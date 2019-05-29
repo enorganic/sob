@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.1",
+    version="0.1.2",
     description='A framework for serializing/deserializing JSON/YAML into python class instances and vice versa',
     url='https://bitbucket.com/davebelais/sob.git',
     author='David Belais',
