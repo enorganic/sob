@@ -25,10 +25,9 @@ class Types(ABC):
     @abstractmethod
     def __init__(
         self,
-        property_,  # type: Property
         items=None  # type: Optional[Union[Sequence[Union[type, Property], Types], type, Property]]
     ):
-        self.property_ = property_
+        pass
 
     @abstractmethod
     def __instancecheck__(self, instance):

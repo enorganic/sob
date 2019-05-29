@@ -461,13 +461,13 @@ class Nucleus(Matter):
         acceleration=None,  # type: Optional[Vector]
         spin=None,  # type: Optional[Spin]
     ):
+        super().__init__(_)  # This needs to come before attribute assignment when inheriting
         self.name = name
         self.mass = mass
         self.origin = origin
         self.velocity = velocity
         self.acceleration = acceleration
         self.spin = spin
-        super().__init__(_)
 
 
 meta.writable(Nucleus).properties.update(
@@ -490,13 +490,13 @@ class Neutron(Matter):
         acceleration=None,  # type: Optional[Acceleration]
         orbit=None,  # type: Optional[Orbit]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
         self.velocity = velocity
         self.acceleration = acceleration
         self.orbit = orbit
-        super().__init__(_)
 
 
 meta.writable(Neutron).properties.update(
@@ -542,6 +542,7 @@ class Atom(Matter):
         neutrons=None,  # type: Optional[Sequence[Neutron]]
         name=None,  # type: Optional[str]
     ):
+        super().__init__(_)
         self.origin = origin
         self.mass = mass
         self.velocity = velocity
@@ -551,7 +552,6 @@ class Atom(Matter):
         self.electrons = electrons
         self.neutrons = neutrons
         self.name = name
-        super().__init__(_)
 
 
 meta.writable(Atom).properties.update(
@@ -590,13 +590,13 @@ class Molecule(Matter):
         acceleration=None,  # type: Optional[Vector]
         atoms=None,  # type: Optional[Sequence[Atom]]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
         self.atoms = atoms
         self.velocity = velocity
         self.acceleration = acceleration
-        super().__init__(_)
 
 
 meta.writable(Molecule).properties.update(
@@ -626,6 +626,7 @@ class Ion(Molecule):
         atoms=None,  # type: Optional[Sequence[Atom]]
         charge=None  # type: Optional[int]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
@@ -633,7 +634,6 @@ class Ion(Molecule):
         self.velocity = velocity
         self.acceleration = acceleration
         self.charge = charge
-        super().__init__(_)
 
 
 meta.writable(Ion).properties.update(
@@ -653,13 +653,13 @@ class Body(Matter):
         acceleration=None,  # type: Optional[Vector]
         contents=None,  # type: Optional[Sequence[Body, Ion, Molucule, Atom]]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
         self.velocity = velocity
         self.acceleration = acceleration
         self.contents = contents
-        super().__init__(_)
 
 
 meta.writable(Body).properties.update(
@@ -685,28 +685,30 @@ class Satellite(Matter):
         origin=None,  # type: Optional[SpaceTimeCoordinates]
         velocity=None,  # type: Optional[Vector]
         acceleration=None,  # type: Optional[Vector]
-        spin=None,   # type: Optional[Spin]
-        orbit=None,   # type: Optional[Orbit]
+        axial_rotation=None,   # type: Optional[Spin]
+        orbital_rotation=None,   # type: Optional[Orbit]
         satellites=None,  # type: Optional[Sequence[Satellite]]
         contents=None,  # type: Optional[Sequence[Body]]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
         self.velocity = velocity
         self.acceleration = acceleration
-        self.spin = spin
-        self.orbit = orbit
+        self.axial_rotation = axial_rotation
+        self.orbital_rotation = orbital_rotation
         self.satellites = satellites
         self.contents = contents
-        super().__init__(_)
 
 
 meta.writable(Satellite).properties.update(
     axial_rotation=properties.Property(
+        name='axialRotation',
         types=(Spin,)
     ),
     orbital_rotation=properties.Property(
+        name='orbitalRotation',
         types=(Orbit,)
     ),
     satellites=properties.Array(
@@ -747,6 +749,7 @@ class Comet(Satellite):
         nucleus=None,  # type: Optional[Body]
         tail=None,  # type: Optional[Sequence[Ion, Molecule, Atom]]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
@@ -757,7 +760,6 @@ class Comet(Satellite):
         self.satellites = satellites
         self.nucleus = nucleus
         self.tail = tail
-        super().__init__(_)
 
 
 comet_properties = meta.writable(Comet).properties
@@ -790,6 +792,7 @@ class DwarfPlanet(Satellite):
         contents=None,  # type: Optional[Sequence[Body]]
         dwarf=None,  # type: Optional[bool]
     ):
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
@@ -800,7 +803,6 @@ class DwarfPlanet(Satellite):
         self.satellites = satellites
         self.contents = contents
         self.is_dwarf = dwarf
-        super().__init__(_)
 
 
 meta.writable(DwarfPlanet).properties.update(
@@ -892,21 +894,60 @@ class Multiverse(model.Array):
 meta.writable(Multiverse).item_types = [Universe]
 
 
-MULTIVERSE = None  # type: Optional[Multiverse]
+def get_milky_way():
+
+    # Make some stars
+    sun = Star(
+        name='Sun'
+    )
+    alpha_centauri_a = Star(
+        name='Alpha Centauri A'
+    )
+    assert alpha_centauri_a.name == 'Alpha Centauri A'
+    alpha_centauri_b = Star(
+        name='Alpha Centauri B'
+    )
+    proxima_centuari = Star(
+        name='Proxima Centauri'
+    )
+
+    return Galaxy(
+        name='Milky Way',
+        satellites=[
+            sun,
+            alpha_centauri_a,
+            alpha_centauri_b,
+            proxima_centuari
+        ]
+    )
+
+
+def get_universe_prime():
+    return Universe(
+        galaxies=[
+            get_milky_way()
+        ]
+    )
+
+
+def get_multiverse():
+    """
+    Build a representation of the multiverse for use in testing `sob`.
+    """
+
+    return Multiverse([
+        get_universe_prime()
+    ])
 
 
 def test_model_object_multiverse():
-    if MULTIVERSE is None:
-        MULTIVERSE = Multiverse([
-            Universe(
-                galaxies=[
-                    Galaxy(
-                        name='Milky Way',
-                        satellites=[
+    multiverse = get_multiverse()
+    # print(meta.read(Star))
+    # print(repr(multiverse[0]))
+    print(repr(multiverse))
+    # multiverse[0].galaxies[0].satellites[0].name = 'Name'
+    # print(repr(multiverse[0].galaxies[0].satellites[0].name))
 
-                        ]
-                    )
-                ]
-            )
-        ])
-    return MULTIVERSE
+
+if __name__ == '__main__':
+    test_model_object_multiverse()

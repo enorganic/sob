@@ -522,6 +522,28 @@ def get_io_url(file_like_object):
     return url
 
 
+def indent(text, number_of_spaces=4, start=1, stop=None):
+    # type: (str, int, int, int, Optional[int]) -> str
+    """
+    Indent text by `number_of_spaces` starting at line index `start` and stopping at line index `stop`.
+    """
+
+    indented_text = text
+
+    if ('\n' in text) or start == 0:
+        lines = text.split('\n')
+        if stop:
+            if stop < 0:
+                stop = len(lines) - stop
+        else:
+            stop = len(lines)
+        for i in range(start, stop):
+            lines[i] = (' ' * number_of_spaces) + lines[i]
+        indented_text = '\n'.join(lines)
+
+    return indented_text
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()

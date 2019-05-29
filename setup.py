@@ -1,23 +1,8 @@
-import pkg_resources
 from setuptools import setup, find_packages
-
-try:
-    pyserial_distribution = pkg_resources.get_distribution('pyserial')
-    raise RuntimeError(
-        'This package cannot be installed alongside `pyserial`, due to a module name conflict. ' +
-        'To install `sob`, first uninstall `pyserial`: \n' +
-        '>>> pip uninstall pyserial\n' +
-        '>>> pip install sob\n' +
-        '...or:\n'
-        '>>> pip3 uninstall sob\n'
-        '>>> pip3 install pyserial\n'
-    )
-except pkg_resources.DistributionNotFound:
-    pass
 
 setup(
     name='sob',
-    version="0.1.0",
+    version="0.1.1",
     description='A framework for serializing/deserializing JSON/YAML into python class instances and vice versa',
     url='https://bitbucket.com/davebelais/sob.git',
     author='David Belais',

@@ -1,5 +1,5 @@
 """
-This module defines the building blocks of a `sob` based data model.
+This module defines the building blocks of an `sob` based data model.
 """
 
 # Tell the linters what's up:
@@ -40,7 +40,7 @@ import yaml
 
 # region sob Imports
 
-from .utilities import qualified_name, collections, Generator, get_io_url, read, collections_abc
+from .utilities import qualified_name, collections, Generator, get_io_url, read, collections_abc, indent
 from . import properties, meta, errors, hooks, abc
 
 # endregion
@@ -234,10 +234,10 @@ class Object(object):
                 property_name, value = instance_hooks.before_setattr(self, property_name, value)
             unmarshalled_value = self._unmarshal_value(property_name, value)
 
-        super().__setattr__(property_name, unmarshalled_value)
-
         if instance_hooks and instance_hooks.after_setattr:
             instance_hooks.after_setattr(self, property_name, value)
+
+        super().__setattr__(property_name, unmarshalled_value)
 
     def __setitem__(self, key, value):
         # type: (str, Any) -> None
@@ -413,7 +413,7 @@ class Object(object):
                 )
         # Strip the last comma
         if representation:
-            representation[-1] = representation[-1][:-1]
+            representation[-1] = representation[-1].rstrip(',')
         representation.append(')')
         if len(representation) > 2:
             return '\n'.join(representation)
@@ -623,7 +623,7 @@ class Array(list):
     def append(self, value):
         # type: (Any) -> None
         if not isinstance(value, UNMARSHALLABLE_TYPES):
-            raise errors.UnmarshalTypeError(value)
+            raise errors.UnmarshalTypeError(data=value)
 
         instance_hooks = hooks.read(self)  # type: hooks.Array
 
@@ -737,6 +737,7 @@ class Array(list):
                 representation_lines.append(
                     self._repr_item(item)
                 )
+            representation_lines[-1] = representation_lines[-1].rstrip(',')
             representation_lines.append(
                 '    ]' + (
                     ','
@@ -746,11 +747,8 @@ class Array(list):
             )
         if instance_meta != class_meta and instance_meta.item_types:
             representation_lines.append(
-                '    item_types=(',
+                '    item_types=' + indent(repr(instance_meta.item_types))
             )
-            for item_type in instance_meta.item_types:
-                representation_lines.append(self._repr_item(item_type))
-            representation_lines.append('    )')
         representation_lines.append(')')
         if len(representation_lines) > 2:
             representation_lines = '\n'.join(representation_lines)
@@ -1071,13 +1069,8 @@ class Dictionary(collections.OrderedDict):
 
         if instance_meta != class_meta and instance_meta.value_types:
             representation_lines.append(
-                '    value_types=(',
+                '    value_types=' + indent(repr(instance_meta.value_types)),
             )
-            for value_type in instance_meta.value_types:
-                representation_lines.append(Array._repr_item(value_type))
-            if len(instance_meta.value_types) > 1:
-                representation_lines[-1] = representation_lines[-1][:-1]
-            representation_lines.append('    )')
         representation_lines.append(')')
         if len(representation_lines) > 2:
             representation = '\n'.join(representation_lines)
@@ -1260,7 +1253,7 @@ def from_meta(name, metadata, module=None, docstring=None):
             '',
             '    def __init__(',
             '        self,',
-            '        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]'
+            '        _data=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]'
         ]
         for n, p in metadata.properties.items():
             out.append(
@@ -1273,7 +1266,7 @@ def from_meta(name, metadata, module=None, docstring=None):
             out.append(
                 '        self.%s = %s' % (n, n)
             )
-        out.append('        super().__init__(_)\n\n')
+        out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
     class_definition = '\n'.join(out)
@@ -1495,10 +1488,11 @@ class _Unmarshal(object):
                     )
                     successfully_unmarshalled = False  # type: bool
                     first_error = None  # type: Optional[Exception]
-
+                    first_error_message = None  # type: Optional[str]
                     # Attempt to un-marshal the data as each type, in the order provided
                     for type_ in self.types:
                         error = None  # type: Optional[Union[AttributeError, KeyError, TypeError, ValueError]]
+                        error_message = None  # type: Optional[str]
                         try:
                             unmarshalled_data = self.as_type(type_)
                             # If the data is un-marshalled successfully, we do not need to try any further types
@@ -1506,20 +1500,24 @@ class _Unmarshal(object):
                             break
                         except (AttributeError, KeyError, TypeError, ValueError) as e:
                             error = e
-                        if (first_error is None) and (error is not None):
+                            error_message = errors.get_exception_text()
+                        if (error is not None) and (first_error is None):
                             first_error = error
+                            first_error_message = error_message
 
                     if not successfully_unmarshalled:
                         if (first_error is None) or isinstance(first_error, TypeError):
                             raise errors.UnmarshalTypeError(
-                                self.data,
+                                first_error_message,
+                                data=self.data,
                                 types=self.types,
                                 value_types=self.value_types,
                                 item_types=self.item_types
                             )
                         elif isinstance(first_error, ValueError):
                             raise errors.UnmarshalValueError(
-                                self.data,
+                                first_error_message,
+                                data=self.data,
                                 types=self.types,
                                 value_types=self.value_types,
                                 item_types=self.item_types

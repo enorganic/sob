@@ -680,7 +680,7 @@ def test_utilities():
     assert utilities.calling_function_qualified_name() == (
         'test_utilities'
         if __name__ == '__main__' else
-        'test_serial.test_utilities'
+        'test_sob.test_utilities'
     )
 
     class TestCallingFunctionQualifiedNameA(object):
@@ -710,13 +710,13 @@ def test_utilities():
                 assert utilities.calling_function_qualified_name() == (
                     'test_utilities.TestCallingFunctionQualifiedNameB.__init__'
                     if __name__ == '__main__' else
-                    'test_serial.test_utilities.TestCallingFunctionQualifiedNameB.__init__'
+                    'test_sob.test_utilities.TestCallingFunctionQualifiedNameB.__init__'
                 )
             else:
                 assert utilities.calling_function_qualified_name() == (
                     'TestCallingFunctionQualifiedNameB.__init__'
                     if __name__ == '__main__' else
-                    'test_serial.TestCallingFunctionQualifiedNameB.__init__'
+                    'test_sob.TestCallingFunctionQualifiedNameB.__init__'
                 )
 
     TestCallingFunctionQualifiedNameB()
@@ -733,7 +733,7 @@ def test_utilities():
                         (
                             ''
                             if __name__ == '__main__' else
-                            'test_serial.'
+                            'test_sob.'
                         ) +
                         'test_utilities.TestCallingFunctionQualifiedNameC.' +
                         'TestCallingFunctionQualifiedNameD.__init__'
@@ -745,7 +745,7 @@ def test_utilities():
                         (
                             ''
                             if __name__ == '__main__' else
-                            'test_serial.'
+                            'test_sob.'
                         ) +
                         'TestCallingFunctionQualifiedNameD.__init__'
                     )
@@ -760,7 +760,7 @@ def test_utilities():
             (
                 ''
                 if __name__ == '__main__' else
-                'test_serial.'
+                'test_sob.'
             ) +
             'test_utilities.TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD'
         )
@@ -773,7 +773,7 @@ def test_utilities():
             (
                 ''
                 if __name__ == '__main__' else
-                'test_serial.'
+                'test_sob.'
             ) +
             'TestCallingFunctionQualifiedNameD'
         )

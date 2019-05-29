@@ -10,6 +10,8 @@ from datetime import date, datetime
 from decimal import Decimal
 from numbers import Number
 
+import traceback, sys
+
 try:
     import typing
 except ImportError as e:
@@ -47,7 +49,8 @@ class UnmarshalError(Exception):
 
     def __init__(
         self,
-        data,  # type: Any
+        message=None,  # type: Optional[str]
+        data=None,  # type: Optional[Any]
         types=None,  # type: Optional[Sequence[Model, Property, type]]
         item_types=None,  # type: Optional[Sequence[Model, Property, type]]
         value_types=None  # type: Optional[Sequence[Model, Property, type]]
@@ -141,18 +144,21 @@ class UnmarshalError(Exception):
             ' - %s: %s' % (types_label, '\n'.join(types_lines))
         )
 
+        if message:
+            error_message_lines += ['', message]
+
         self.message = '\n'.join(error_message_lines)
 
     @property
-    def paramater(self):
+    def parameter(self):
         # type: (...) -> Optional[str]
         return self._parameter
 
-    @paramater.setter
-    def paramater(self, paramater_name):
+    @parameter.setter
+    def parameter(self, parameter_name):
         # type: (str) -> None
-        if paramater_name != self.paramater:
-            self._parameter = paramater_name
+        if parameter_name != self.parameter:
+            self._parameter = parameter_name
             self.assemble_message()
 
     @property
@@ -170,7 +176,7 @@ class UnmarshalError(Exception):
     @property
     def index(self):
         # type: (...) -> Optional[int]
-        return self._message
+        return self._index
 
     @index.setter
     def index(self, index_or_key):
@@ -183,9 +189,9 @@ class UnmarshalError(Exception):
 
         messages = []
 
-        if self.paramater:
+        if self.parameter:
             messages.append(
-                'Errors encountered in attempting to un-marshal %s:' % self.paramater
+                'Errors encountered in attempting to un-marshal %s:' % self.parameter
             )
 
         if self.index is not None:
@@ -205,3 +211,14 @@ class UnmarshalTypeError(UnmarshalError, TypeError):
 
 class UnmarshalValueError(UnmarshalError, ValueError):
     pass
+
+
+def get_exception_text():
+    # type: (...) -> str
+    """
+    When called within an exception, this function returns a text
+    representation of the error matching what is found in
+    `traceback.print_exception`, but is returned as a string value rather than
+    printing.
+    """
+    return ''.join(traceback.format_exception(*sys.exc_info()))

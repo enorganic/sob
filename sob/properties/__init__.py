@@ -5,7 +5,7 @@
 from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
    print_function, unicode_literals
 
-from .utilities.compatibility import backport
+from ..utilities.compatibility import backport
 
 backport()  # noqa
 
@@ -25,219 +25,11 @@ except ImportError:
 
 import iso8601  # noqa
 
-from .utilities import collections, collections_abc, qualified_name, properties_values, parameters_defaults,\
-    calling_function_qualified_name
+from ..utilities import collections, collections_abc, qualified_name, properties_values, parameters_defaults, \
+    calling_function_qualified_name, indent
 
-from . import abc, errors, meta
-
-
-NoneType = type(None)
-
-
-NULL = None
-
-
-class Null(object):  # noqa - inheriting from object is intentional, as this is needed for python 2x compatibility
-    """
-    Instances of this class represent an *explicit* null value, rather than the absence of a
-    property/attribute/element, as would be inferred from a value of `None`.
-    """
-
-    def __init__(self):
-        if NULL is not None:
-            raise errors.DefinitionExistsError(
-                '%s may only be defined once.' % repr(self)
-            )
-
-    def __bool__(self):
-        # type: (...) -> bool
-        return False
-
-    def __eq__(self, other):
-        # type: (Any) -> bool
-        return id(other) == id(self)
-
-    def __hash__(self):
-        # type: (...) -> int
-        return 0
-
-    def __str__(self):
-        # type: (...) -> str
-        return 'null'
-
-    def _marshal(self):
-        # type: (...) -> None
-        return None
-
-    def __repr__(self):
-        # type: (...) -> str
-        return (
-            'NULL'
-            if self.__module__ in ('__main__', 'builtins', '__builtin__') else
-            '%s.NULL' % self.__module__
-        )
-
-    def __copy__(self):
-        # type: (...) -> Null
-        return self
-
-    def __deepcopy__(self, memo):
-        # type: (Dict[Hashable, Any]) -> Null
-        return self
-
-
-NULL = Null()
-
-
-def _validate_type_or_property(type_or_property):
-    # type: (Union[type, Property]) -> (Union[type, Property])
-
-    if not isinstance(type_or_property, (type, Property)):
-        raise TypeError(type_or_property)
-
-    if not (
-        (type_or_property is Null) or
-        (
-            isinstance(type_or_property, type) and
-            issubclass(
-                type_or_property,
-                (
-                    abc.model.Model,
-                    str,
-                    native_str,
-                    bytes,
-                    numbers.Number,
-                    date,
-                    datetime,
-                    Null,
-                    collections_abc.Iterable,
-                    dict,
-                    collections.OrderedDict,
-                    bool
-                )
-            )
-        ) or
-        isinstance(type_or_property, Property)
-    ):
-        raise TypeError(type_or_property)
-
-    return type_or_property
-
-
-class Types(list):
-    """
-    Instances of this class are lists which will only take values which are valid types for describing a property
-    definition.
-    """
-
-    def __init__(
-        self,
-        property_,  # type: Property
-        items=None  # type: Optional[Union[Sequence[Union[type, Property], Types], type, Property]]
-    ):
-        # (...) -> None
-        if not isinstance(property_, Property):
-            raise TypeError(
-                'The parameter `property` must be a `type`, or an instance of `%s`.' % qualified_name(Property)
-            )
-
-        self.property_ = property_
-
-        if isinstance(items, (type, Property)):
-            items = (items,)
-
-        if items is None:
-            super().__init__()
-        else:
-            super().__init__(items)
-
-    def __setitem__(self, index, value):
-        # type: (int, Union[type, Property]) -> None
-        super().__setitem__(index, _validate_type_or_property(value))
-        if value is str and (native_str is not str) and (native_str not in self):
-            super().append(native_str)
-
-    def append(self, value):
-        # type: (Union[type, Property]) -> None
-        super().append(_validate_type_or_property(value))
-        if value is str and (native_str is not str) and (native_str not in self):
-            super().append(native_str)
-
-    def __delitem__(self, index):
-        # type: (int) -> None
-        value = self[index]
-        super().__delitem__(index)
-        if (value is str) and (native_str in self):
-            self.remove(native_str)
-
-    def pop(self, index=-1):
-        # type: (int) -> Union[type, Property]
-        value = super().pop(index)
-        if (value is str) and (native_str in self):
-            self.remove(native_str)
-        return value
-
-    def __copy__(self):
-        # type: () -> Types
-        return self.__class__(self.property_, self)
-
-    def __deepcopy__(self, memo=None):
-        # type: (dict) -> Types
-        return self.__class__(
-            self.property_,
-            tuple(
-                deepcopy(v, memo=memo)
-                for v in self
-            )
-        )
-
-    def __repr__(self):
-
-        representation = [
-            qualified_name(type(self)) + '('
-        ]
-
-        if self:
-
-            representation[0] += '['
-
-            for v in self:
-
-                rv = (
-                    qualified_name(v) if isinstance(v, type) else
-                    repr(v)
-                )
-                rvls = rv.split('\n')
-
-                if len(rvls) > 1:
-
-                    rvs = [rvls[0]]
-
-                    for rvl in rvls[1:]:
-                        rvs.append('    ' + rvl)
-
-                    rv = '\n'.join(rvs)
-                    representation += [
-                        '    %s' % rv,
-                    ]
-
-                else:
-
-                    representation.append(
-                        '    %s,' % rv
-                    )
-
-            representation[-1] = representation[-1][:-1]
-            representation.append(
-                ']'
-            )
-
-        representation[-1] += ')'
-
-        return '\n'.join(representation) if len(representation) > 2 else ''.join(representation)
-
-
-abc.properties.Types.register(Types)
+from .. import abc, meta
+from .types import Types, Null, NULL, NoneType
 
 
 class Property(object):
@@ -293,19 +85,16 @@ class Property(object):
         # type: (Optional[Sequence[Union[type, Property, abc.model.Model]]]) -> None
 
         if types_or_properties is not None:
-
             if callable(types_or_properties):
-
                 if native_str is not str:
-
                     _types_or_properties = types_or_properties
 
                     def types_or_properties(d):
                         # type: (Sequence[Union[type, Property, abc.model.Model]]) -> Types
-                        return Types(self, _types_or_properties(d))
+                        return Types(_types_or_properties(d))
 
             else:
-                types_or_properties = Types(self, types_or_properties)
+                types_or_properties = Types(types_or_properties)
 
         self._types = types_or_properties
 
@@ -357,55 +146,29 @@ class Property(object):
         if (argument not in defaults) or defaults[argument] == value or value is None or value is NULL:
             return None
 
-        if isinstance(value, collections_abc.Sequence) and not isinstance(value, (str, bytes)):
-            lines = ['(']
-            for value_item in value:
-                item_representation = (
-                    qualified_name(value_item)
-                    if isinstance(value_item, type) else
-                    "'%s'" % str(value_item)
-                    if isinstance(value_item, meta.Version) else
-                    repr(value_item)
-                )
-                item_lines = item_representation.split('\n')
-                if len(item_lines) > 1:
-                    indented_item_lines = [item_lines[0]]
-                    for item_line in item_lines[1:]:
-                        indented_item_lines.append('        ' + item_line)
-                    item_representation = '\n'.join(indented_item_lines)
-                lines.append('        %s,' % item_representation)
-            if len(value) > 1:
-                lines[-1] = lines[-1][:-1]
-            lines.append('    )')
-            value_representation = '\n'.join(lines)
-        else:
-            value_representation = (
-                qualified_name(value)
-                if isinstance(value, type) else
-                "'%s'" % str(value)
-                if isinstance(value, meta.Version) else
-                repr(value)
-            )
-            lines = value_representation.split('\n')
-            if len(lines) > 2:
-                lines = [lines[0]]
-                for line in lines[1:]:
-                    lines.append('    ' + line)
-                value_representation = '\n'.join(lines)
-        return '    %s=%s,' % (argument, value_representation)
+        value_representation = (
+            qualified_name(value)
+            if isinstance(value, type) else
+            "'%s'" % str(value)
+            if isinstance(value, meta.Version) else
+            repr(value)
+        )
+
+        return '    %s=%s,' % (argument, indent(value_representation))
 
     def __repr__(self):
-        representation = [qualified_name(type(self)) + '(']
+        lines = [qualified_name(type(self)) + '(']
         defaults = parameters_defaults(self.__init__)
         for property_name, value in properties_values(self):
             argument_representation = self._repr_argument(property_name, value, defaults)
             if argument_representation is not None:
-                representation.append(argument_representation)
-        representation.append(')')
-        if len(representation) > 2:
-            return '\n'.join(representation)
+                lines.append(argument_representation)
+        lines[-1] = lines[-1].rstrip(',')
+        lines.append(')')
+        if len(lines) > 2:
+            return '\n'.join(lines)
         else:
-            return ''.join(representation)
+            return ''.join(lines)
 
     def __copy__(self):
 
@@ -715,9 +478,9 @@ class Array(Property):
 
                     def item_types(d):
                         # type: (Sequence[Union[type, Property, abc.model.Object]]) -> Types
-                        return Types(self, _item_types(d))
+                        return Types(_item_types(d))
             else:
-                item_types = Types(self, item_types)
+                item_types = Types(item_types)
         self._item_types = item_types
 
 
@@ -782,11 +545,11 @@ class Dictionary(Property):
 
                     def value_types_(data):
                         # type: (Sequence[Union[type, Property, abc.model.Object]]) -> Types
-                        return Types(self, original_value_types_(data))
+                        return Types(original_value_types_(data))
 
             else:
 
-                value_types_ = Types(self, value_types_)
+                value_types_ = Types(value_types_)
 
         self._value_types = value_types_
 

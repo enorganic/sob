@@ -23,6 +23,7 @@ except ImportError:
 
 from . import abc, errors
 from .utilities import qualified_name, properties_values, collections_abc, calling_function_qualified_name
+from .properties.types import Types
 
 _DOT_SYNTAX_RE = re.compile(
     r'^\d+(\.\d+)*$'
@@ -52,8 +53,12 @@ class Meta(object):
 
     def __repr__(self):
         lines = ['%s(' % qualified_name(type(self))]
-        for p, v in properties_values(self):
-            lines.append('    %s=%s,' % (p, repr(v)))
+        for proxy_name, value in properties_values(self):
+            if isinstance(value, type):
+                value_representation = qualified_name(value)
+            else:
+                value_representation = repr(value)
+            lines.append('    %s=%s,' % (proxy_name, value_representation))
         lines[-1] = lines[-1][:-1]
         lines.append(')')
         return ('\n'.join(lines))
@@ -212,7 +217,6 @@ class Dictionary(Meta):
 
     @property
     def value_types(self):
-        # type: () -> Optional[Dict[str, Union[type, abc.properties.Property, abc.model.Object]]]
         return self._value_types
 
     @value_types.setter
@@ -225,33 +229,15 @@ class Dictionary(Meta):
                 value_types = (value_types,)
 
             if native_str is not str:
-
-                if isinstance(value_types, collections.Callable):
-
+                if callable(value_types):
                     _types = value_types
 
-                    def value_types(d):
+                    def value_types(data):
                         # type: (Any) -> Any
+                        return Types(_types(data))
 
-                        ts = _types(d)
-
-                        if (ts is not None) and (str in ts) and (native_str not in ts):
-                            ts = tuple(chain(*(
-                                ((t, native_str) if (t is str) else (t,))
-                                for t in ts
-                            )))
-
-                        return ts
-
-                elif (str in value_types) and (native_str is not str) and (native_str not in value_types):
-
-                    value_types = chain(*(
-                        ((t, native_str) if (t is str) else (t,))
-                        for t in value_types
-                    ))
-
-            if not isinstance(value_types, collections_abc.Callable):
-                value_types = tuple(value_types)
+            if not callable(value_types):
+                value_types = Types(value_types)
 
         self._value_types = value_types
 
@@ -271,30 +257,24 @@ class Array(Meta):
 
     @item_types.setter
     def item_types(self, item_types):
-        # type: (Optional[Sequence[Union[type, Property, abc.model.Object]]]) -> None
+        # type: (Optional[Sequence[Union[type, abc.properties.Property, abc.model.Object]]]) -> None
+
         if item_types is not None:
+
             if isinstance(item_types, (type, abc.properties.Property)):
                 item_types = (item_types,)
+
             if native_str is not str:
-                if isinstance(item_types, collections.Callable):
+                if callable(item_types):
                     _types = item_types
 
-                    def item_types(d):
+                    def item_types(data):
                         # type: (Any) -> Any
-                        ts = _types(d)
-                        if (ts is not None) and (str in ts) and (native_str not in ts):
-                            ts = tuple(chain(*(
-                                ((t, native_str) if (t is str) else (t,))
-                                for t in ts
-                            )))
-                        return ts
-                elif (str in item_types) and (native_str is not str) and (native_str not in item_types):
-                    item_types = chain(*(
-                        ((t, native_str) if (t is str) else (t,))
-                        for t in item_types
-                    ))
+                        return Types(_types(data))
+
             if not callable(item_types):
-                item_types = tuple(item_types)
+                item_types = Types(item_types)
+
         self._item_types = item_types
 
 
@@ -366,7 +346,7 @@ class Properties(OrderedDict):
             representation[0] += '['
             for key, value in items:
                 representation.append(self._repr_item(key, value))
-            representation[-1] = representation[-1][:-1]
+            representation[-1] = representation[-1].rstrip(',')
             representation.append(
                 '    ]'
             )
