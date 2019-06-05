@@ -29,35 +29,6 @@ class Types(ABC):
     ):
         pass
 
-    @abstractmethod
-    def __instancecheck__(self, instance):
-        # type: (object) -> bool
-        """
-        Check an instance of a subclass to ensure it has required properties
-        """
-
-        if not isinstance(self, list):
-            return False
-
-        # Perform any instance checks needed for our superclass(es)
-        return super().__instancecheck__(instance)
-
-    @classmethod
-    def __subclasscheck__(cls, subclass):
-        # type: (object) -> bool
-        """
-        Verify inheritance
-        """
-
-        if cls is subclass or type.__subclasscheck__(cls, subclass):
-            return True
-
-        if not issubclass(subclass, list):
-            return False
-
-        # Perform any subclass checks needed for our superclass(es)
-        return super().__subclasscheck__(subclass)
-
 
 class Property(ABC):
 
@@ -71,30 +42,10 @@ class Property(ABC):
         required=False,  # type: Union[bool, collections.Callable]
         versions=None,  # type: Optional[Sequence[Union[str, sob.meta.Version]]]
     ):
-        self._types = None  # type: Optional[Sequence[Union[type, Property]]]
         self.types = types
         self.name = name
         self.required = required
-        self._versions = None  # type: Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
         self.versions = versions  # type: Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
-
-    def __instancecheck__(self, instance):
-        # type: (object) -> bool
-        """
-        Check an instance of a subclass to ensure it has required properties
-        """
-
-        for attribute in (
-            '_types',
-            '_versions',
-            'name',
-            'required'
-        ):
-            if not hasattr(self, attribute):
-                return False
-
-        # Perform any instance checks needed for our superclass(es)
-        return super().__instancecheck__(instance)
 
     @property
     @abstractmethod
@@ -121,31 +72,6 @@ class Property(ABC):
         versions  # type: Optional[Sequence[Union[str, collections_abc.Iterable, meta.Version]]]
     ):
         # type: (...) -> Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
-        pass
-
-    @abstractmethod
-    def unmarshal(self, data):
-        # type: (Any) -> Any
-        pass
-
-    @abstractmethod
-    def marshal(self, data):
-        # type: (Any) -> Any
-        pass
-
-    @abstractmethod
-    def __repr__(self):
-        # type: (...) -> str
-        pass
-
-    @abstractmethod
-    def __copy__(self):
-        # type: (...) -> Property
-        pass
-
-    @abstractmethod
-    def __deepcopy__(self, memo):
-        # type: (dict) -> Property
         pass
 
 

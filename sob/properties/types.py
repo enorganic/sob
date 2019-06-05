@@ -12,6 +12,7 @@ backport()  # noqa
 from future.utils import native_str
 
 import numbers  # noqa
+import decimal  # noqa
 
 from copy import deepcopy  # noqa
 from datetime import date, datetime  # noqa
@@ -23,9 +24,9 @@ except ImportError:
     Union = Optional = Sequence = Mapping = Set = Sequence = Callable = Dict = Any = Hashable = Collection = Tuple =\
         Iterable = None
 
-from sob.utilities import collections, collections_abc, qualified_name
+from sob.utilities import collections, collections_abc, qualified_name, Generator
 
-from .. import abc, errors
+from .. import abc
 from ..abc.properties import Property
 
 
@@ -33,6 +34,11 @@ NoneType = type(None)
 
 
 NULL = None
+
+
+class DefinitionExistsError(Exception):
+
+    pass
 
 
 class Null(object):  # noqa - inheriting from object is intentional, as this is needed for python 2x compatibility
@@ -43,7 +49,7 @@ class Null(object):  # noqa - inheriting from object is intentional, as this is 
 
     def __init__(self):
         if NULL is not None:
-            raise errors.DefinitionExistsError(
+            raise DefinitionExistsError(
                 '%s may only be defined once.' % repr(self)
             )
 
@@ -87,6 +93,22 @@ class Null(object):  # noqa - inheriting from object is intentional, as this is 
 NULL = Null()
 
 
+TYPES = tuple(
+    # We first put all the types in a `set` so that when `native_str` and `str` are the same--they are
+    # not duplicated
+    {
+        str, bytes, bool,
+        dict, collections.OrderedDict,
+        collections_abc.Set, collections_abc.Sequence, Generator,
+        native_str,
+        numbers.Number, decimal.Decimal,
+        date, datetime,
+        abc.model.Model,
+        Null
+    }
+)
+
+
 def _validate_type_or_property(type_or_property):
     # type: (Union[type, Property]) -> (Union[type, Property])
 
@@ -99,20 +121,7 @@ def _validate_type_or_property(type_or_property):
             isinstance(type_or_property, type) and
             issubclass(
                 type_or_property,
-                (
-                    abc.model.Model,
-                    str,
-                    native_str,
-                    bytes,
-                    numbers.Number,
-                    date,
-                    datetime,
-                    Null,
-                    collections_abc.Iterable,
-                    dict,
-                    collections.OrderedDict,
-                    bool
-                )
+                TYPES
             )
         ) or
         isinstance(type_or_property, Property)

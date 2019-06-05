@@ -6,10 +6,6 @@ backport()
 
 from future.utils import native_str
 
-from datetime import date, datetime
-from decimal import Decimal
-from numbers import Number
-
 import traceback, sys
 
 try:
@@ -18,31 +14,23 @@ except ImportError as e:
     typing = None
 
 from .abc.model import Model
-from .utilities import qualified_name, collections, collections_abc, Generator
+from .properties.types import TYPES
+from .utilities import qualified_name
 
 
 class ValidationError(Exception):
+
     pass
 
 
 class VersionError(AttributeError):
-    pass
 
-
-class DefinitionExistsError(Exception):
     pass
 
 
 class UnmarshalValueError(ValueError):
+
     pass
-
-
-UNMARSHALLABLE_TYPES = tuple({
-    str, bytes, native_str, Number, Decimal, date, datetime, bool,
-    dict, collections.OrderedDict,
-    collections_abc.Set, collections_abc.Sequence, Generator,
-    Model
-})
 
 
 class UnmarshalError(Exception):
@@ -119,7 +107,7 @@ class UnmarshalError(Exception):
         )
 
         if types is None:
-            types = UNMARSHALLABLE_TYPES
+            types = TYPES
             types_label = 'un-marshallable types'
 
         types_lines = ['(']
@@ -206,11 +194,24 @@ class UnmarshalError(Exception):
 
 
 class UnmarshalTypeError(UnmarshalError, TypeError):
+
     pass
 
 
 class UnmarshalValueError(UnmarshalError, ValueError):
+
     pass
+
+
+class UnmarshalKeyError(KeyError):
+
+    def __init__(self, message):
+        # type (str) -> None
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 
 
 def get_exception_text():

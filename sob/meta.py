@@ -53,15 +53,16 @@ class Meta(object):
 
     def __repr__(self):
         lines = ['%s(' % qualified_name(type(self))]
-        for proxy_name, value in properties_values(self):
+        for property_name, value in properties_values(self):
             if isinstance(value, type):
                 value_representation = qualified_name(value)
             else:
                 value_representation = repr(value)
-            lines.append('    %s=%s,' % (proxy_name, value_representation))
+            lines.append('    %s=%s,' % (property_name, value_representation))
+        # Stript the trailing comma
         lines[-1] = lines[-1][:-1]
         lines.append(')')
-        return ('\n'.join(lines))
+        return '\n'.join(lines)
 
 
 class Version(Meta):
@@ -325,16 +326,16 @@ class Properties(OrderedDict):
         if len(value_representation_lines) > 1:
             indented_lines = [value_representation_lines[0]]
             for line in value_representation_lines[1:]:
-                indented_lines.append('            ' + line)
+                indented_lines.append('        ' + line)
             value_representation = '\n'.join(indented_lines)
             representation = '\n'.join([
-                '        (',
-                '            %s,' % repr(key),
-                '            %s' % value_representation,
-                '        ),'
+                '    (',
+                '        %s,' % repr(key),
+                '        %s' % value_representation,
+                '    ),'
             ])
         else:
-            representation = '        (%s, %s),' % (repr(key), value_representation)
+            representation = '    (%s, %s),' % (repr(key), value_representation)
         return representation
 
     def __repr__(self):
@@ -348,7 +349,7 @@ class Properties(OrderedDict):
                 representation.append(self._repr_item(key, value))
             representation[-1] = representation[-1].rstrip(',')
             representation.append(
-                '    ]'
+                ']'
             )
         representation[-1] += ')'
         if len(representation) > 2:

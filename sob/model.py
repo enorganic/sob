@@ -60,15 +60,8 @@ except ImportError:
 
 # region Constants
 
-UNMARSHALLABLE_TYPES = tuple(
-    # We first put all the unmarshallable types in a `set` so that when `native_str` and `str` are the same--they are
-    # not duplicated
-    {
-        str, bytes, native_str, Number, Decimal, date, datetime, bool,
-        dict, collections.OrderedDict,
-        collections_abc.Set, collections_abc.Sequence, Generator,
-        abc.model.Model, properties.Null, properties.NoneType
-    }
+_UNMARSHALLABLE_TYPES = tuple(
+    set(properties.types.TYPES) | {properties.types.NoneType}
 )
 
 # endregion
@@ -76,7 +69,15 @@ UNMARSHALLABLE_TYPES = tuple(
 # region Model Classes
 
 
-class Object(object):
+class Model(object):
+
+    pass
+
+
+abc.model.Model.register(Model)
+
+
+class Object(Model):
 
     _format = None  # type: Optional[str]
     _meta = None  # type: Optional[meta.Object]
@@ -128,11 +129,13 @@ class Object(object):
             try:
                 self[property_name] = value
             except KeyError as error:
-                if error.args and len(error.args) == 1:
-                    error.args = (
-                        r'%s.%s: %s' % (qualified_name(type(self)), error.args[0], repr(dictionary)),
+                raise errors.UnmarshalKeyError(
+                    '%s\n\n%s.%s: %s' % (
+                        errors.get_exception_text(),
+                        qualified_name(type(self)),
+                        error.args[0], repr(dictionary)
                     )
-                raise error
+                )
 
     def _copy_init(self, other):
         # type: (Object) -> None
@@ -169,6 +172,7 @@ class Object(object):
         meta.url(self, meta.url(other))
         meta.pointer(self, meta.pointer(other))
         meta.xpath(self, meta.xpath(other))
+        meta.format_(self, meta.format_(other))
 
     def __hash__(self):
         # type (...) -> None
@@ -239,15 +243,12 @@ class Object(object):
 
         super().__setattr__(property_name, unmarshalled_value)
 
-    def __setitem__(self, key, value):
-        # type: (str, Any) -> None
-        # Before set-item hooks
-        instance_hooks = hooks.read(self)  # type: hooks.Object
-        if instance_hooks and instance_hooks.before_setitem:
-            key, value = instance_hooks.before_setitem(self, key, value)
-        # Get the corresponding property name
+    def _get_key_property_name(self, key):
+        # type: (str) -> str
         instance_meta = meta.read(self)
-        if key in instance_meta.properties:
+        if (key in instance_meta.properties) and (
+            instance_meta.properties[key].name in (None, )
+        ):
             property_name = key
         else:
             property_name = None
@@ -262,11 +263,21 @@ class Object(object):
                         key
                     )
                 )
+        return property_name
+
+    def __setitem__(self, key, value):
+        # type: (str, Any) -> None
+        # Before set-item hooks
+        hooks_ = hooks.read(self)  # type: hooks.Object
+        if hooks_ and hooks_.before_setitem:
+            key, value = hooks_.before_setitem(self, key, value)
+        # Get the corresponding property name
+        property_name = self._get_key_property_name(key)
         # Set the attribute value
         setattr(self, property_name, value)
         # After set-item hooks
-        if instance_hooks and instance_hooks.after_setitem:
-            instance_hooks.after_setitem(self, key, value)
+        if hooks_ and hooks_.after_setitem:
+            hooks_.after_setitem(self, key, value)
 
     def __delattr__(self, key):
         # type: (str) -> None
@@ -340,23 +351,13 @@ class Object(object):
     def __deepcopy__(self, memo):
         # type: (Optional[dict]) -> Object
 
-        new_instance = self.__class__()
+        # Perform a regular copy operation
+        new_instance = self.__copy__()
 
-        instance_meta = meta.read(self)
-        class_meta = meta.read(type(self))
+        # Retrieve the metadata
+        meta_ = meta.read(self)
 
-        if instance_meta is class_meta:
-            meta_ = class_meta  # type: meta.Object
-        else:
-            meta.write(new_instance, deepcopy(instance_meta, memo))
-            meta_ = instance_meta  # type: meta.Object
-
-        instance_hooks = hooks.read(self)
-        class_hooks = hooks.read(type(self))
-
-        if instance_hooks is not class_hooks:
-            hooks.write(new_instance, deepcopy(instance_hooks, memo))
-
+        # If there is metadata--copy it recursively
         if meta_ is not None:
             for property_name in meta_.properties.keys():
                 self._deepcopy_property(property_name, new_instance, memo)
@@ -548,7 +549,7 @@ class Object(object):
 abc.model.Object.register(Object)
 
 
-class Array(list):
+class Array(list, Model):
 
     _format = None  # type: Optional[str]
     _hooks = None  # type: Optional[hooks.Array]
@@ -594,6 +595,9 @@ class Array(list):
         if format_ is not None:
             meta.format_(self, format_)
 
+    def _copy_init(self, other):
+        pass
+
     def __hash__(self):
         return id(self)
 
@@ -622,7 +626,7 @@ class Array(list):
 
     def append(self, value):
         # type: (Any) -> None
-        if not isinstance(value, UNMARSHALLABLE_TYPES):
+        if not isinstance(value, _UNMARSHALLABLE_TYPES):
             raise errors.UnmarshalTypeError(data=value)
 
         instance_hooks = hooks.read(self)  # type: hooks.Array
@@ -782,7 +786,7 @@ class Array(list):
 abc.model.Array.register(Array)
 
 
-class Dictionary(collections.OrderedDict):
+class Dictionary(collections.OrderedDict, Model):
 
     _format = None  # type: Optional[str]
     _hooks = None  # type: Optional[hooks.Dictionary]
@@ -1417,13 +1421,13 @@ class _Unmarshal(object):
         # Verify that the data can be parsed before attempting to un-marshall it
         if not isinstance(
             data,
-            UNMARSHALLABLE_TYPES
+            _UNMARSHALLABLE_TYPES
         ):
             raise errors.UnmarshalTypeError(
                 '%s, an instance of `%s`, cannot be un-marshalled. ' % (repr(data), type(data).__name__) +
                 'Acceptable types are: ' + ', '.join((
                     qualified_name(data_type)
-                    for data_type in UNMARSHALLABLE_TYPES
+                    for data_type in _UNMARSHALLABLE_TYPES
                 ))
             )
 
@@ -1572,12 +1576,103 @@ class _Unmarshal(object):
                 for type_ in self.types
             )))  # type: Tuple[Union[type, properties.Property], ...]
 
+    def get_dictionary_type(self, dictionary_type):
+        # type: (type) -> type
+        """
+        Get the dictionary type to use
+        """
+
+        if dictionary_type is abc.model.Dictionary:
+            dictionary_type = Dictionary
+        elif issubclass(dictionary_type, abc.model.Object):
+            dictionary_type = None
+        elif issubclass(
+            dictionary_type,
+            abc.model.Dictionary
+        ):
+            pass
+        elif issubclass(
+            dictionary_type,
+            (dict, collections.OrderedDict)
+        ):
+            dictionary_type = Dictionary
+        else:
+            raise TypeError(self.data)
+
+        return dictionary_type
+
+    def before_hook(self, type_):
+        # type: (Any) -> Any
+        data = self.data
+        hooks_ = hooks.read(type_)
+        if hooks_ is not None:
+            before_unmarshal_hook = hooks_.before_unmarshal
+            if before_unmarshal_hook is not None:
+                data = before_unmarshal_hook(deepcopy(data))
+        return data
+
+    def after_hook(self, type_, data):
+        # type: (Any, Any) -> Any
+        hooks_ = hooks.read(type_)
+        if hooks_ is not None:
+            after_unmarshal_hook = hooks_.after_unmarshal
+            if after_unmarshal_hook is not None:
+                data = after_unmarshal_hook(data)
+        return data
+
+    def as_dictionary_type(
+        self,
+        type_  # type: type
+    ):
+        # type: (...) -> Union[dict, collections.OrderedDict, abc.model.Model]
+        dictionary_type = self.get_dictionary_type(type_)
+        # Determine whether the `type_` is an `Object` or a `Dictionary`
+        if dictionary_type is None:
+            data = self.before_hook(type_)
+            unmarshalled_data = type_(data)
+            unmarshalled_data = self.after_hook(type_, unmarshalled_data)
+        else:
+            type_ = dictionary_type
+            data = self.before_hook(type_)
+            unmarshalled_data = type_(data, value_types=self.value_types)
+            unmarshalled_data = self.after_hook(type_, unmarshalled_data)
+        return unmarshalled_data
+
+    def get_array_type(self, type_):
+        # type: (type) -> type
+        if type_ is abc.model.Array:
+            type_ = Array
+        elif issubclass(type_, abc.model.Array):
+            pass
+        elif issubclass(
+            type_,
+            (collections_abc.Set, collections_abc.Sequence)
+        ) and not issubclass(
+            type_,
+            (str, bytes, native_str)
+        ):
+            type_ = Array
+        else:
+            raise TypeError('%s is not of type `%s`' % (repr(self.data), repr(type_)))
+        return type_
+
+    def as_array_type(
+        self,
+        type_  # type: type
+    ):
+        # type: (...) -> Array
+        type_ = self.get_array_type(type_)
+        unmarshalled_data = type_(self.data, item_types=self.item_types)
+        return unmarshalled_data
+
     def as_type(
         self,
         type_,  # type: Union[type, properties.Property]
     ):
-        # type: (...) -> bool
+        # type: (...) -> Any
+
         unmarshalled_data = None  # type: Union[abc.model.Model, Number, str, bytes, date, datetime]
+
         if isinstance(
             type_,
             properties.Property
@@ -1588,40 +1683,12 @@ class _Unmarshal(object):
                 self.data,
                 (dict, collections.OrderedDict, abc.model.Model)
             ):
-                if type_ is abc.model.Dictionary:
-                    unmarshalled_data = Dictionary(self.data, value_types=self.value_types)
-                elif issubclass(type_, abc.model.Object):
-                    unmarshalled_data = type_(self.data)
-                elif issubclass(
-                    type_,
-                    abc.model.Dictionary
-                ):
-                    unmarshalled_data = type_(self.data, value_types=self.value_types)
-                elif issubclass(
-                    type_,
-                    (dict, collections.OrderedDict)
-                ):
-                    unmarshalled_data = Dictionary(self.data, value_types=self.value_types)
-                else:
-                    raise TypeError(self.data)
+                unmarshalled_data = self.as_dictionary_type(type_)
             elif (
                 isinstance(self.data, (collections_abc.Set, collections_abc.Sequence, abc.model.Array)) and
                 (not isinstance(self.data, (str, bytes, native_str)))
             ):
-                if type_ is abc.model.Array:
-                    unmarshalled_data = Array(self.data, item_types=self.item_types)
-                elif issubclass(type_, abc.model.Array):
-                    unmarshalled_data = type_(self.data, item_types=self.item_types)
-                elif issubclass(
-                    type_,
-                    (collections_abc.Set, collections_abc.Sequence)
-                ) and not issubclass(
-                    type_,
-                    (str, bytes, native_str)
-                ):
-                    unmarshalled_data = Array(self.data, item_types=self.item_types)
-                else:
-                    raise TypeError('%s is not of type `%s`' % (repr(self.data), repr(type_)))
+                unmarshalled_data = self.as_array_type(type_)
             elif isinstance(self.data, type_):
                 if isinstance(self.data, Decimal):
                     unmarshalled_data = float(self.data)
