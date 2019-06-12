@@ -1112,7 +1112,7 @@ abc.model.Dictionary.register(Dictionary)
 
 
 def from_meta(name, metadata, module=None, docstring=None):
-    # type: (meta.Meta, str, Optional[str]) -> type
+    # type: (str, meta.Meta, Optional[str], Optional[str]) -> type
     """
     Constructs an `Object`, `Array`, or `Dictionary` sub-class from an instance of `sob.meta.Meta`.
 

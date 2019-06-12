@@ -544,6 +544,45 @@ def indent(text, number_of_spaces=4, start=1, stop=None):
     return indented_text
 
 
+_URL_DIRECTORY_AND_FILE_NAME_RE = re.compile(r'^(.*/)([^/]*)')
+
+
+def url_directory_and_file_name(url):
+    # type: (str) -> str
+    """
+    Split a URL into
+    """
+    return _URL_DIRECTORY_AND_FILE_NAME_RE.match(url).groups()
+
+
+def url_relative_to(absolute_url, base_url):
+    # type: (str) -> str
+    """
+    Returns a relative URL given an absolute URL and a base URL
+    """
+
+    # If no portion of the absolute URL is shared with the base URL--the absolute URL will be returned
+    relative_url = absolute_url  # type: str
+
+    base_url = url_directory_and_file_name(base_url)[0]
+
+    if base_url:
+
+        relative_url = ''
+
+        # URLs are not case-sensitive
+        base_url = base_url.lower()
+        lowercase_absolute_url = absolute_url.lower()
+
+        while base_url and base_url.lower() != lowercase_absolute_url[:len(base_url)]:
+            relative_url = '../' + relative_url
+            base_url = url_directory_and_file_name(base_url[:-1])[0]
+
+        relative_url += absolute_url[len(base_url):]
+
+    return relative_url
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod()
