@@ -6,7 +6,8 @@ backport()
 
 from future.utils import native_str
 
-import traceback, sys
+import sys
+from traceback import format_exception
 
 try:
     import typing
@@ -213,7 +214,6 @@ class UnmarshalKeyError(KeyError):
         return self.message
 
 
-
 def get_exception_text():
     # type: (...) -> str
     """
@@ -222,4 +222,4 @@ def get_exception_text():
     `traceback.print_exception`, but is returned as a string value rather than
     printing.
     """
-    return ''.join(traceback.format_exception(*sys.exc_info()))
+    return ''.join(format_exception(*sys.exc_info()))

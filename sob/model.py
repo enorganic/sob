@@ -41,7 +41,7 @@ import yaml
 # region sob Imports
 
 from .utilities import qualified_name, collections, Generator, get_io_url, read, collections_abc, indent
-from . import properties, meta, errors, hooks, abc
+from . import properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 
 # endregion
 
@@ -1128,73 +1128,74 @@ def from_meta(name, metadata, module=None, docstring=None):
         - docstring (str): A docstring to associate with the class definition.
     """
 
-    def typing_from_property(p):
+    def typing_from_property(property_):
         # type: (properties.Property) -> str
-        if isinstance(p, type):
-            if p in (
+        if isinstance(property_, type):
+            if property_ in (
                 Union, Dict, Any, Sequence, IO
             ):
-                type_hint = p.__name__
+                type_hint = property_.__name__
             else:
-                type_hint = qualified_name(p)
-        elif isinstance(p, properties.DateTime):
+                type_hint = qualified_name(property_)
+        elif isinstance(property_, properties.DateTime):
             type_hint = 'datetime'
-        elif isinstance(p, properties.Date):
+        elif isinstance(property_, properties.Date):
             type_hint = 'date'
-        elif isinstance(p, properties.Bytes):
+        elif isinstance(property_, properties.Bytes):
             type_hint = 'bytes'
-        elif isinstance(p, properties.Integer):
+        elif isinstance(property_, properties.Integer):
             type_hint = 'int'
-        elif isinstance(p, properties.Number):
+        elif isinstance(property_, properties.Number):
             type_hint = qualified_name(Number)
-        elif isinstance(p, properties.Boolean):
+        elif isinstance(property_, properties.Boolean):
             type_hint = 'bool'
-        elif isinstance(p, properties.String):
+        elif isinstance(property_, properties.String):
             type_hint = 'str'
-        elif isinstance(p, properties.Array):
+        elif isinstance(property_, properties.Array):
             item_types = None
-            if p.item_types:
-                if len(p.item_types) > 1:
+            if property_.item_types:
+                if len(property_.item_types) > 1:
                     item_types = 'Union[%s]' % (
                         ', '.join(
-                           typing_from_property(it)
-                           for it in p.item_types
+                            typing_from_property(it)
+                            for it in property_.item_types
                         )
                     )
                 else:
-                    item_types = typing_from_property(p.item_types[0])
+                    item_types = typing_from_property(property_.item_types[0])
             type_hint = 'Sequence' + (
                 '[%s]' % item_types
                 if item_types else
                 ''
             )
-        elif isinstance(p, properties.Dictionary):
+        elif isinstance(property_, properties.Dictionary):
             value_types = None
-            if p.value_types:
-                if len(p.value_types) > 1:
+            if property_.value_types:
+                if len(property_.value_types) > 1:
                     value_types = 'Union[%s]' % (
                         ', '.join(
-                           typing_from_property(vt)
-                           for vt in p.value_types
+                            typing_from_property(vt)
+                            for vt in property_.value_types
                         )
                     )
                 else:
-                    value_types = typing_from_property(p.value_types[0])
+                    value_types = typing_from_property(property_.value_types[0])
             type_hint = (
                 'Dict[str, %s]' % value_types
                 if value_types else
                 'dict'
             )
-        elif p.types:
-            if len(p.types) > 1:
+        elif property_.types:
+            if len(property_.types) > 1:
                 type_hint = 'Union[%s]' % ', '.join(
-                    typing_from_property(t) for t in p.types
+                    typing_from_property(t) for t in property_.types
                 )
             else:
-                type_hint = typing_from_property(p.types[0])
+                type_hint = typing_from_property(property_.types[0])
         else:
             type_hint = 'Any'
         return type_hint
+
     if docstring is not None:
         if '\t' in docstring:
             docstring = docstring.replace('\t', '    ')
@@ -1235,21 +1236,21 @@ def from_meta(name, metadata, module=None, docstring=None):
         )
     if isinstance(metadata, meta.Dictionary):
         out = [
-            'class %s(sob.model.Dictionary):' % name
+            'class %s(%s):' % (name, qualified_name(Dictionary))
         ]
         if docstring is not None:
             out.append(docstring)
-        out.append('\n    pass')
+        out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Array):
         out = [
-            'class %s(sob.model.Array):' % name
+            'class %s(%s):' % (name, qualified_name(Array))
         ]
         if docstring is not None:
             out.append(docstring)
-        out.append('\n    pass')
+        out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Object):
         out = [
-            'class %s(sob.model.Object):' % name
+            'class %s(%s):' % (name, qualified_name(Object))
         ]
         if docstring is not None:
             out.append(docstring)
@@ -1273,12 +1274,13 @@ def from_meta(name, metadata, module=None, docstring=None):
         out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
+
     class_definition = '\n'.join(out)
     namespace = dict(__name__='from_meta_%s' % name)
     imports = '\n'.join([
-        'import sob',
+        'import %s' % _parent_module_name,
         '',
-        'sob.utilities.compatibility.backport()',
+        '%s()' % qualified_name(backport),
         ''
         'try:',
         '    from typing import Union, Dict, Any, Sequence, IO',

@@ -80,7 +80,11 @@ def qualified_name(type_):
     """
 
     if hasattr(type_, '__qualname__'):
-        type_name = '.'.join(name_part for name_part in type_.__qualname__.split('.') if name_part[0] != '<')
+        type_name = '.'.join(
+            name_part
+            for name_part in type_.__qualname__.split('.')
+            if name_part[0] != '<'
+        )
     else:
         type_name = type_.__name__
 
@@ -177,8 +181,15 @@ def calling_function_qualified_name(depth=1):
                 hasattr(argument_value_type, '__name__') and
                 hasattr(argument_value_type, '__module__') and
                 (
-                    (argument_value_type.__name__ not in dir(builtins)) or
-                    (getattr(builtins, argument_value_type.__name__) is not argument_value_type)
+                    (
+                        argument_value_type.__name__
+                        not in
+                        dir(builtins)
+                    ) or (
+                        getattr(builtins, argument_value_type.__name__)
+                        is not
+                        argument_value_type
+                    )
                 )
             ):
                 name_list.append(qualified_name(argument_value_type))
@@ -518,7 +529,7 @@ def get_io_url(file_like_object):
     if hasattr(file_like_object, 'url'):
         url = file_like_object.url
     elif hasattr(file_like_object, 'name'):
-        url = urljoin('file:', file_like_object.name)
+        url = urljoin('file:', os.path.abspath(file_like_object.name))
     return url
 
 

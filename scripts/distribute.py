@@ -4,7 +4,8 @@ from subprocess import getstatusoutput
 
 from setuptools_setup_versions import version, install_requires
 
-package = __file__.split('/')[-2]
+# Change to the package directory
+os.chdir('../')
 
 # Update `setup.py` to require currently installed versions of all packages
 install_requires.update_versions()
@@ -23,7 +24,7 @@ if status:
 else:
     print(output)
 
-exec(open('./clean.py').read())
+exec(open('./scripts/clean.py').read())
 
 if error:
     raise error

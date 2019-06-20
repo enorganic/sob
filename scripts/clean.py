@@ -7,7 +7,7 @@ import os
 
 from subprocess import getstatusoutput
 
-package = __file__.split('/')[-2]
+package = __file__.split('/')[-3]
 
 for file_or_directory in (
     'dist', 'build', '%s.egg-info' % package,
