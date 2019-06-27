@@ -1,9 +1,9 @@
 import doctest
-from sob.utilities import compatibility, inspect, io, strings, types
+from sob.utilities import compatibility, inspect, io, string, types
 
 
 def test_strings():
-    doctest.testmod(strings)
+    doctest.testmod(string)
 
 
 def test_compatibility():
@@ -19,7 +19,7 @@ def test_io():
 
 
 def test_strings():
-    doctest.testmod(strings)
+    doctest.testmod(string)
 
 
 def test_types():

@@ -11,7 +11,7 @@ import os  # noqa
 
 from io import UnsupportedOperation  # noqa
 
-from .strings import urljoin  # noqa
+from .string import urljoin  # noqa
 
 
 def read(data):

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.13",
+    version="0.1.14",
     description='A framework for serializing/deserializing JSON/YAML into python class instances and vice versa',
     url='https://github.com/davebelais/sob.git',
     author='David Belais',
@@ -24,7 +24,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "future>=0.17.1",
-        "pyyaml>=3.13",
+        "pyyaml>=5.1.1",
         "iso8601>=0.1.12"
     ],
     extras_require={

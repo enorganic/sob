@@ -1,7 +1,7 @@
 from . import compatibility
 from . import inspect
 from . import io
-from . import strings
+from . import string
 from . import types
 
 from .inspect import (
@@ -12,7 +12,7 @@ from .inspect import (
     properties_values,
     qualified_name
 )
-from .strings import (
+from .string import (
     camel,
     camel_split,
     class_name,

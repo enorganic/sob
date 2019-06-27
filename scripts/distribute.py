@@ -2,7 +2,7 @@
 import os
 from subprocess import getstatusoutput
 
-from setuptools_setup_versions import version, install_requires
+from setuptools_setup_versions import install_requires
 
 # Change to the package directory
 os.chdir('../')
