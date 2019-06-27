@@ -24,7 +24,8 @@ except ImportError:
     Union = Optional = Sequence = Mapping = Set = Sequence = Callable = Dict = Any = Hashable = Collection = Tuple =\
         Iterable = None
 
-from sob.utilities import collections, collections_abc, qualified_name, Generator
+from ..utilities.compatibility import collections, collections_abc, Generator
+from ..utilities import qualified_name
 
 from .. import abc
 from ..abc.properties import Property

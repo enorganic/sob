@@ -1,8 +1,9 @@
 """
-This module extends the functionality of `urllib.request.Request` to support multipart requests, to support passing
-instances of sob models to the `data` parameter/property for `urllib.request.Request`, and to
-support casting requests as `str` or `bytes` (typically for debugging purposes and/or to aid in producing
-non-language-specific API documentation).
+This module extends the functionality of `urllib.request.Request` to support
+multipart requests, to support passing instances of sob models to the `data`
+parameter/property for `urllib.request.Request`, and to support casting
+requests as `str` or `bytes` (typically for debugging purposes and/or to aid in
+producing non-language-specific API documentation).
 """
 # region Backwards Compatibility
 from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
@@ -25,7 +26,7 @@ except ImportError:
 
 from .model import serialize
 from .abc.model import Model
-from .utilities import collections_abc
+from .utilities.compatibility import collections_abc
 
 
 class Headers(object):

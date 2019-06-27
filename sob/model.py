@@ -9,7 +9,7 @@ This module defines the building blocks of an `sob` based data model.
 from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
    print_function, unicode_literals
 
-from .utilities.compatibility import backport
+from .utilities.compatibility import backport, collections, Generator
 
 backport()  # noqa
 
@@ -38,11 +38,12 @@ import yaml
 
 # endregion
 
-# region sob Imports
-
-from .utilities import qualified_name, collections, Generator, get_io_url, read, collections_abc, indent
-from . import properties, meta, errors, hooks, abc, __name__ as _parent_module_name
-
+# region Relative Imports
+from .utilities import qualified_name, get_io_url, read, indent
+from .utilities.compatibility import collections_abc
+from . import (
+    properties, meta, errors, hooks, abc, __name__ as _parent_module_name
+)
 # endregion
 
 # region Compatibility Conditionals

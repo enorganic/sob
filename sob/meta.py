@@ -22,7 +22,10 @@ except ImportError:
     Optional = Sequence = Dict = Tuple = Mapping = Union = Any = List = None
 
 from . import abc, errors
-from .utilities import qualified_name, properties_values, collections_abc, calling_function_qualified_name
+from .utilities import (
+    qualified_name, properties_values, calling_function_qualified_name
+)
+from .utilities.compatibility import collections_abc
 from .properties.types import Types
 
 _DOT_SYNTAX_RE = re.compile(

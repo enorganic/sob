@@ -25,8 +25,12 @@ except ImportError:
 
 import iso8601  # noqa
 
-from ..utilities import collections, collections_abc, qualified_name, properties_values, parameters_defaults, \
+from ..utilities import (
+    qualified_name, properties_values, parameters_defaults,
     calling_function_qualified_name, indent
+)
+
+from ..utilities.compatibility import collections, collections_abc
 
 from .. import abc, meta
 from .types import Types, Null, NULL, NoneType
