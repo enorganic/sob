@@ -1,30 +1,21 @@
-# Tell the linters what's up:
-# pylint:disable=wrong-import-position,consider-using-enumerate,useless-object-inheritance, unused-import, too-many-arguments, too-many-locals
-# mccabe:options:max-complexity=999
-
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
-   print_function, unicode_literals
-
-from sob.utilities.compatibility import backport
-
+# Compatibility
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
+    print_function, unicode_literals
+)
+from sob.utilities.compatibility import backport, urljoin
 backport()
-
-# endregion
-
-import re
+# Standard library imports
+import re  # noqa
+import os  # noqa
 from iso8601 import iso8601
-
 from decimal import Decimal
-from urllib.parse import urljoin
-
-import os
 from base64 import b64encode
 from collections import OrderedDict
-
 from copy import deepcopy
-
+# `sob` package imports
 from sob import model, properties, meta, test, utilities
-from sob.request import MultipartRequest, Part  # noqa
+from sob.request import MultipartRequest, Part
 
 try:
     import typing
@@ -641,42 +632,40 @@ def test_request():
             parts=[
                 Part(
                     headers={
-                        'Content-Disposition': 'form-data; name="rainbow"; filename="rainbow.png"'
+                        'Content-Disposition':
+                        'form-data; name="rainbow"; filename="rainbow.png"'
                     },
                     data=rainbow_bytes
                 )
             ]
         )
-
         path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             'data',
             'multi_part_json_request'
         )
-
         if os.path.exists(path):
-
             with open(path, 'rb') as multi_part_request_file:
-
                 stored_bytes = bytes(multi_part_request_file.read())
                 multi_part_request_bytes = bytes(multi_part_json_request)
-                stored_boundary = re.search(b'\\bboundary=([a-zA-Z0-9]+)', stored_bytes).groups()[0]
-
-                # We have to swap out the boundary prior to comparison because the boundary is a random string, and
+                stored_boundary = re.search(
+                    b'\\bboundary=([a-zA-Z0-9]+)',
+                    stored_bytes
+                ).groups()[0]
+                # We have to swap out the boundary prior to comparison because
+                # the boundary is a random string, and
                 # will be different every time.
                 boundary = bytes(multi_part_json_request.boundary)
                 stored_bytes = stored_bytes.replace(stored_boundary, boundary)
-
                 assert stored_bytes == multi_part_request_bytes
-
         else:
-            
             with open(path, 'wb') as multi_part_request_file:
-                assert multi_part_request_file.write(bytes(multi_part_json_request))
+                assert multi_part_request_file.write(
+                    bytes(multi_part_json_request)
+                )
 
 
 def test_utilities():
-
     assert utilities.calling_function_qualified_name() == (
         'test_utilities'
         if __name__ == '__main__' else
@@ -688,15 +677,12 @@ def test_utilities():
         __module__ = 'sob.test'
 
         def __init__(self):
-
             if hasattr(type(self), '__qualname__'):
-
                 assert utilities.calling_function_qualified_name() == (
-                    'sob.test.test_utilities.TestCallingFunctionQualifiedNameA.__init__'
+                    'sob.test.test_utilities.'
+                    'TestCallingFunctionQualifiedNameA.__init__'
                 )
-
             else:
-
                 assert utilities.calling_function_qualified_name() == (
                     'sob.test.TestCallingFunctionQualifiedNameA.__init__'
                 )
@@ -710,7 +696,8 @@ def test_utilities():
                 assert utilities.calling_function_qualified_name() == (
                     'test_utilities.TestCallingFunctionQualifiedNameB.__init__'
                     if __name__ == '__main__' else
-                    'test_sob.test_utilities.TestCallingFunctionQualifiedNameB.__init__'
+                    'test_sob.test_utilities.'
+                    'TestCallingFunctionQualifiedNameB.__init__'
                 )
             else:
                 assert utilities.calling_function_qualified_name() == (
@@ -726,9 +713,7 @@ def test_utilities():
         class TestCallingFunctionQualifiedNameD(object):
 
             def __init__(self):
-
                 if hasattr(type(self), '__qualname__'):
-
                     assert utilities.calling_function_qualified_name() == (
                         (
                             ''
@@ -738,9 +723,7 @@ def test_utilities():
                         'test_utilities.TestCallingFunctionQualifiedNameC.' +
                         'TestCallingFunctionQualifiedNameD.__init__'
                     )
-
                 else:
-
                     assert utilities.calling_function_qualified_name() == (
                         (
                             ''
@@ -752,23 +735,34 @@ def test_utilities():
 
     TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
 
-    if hasattr(TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD, '__qualname__'):
+    if hasattr(
+        getattr(
+            TestCallingFunctionQualifiedNameC,
+            'TestCallingFunctionQualifiedNameD'
+        ),
+        '__qualname__'
+    ):
 
         assert utilities.qualified_name(
-            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
+            getattr(
+                TestCallingFunctionQualifiedNameC(),
+                'TestCallingFunctionQualifiedNameD'
+            )
         ) == (
             (
                 ''
                 if __name__ == '__main__' else
                 'test_sob.'
             ) +
-            'test_utilities.TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD'
+            'test_utilities.TestCallingFunctionQualifiedNameC.'
+            'TestCallingFunctionQualifiedNameD'
         )
-
     else:
-
         assert utilities.qualified_name(
-            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
+            getattr(
+                TestCallingFunctionQualifiedNameC(),
+                'TestCallingFunctionQualifiedNameD'
+            )
         ) == (
             (
                 ''
@@ -777,8 +771,10 @@ def test_utilities():
             ) +
             'TestCallingFunctionQualifiedNameD'
         )
-
-    assert utilities.qualified_name(MultipartRequest) == 'sob.request.MultipartRequest'
+    assert (
+        utilities.qualified_name(MultipartRequest) ==
+        'sob.request.MultipartRequest'
+    )
 
 
 if __name__ == '__main__':

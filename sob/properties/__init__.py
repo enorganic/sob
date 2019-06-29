@@ -1,9 +1,7 @@
-# Tell the linters what's up:
-# pylint:disable=wrong-import-position,consider-using-enumerate,useless-object-inheritance
-# mccabe:options:max-complexity=999
-
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
    print_function, unicode_literals
+)
 
 from ..utilities.compatibility import backport
 
@@ -15,13 +13,6 @@ import numbers  # noqa
 
 from copy import deepcopy  # noqa
 from datetime import date, datetime  # noqa
-
-try:
-    from typing import Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any, Hashable, Collection,\
-        Tuple
-except ImportError:
-    Union = Optional = Sequence = Mapping = Set = Sequence = Callable = Dict = Any = Hashable = Collection = Tuple =\
-        Iterable = None
 
 import iso8601  # noqa
 
@@ -35,6 +26,31 @@ from ..utilities.compatibility import collections, collections_abc
 from .. import abc, meta
 from .types import Types, Null, NULL, NoneType
 
+try:
+    from typing import (
+        Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any,
+        Hashable, Collection, Tuple
+    )
+    _TypesOrProperties = Optional[
+        Sequence[Union[type, abc.properties.Property, abc.model.Model]]
+    ]
+    _VersionsParameter = Optional[
+        Sequence[Union[str, collections_abc.Iterable, meta.Version]]
+    ]
+    _VersionsProperty = Optional[Sequence[meta.Version]]
+    _ItemTypes = Optional[
+        Union[
+            type,
+            Callable,
+            Sequence[Union[type, abc.properties.Property]]
+        ]
+    ]
+except ImportError:
+    Union = Optional = Sequence = Mapping = Set = Callable = None
+    Any = Hashable = Collection = Tuple = Iterable = Dict = None
+    _TypesOrProperties = _ItemTypes = None
+    _VersionsProperty = _VersionsParameter = None
+
 
 class Property(object):
     """
@@ -42,28 +58,38 @@ class Property(object):
 
     Properties
 
-        - value_types ([type|Property]): One or more expected value_types or `Property` instances. Values are checked,
-          sequentially, against each type or `Property` instance, and the first appropriate match is used.
+        - value_types ([type|Property]): One or more expected value_types or
+          `Property` instances. Values are checked, sequentially, against each
+          type or `Property` instance, and the first appropriate match is used.
 
-        - required (bool|collections.Callable): If `True`--dumping the json_object will throw an error if this value
-          is `None`.
+        - required (bool|collections.Callable): If `True`--dumping the
+          json_object will throw an error if this value is `None`.
 
-        - versions ([str]|{str:Property}): The property should be one of the following:
+        - versions ([str]|{str:Property}):
 
-            - A set/tuple/list of version numbers to which this property applies.
-            - A mapping of version numbers to an instance of `Property` applicable to that version.
+          The property should be one of the following:
 
-          Version numbers prefixed by "<" indicate any version less than the one specified, so "<3.0" indicates that
-          this property is available in versions prior to 3.0. The inverse is true for version numbers prefixed by ">".
-          ">=" and "<=" have similar meanings, but are inclusive.
+            - A set/tuple/list of version numbers to which this property
+              applies.
+            - A mapping of version numbers to an instance of `Property`
+              applicable to that version.
 
-          Versioning can be applied to an json_object by calling `sob.meta.set_version` in the `__init__` method of
-          an `sob.model.Object` sub-class. For an example, see `oapi.model.OpenAPI.__init__`.
+          Version numbers prefixed by "<" indicate any version less than the
+          one specified, so "<3.0" indicates that this property is available in
+          versions prior to 3.0. The inverse is true for version numbers
+          prefixed by ">". ">=" and "<=" have similar meanings, but are
+          inclusive.
 
-        - name (str): The name of the property when loaded from or dumped into a JSON/YAML object. Specifying a
-          `name` facilitates mapping of PEP8 compliant property to JSON or YAML attribute names,
-          which are either camelCased, are python keywords, or otherwise not appropriate for usage in python code.
+          Versioning can be applied to an json_object by calling
+          `sob.meta.set_version` in the `__init__` method of an
+          `sob.model.Object` sub-class. For an example, see
+          `oapi.model.OpenAPI.__init__`.
 
+        - name (str): The name of the property when loaded from or dumped into
+          a JSON/YAML object. Specifying a `name` facilitates mapping of PEP8
+          compliant property to JSON or YAML attribute names, which are either
+          camelCased, are python keywords, or otherwise not appropriate for
+          usage in python code.
     """
 
     def __init__(
@@ -77,57 +103,53 @@ class Property(object):
         self.types = types
         self.name = name
         self.required = required
-        self._versions = None  # type: Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
-        self.versions = versions  # type: Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
+        self._versions = None  # type: _VersionsProperty
+        self.versions = versions  # type: _VersionsParameter
 
     @property
     def types(self):
         return self._types
 
     @types.setter
-    def types(self, types_or_properties):
-        # type: (Optional[Sequence[Union[type, Property, abc.model.Model]]]) -> None
-
+    def types(
+        self,
+        types_or_properties  # type: _TypesOrProperties
+    ):
+        # type: (...) -> None
         if types_or_properties is not None:
             if callable(types_or_properties):
                 if native_str is not str:
                     _types_or_properties = types_or_properties
 
                     def types_or_properties(d):
-                        # type: (Sequence[Union[type, Property, abc.model.Model]]) -> Types
+                        # type: (_TypesOrProperties) -> Types
                         return Types(_types_or_properties(d))
 
             else:
                 types_or_properties = Types(types_or_properties)
-
         self._types = types_or_properties
 
     @property
     def versions(self):
-        # type: () -> Optional[Sequence[meta.Version]]
+        # type: () -> _VersionsProperty
         return self._versions
 
     @versions.setter
     def versions(
         self,
-        versions  # type: Optional[Sequence[Union[str, collections_abc.Iterable, meta.Version]]]
+        versions  # type: _VersionsParameter
     ):
-        # type: (...) -> Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
+        # type: (...) -> None
         if versions is not None:
-
             if isinstance(versions, (str, Number, meta.Version)):
                 versions = (versions,)
-
             if isinstance(versions, collections_abc.Iterable):
                 versions = tuple(
                     (v if isinstance(v, meta.Version) else meta.Version(v))
                     for v in versions
                 )
-
             else:
-
                 repr_versions = repr(versions)
-
                 raise TypeError(
                     (
                         '`%s` requires a sequence of version strings or ' %
@@ -140,16 +162,18 @@ class Property(object):
                         ' `%s`.' % repr_versions
                     )
                 )
-
         self._versions = versions
 
     @staticmethod
     def _repr_argument(argument, value, defaults):
-        # type: (str, Any, Dict[str, Any]) -> str
-
-        if (argument not in defaults) or defaults[argument] == value or value is None or value is NULL:
+        # type: (str, Any, Dict[str, Any]) -> Optional[str]
+        if (
+            (argument not in defaults) or
+            defaults[argument] == value or
+            value is None or
+            value is NULL
+        ):
             return None
-
         value_representation = (
             qualified_name(value)
             if isinstance(value, type) else
@@ -157,14 +181,15 @@ class Property(object):
             if isinstance(value, meta.Version) else
             repr(value)
         )
-
         return '    %s=%s,' % (argument, indent(value_representation))
 
     def __repr__(self):
         lines = [qualified_name(type(self)) + '(']
         defaults = parameters_defaults(self.__init__)
         for property_name, value in properties_values(self):
-            argument_representation = self._repr_argument(property_name, value, defaults)
+            argument_representation = self._repr_argument(
+                property_name, value, defaults
+            )
             if argument_representation is not None:
                 lines.append(argument_representation)
         lines[-1] = lines[-1].rstrip(',')
@@ -227,16 +252,18 @@ abc.properties.String.register(String)
 
 class Date(Property):
     """
-    See `sob.properties.Property`
+    ...See `sob.properties.Property`
 
-    Additional Properties:
+    + Parameters:
 
-        - date2str (collections.Callable): A function, taking one argument (a python `date` json_object), and returning
-          a date string in the desired format. The default is `date.isoformat`--returning an iso8601 compliant date
-          string.
+        - date2str (collections.Callable): A function, taking one argument (a
+          python `date` json_object), and returning a date string in the
+          desired format. The default is `date.isoformat`--returning an
+          iso8601 compliant date string.
 
-        - str2date (collections.Callable): A function, taking one argument (a date string), and returning a python
-          `date` json_object. By default, this is `iso8601.parse_date`.
+        - str2date (collections.Callable): A function, taking one argument (a
+          date string), and returning a python `date` object. By default,
+          this is `iso8601.parse_date`.
     """
 
     def __init__(
@@ -266,12 +293,14 @@ class DateTime(Property):
 
     Additional Properties:
 
-        - datetime2str (collections.Callable): A function, taking one argument (a python `datetime` json_object), and
-          returning a date-time string in the desired format. The default is `datetime.isoformat`--returning an
-          iso8601 compliant date-time string.
+        - datetime2str (collections.Callable): A function, taking one argument
+          (a python `datetime` json_object), and returning a date-time string
+          in the desired format. The default is `datetime.isoformat`--returning
+          an iso8601 compliant date-time string.
 
-        - str2datetime (collections.Callable): A function, taking one argument (a datetime string), and returning a python
-          `datetime` json_object. By default, this is `iso8601.parse_date`.
+        - str2datetime (collections.Callable): A function, taking one argument
+          (a datetime string), and returning a python `datetime` json_object.
+          By default, this is `iso8601.parse_date`.
     """
 
     def __init__(
@@ -323,7 +352,7 @@ class Enumerated(Property):
 
     + Properties:
 
-        - values ([Any]):  A list of possible values.
+        - values ([Any]):  A list or set of possible values.
     """
 
     def __init__(
@@ -335,14 +364,12 @@ class Enumerated(Property):
         versions=None,  # type: Optional[Collection]
     ):
         self._values = None
-
         super().__init__(
             types=types,
             name=name,
             required=required,
             versions=versions
         )
-
         self.values = values  # type: Optional[Sequence]
 
     @property
@@ -353,20 +380,18 @@ class Enumerated(Property):
     @values.setter
     def values(self, values):
         # type: (Iterable) -> None
-
-        if not ((values is None) or callable(values)):
-
-            if (values is not None) and (not isinstance(values, (collections_abc.Sequence, collections_abc.Set))):
-                raise TypeError(
-                    '`values` must be a finite set or sequence, not `%s`.' % qualified_name(type(values))
-                )
-
-            # if values is not None:
-            #     values = [
-            #         sob.model.unmarshal(v, types=self.types)
-            #         for v in values
-            #     ]
-
+        if not (
+            (values is None) or
+            callable(values) or
+            isinstance(
+                values,
+                (collections_abc.Sequence, collections_abc.Set)
+            )
+        ):
+            raise TypeError(
+                '`values` must be a finite set or sequence, not `%s`.' %
+                qualified_name(type(values))
+            )
         self._values = values
 
 
@@ -447,13 +472,15 @@ class Array(Property):
 
     + Properties:
 
-        - item_types (type|Property|[type|Property]): The type(s) of values/objects contained in the array. Similar to
-          `sob.properties.Property().value_types`, but applied to items in the array, not the array itself.
+        - item_types (type|Property|[type|Property]): The type(s) of
+          values/objects contained in the array. Similar to
+          `sob.properties.Property().value_types`, but applied to items in the
+          array, not the array itself.
     """
 
     def __init__(
         self,
-        item_types=None,  # type: Optional[Union[type, Sequence[Union[type, Property]]]]
+        item_types=None,  # type: _ItemTypes
         name=None,  # type: Optional[str]
         required=False,  # type: Union[bool, collections.Callable]
         versions=None,  # type: Optional[Collection]
@@ -474,7 +501,7 @@ class Array(Property):
 
     @item_types.setter
     def item_types(self, item_types):
-        # type: (Optional[Sequence[Union[type, Property, abc.model.Object]]]) -> None
+        # type: (_ItemTypes) -> None
         if item_types is not None:
             if callable(item_types):
                 if native_str is not str:

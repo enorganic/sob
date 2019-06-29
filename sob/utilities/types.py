@@ -8,6 +8,12 @@ compatibility.backport()  # noqa
 # endregion
 
 
+try:
+    from typing import Any
+except ImportError:
+    Any = None
+
+
 UNDEFINED = None
 
 
@@ -66,4 +72,7 @@ class Undefined(object):
         return other is self
 
 
-UNDEFINED = Undefined()  # noqa
+locals()['UNDEFINED'] = Undefined()
+
+
+Module = type(compatibility)

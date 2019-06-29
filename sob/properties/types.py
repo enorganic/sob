@@ -1,9 +1,7 @@
-# Tell the linters what's up:
-# pylint:disable=wrong-import-position,consider-using-enumerate,useless-object-inheritance
-# mccabe:options:max-complexity=999
-
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
    print_function, unicode_literals
+)
 
 from sob.utilities.compatibility import backport
 
@@ -17,23 +15,34 @@ import decimal  # noqa
 from copy import deepcopy  # noqa
 from datetime import date, datetime  # noqa
 
-try:
-    from typing import Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any, Hashable, Collection,\
-        Tuple
-except ImportError:
-    Union = Optional = Sequence = Mapping = Set = Sequence = Callable = Dict = Any = Hashable = Collection = Tuple =\
-        Iterable = None
-
 from ..utilities.compatibility import collections, collections_abc, Generator
 from ..utilities import qualified_name
 
 from .. import abc
 from ..abc.properties import Property
 
+try:
+    from typing import (
+        Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any,
+        Hashable, Collection, Tuple
+    )
+    _TypeOrProperty = Union[type, abc.properties.Property]
+    _ItemsParameter = Optional[
+        Union[
+            Sequence[
+                _TypeOrProperty
+            ],
+            type,
+            abc.properties.Property
+        ]
+    ]
+except ImportError:
+    Union = Optional = Sequence = Mapping = Set = Sequence = Callable = None
+    Dict = Any = Hashable = Collection = Tuple = Iterable = None
+    _TypeOrProperty = _ItemsParameter = None
+
 
 NoneType = type(None)
-
-
 NULL = None
 
 
@@ -42,10 +51,11 @@ class DefinitionExistsError(Exception):
     pass
 
 
-class Null(object):  # noqa - inheriting from object is intentional, as this is needed for python 2x compatibility
+class Null(object):  # noqa - inheriting from `object` needed for python 2x
     """
-    Instances of this class represent an *explicit* null value, rather than the absence of a
-    property/attribute/element, as would be inferred from a value of `None`.
+    Instances of this class represent an *explicit* null value, rather than the
+    absence of a property/attribute/element, as would be inferred from a value
+    of `None`.
     """
 
     def __init__(self):
@@ -91,12 +101,12 @@ class Null(object):  # noqa - inheriting from object is intentional, as this is 
         return self
 
 
-NULL = Null()
+locals()['NULL'] = Null()
 
 
 TYPES = tuple(
-    # We first put all the types in a `set` so that when `native_str` and `str` are the same--they are
-    # not duplicated
+    # We first put all the types in a `set` so that when `native_str` and `str`
+    # are the same--they are not duplicated
     {
         str, bytes, bool,
         dict, collections.OrderedDict,
@@ -111,11 +121,9 @@ TYPES = tuple(
 
 
 def _validate_type_or_property(type_or_property):
-    # type: (Union[type, Property]) -> (Union[type, Property])
-
+    # type: (_TypeOrProperty) -> _TypeOrProperty
     if not isinstance(type_or_property, (type, Property)):
         raise TypeError(type_or_property)
-
     if not (
         (type_or_property is Null) or
         (
@@ -128,23 +136,21 @@ def _validate_type_or_property(type_or_property):
         isinstance(type_or_property, Property)
     ):
         raise TypeError(type_or_property)
-
     return type_or_property
 
 
 class Types(list):
     """
-    Instances of this class are lists which will only take values which are valid types for describing a property
-    definition.
+    Instances of this class are lists which will only take values which are
+    valid types for describing a property definition.
     """
 
     def __init__(
         self,
-        items=None  # type: Optional[Union[Sequence[Union[type, Property], Types], type, Property]]
+        items=None  # type: _ItemsParameter
     ):
         if isinstance(items, (type, Property)):
             items = (items,)
-
         if items is None:
             super().__init__()
         else:
@@ -153,13 +159,17 @@ class Types(list):
     def __setitem__(self, index, value):
         # type: (int, Union[type, Property]) -> None
         super().__setitem__(index, _validate_type_or_property(value))
-        if value is str and (native_str is not str) and (native_str not in self):
+        if value is str and (native_str is not str) and (
+            native_str not in self
+        ):
             super().append(native_str)
 
     def append(self, value):
         # type: (Union[type, Property]) -> None
         super().append(_validate_type_or_property(value))
-        if value is str and (native_str is not str) and (native_str not in self):
+        if value is str and (native_str is not str) and (
+            native_str not in self
+        ):
             super().append(native_str)
 
     def __delitem__(self, index):

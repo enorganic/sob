@@ -13,7 +13,7 @@ import re  # noqa
 
 from collections import OrderedDict  # noqa
 
-from .types import UNDEFINED  # noqa
+from .types import UNDEFINED, Module  # noqa
 
 # region More Compatibility
 
@@ -52,9 +52,6 @@ except ImportError:
 
 # endregion
 
-# Get the `type` used for modules
-_Module = type(sys)
-
 
 # The `BUILTINS_DICT` is used to check for namespace conflicts
 BUILTINS_DICT = {}
@@ -85,7 +82,7 @@ def properties_values(object_):
 
 
 def qualified_name(type_):
-    # type: (Union[type, _Module]) -> str
+    # type: (Union[type, Module]) -> str
     """
     >>> print(qualified_name(qualified_name))
     sob.utilities.inspect.qualified_name
@@ -102,7 +99,7 @@ def qualified_name(type_):
         )
     else:
         type_name = type_.__name__
-    if isinstance(type_, _Module):
+    if isinstance(type_, Module):
         if type_name in (
             'builtins', '__builtin__', '__main__', '__init__'
         ):
@@ -139,12 +136,11 @@ def calling_functions_qualified_names(depth=1):
     return names
 
 
-def _get_frame_info_module_name(frame_info):
-    # type: (FrameInfo) -> str
-    try:
-        file_name = frame_info.filename
-    except AttributeError:
-        file_name = frame_info[1]
+def _get_module_name(file_name):
+    # type: (str) -> str
+    """
+    Given a frame info's file name, find the module name
+    """
     module_name = getmodulename(file_name)
     if module_name is None:
         # Check to see if this is a doctest
@@ -190,15 +186,9 @@ def calling_function_qualified_name(depth=1):
         return None
     name_list = []
     frame_info = stack_[depth]  # type: FrameInfo
-    try:
-        frame_function = frame_info.function
-    except AttributeError:
-        frame_function = frame_info[3]
+    frame_function = frame_info[3]
     if frame_function != '<module>':
-        try:
-            frame = frame_info.frame
-        except AttributeError:
-            frame = frame_info[0]
+        frame = frame_info[0]
         name_list.append(frame_function)
         arguments, _, _, frame_locals = getargvalues(frame)
         if arguments:
@@ -222,7 +212,7 @@ def calling_function_qualified_name(depth=1):
             ):
                 name_list.append(qualified_name(argument_value_type))
     if len(name_list) < 2:
-        module_name = _get_frame_info_module_name(frame_info)
+        module_name = _get_module_name(frame_info[1])
         if module_name in sys.modules:
             qualified_module_name = qualified_name(
                 sys.modules[module_name]
@@ -286,6 +276,3 @@ def parameters_defaults(function):
             else:
                 pd[pn] = p.default
     return pd
-
-
-_index_builtins()

@@ -365,30 +365,21 @@ def read(
     model  # type: Union[type, abc.model.Model]
 ):
     # type: (...) -> Optional[Meta]
-
     if isinstance(
         model,
         abc.model.Model
     ):
-
         return model._meta or read(type(model))
-
     elif isinstance(model, type) and issubclass(model, abc.model.Model):
-
         return model._meta
-
     else:
-
         try:
-
             repr_model = repr(model)
-
         except:
-
             repr_model = object.__repr__(model)
-
         raise TypeError(
-            '%s requires a parameter which is an instance or sub-class of `%s`, not%s' % (
+            '%s requires a parameter which is an instance or sub-class of '
+            '`%s`, not%s' % (
                 calling_function_qualified_name(),
                 qualified_name(abc.model.Model),
                 (

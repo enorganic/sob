@@ -1,27 +1,23 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
+# pylint: disable=wrong-import-position
 
-# Tell the linters what's up:
-# pylint:disable=wrong-import-position,consider-using-enumerate,useless-object-inheritance
-# mccabe:options:max-complexity=999
-
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
    print_function, unicode_literals
+)
+from .utilities.compatibility import (
+    backport, collections, Generator, BACKWARDS_COMPATIBILITY_IMPORTS,
+    typing, urljoin, collections_abc
+)
+backport()
 
-from .utilities.compatibility import backport, collections, Generator
-
-backport()  # noqa
-
-from future.utils import native_str
-
-# region Built-In Imports
-
+# Built-In Imports
 import re
 import sys
 import json
-
-from urllib.parse import urljoin
+from future.utils import native_str
 from copy import deepcopy
 from io import IOBase
 from decimal import Decimal
@@ -30,42 +26,32 @@ from numbers import Number
 from datetime import date, datetime
 from itertools import chain
 
-# endregion
-
-# region 3rd-Party Maintained Package Imports
-
+# 3rd-Party Maintained Imports
 import yaml
 
-# endregion
-
-# region Relative Imports
+# Relative Imports
 from .utilities import qualified_name, get_io_url, read, indent
-from .utilities.compatibility import collections_abc
 from . import (
     properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 )
-# endregion
 
-# region Compatibility Conditionals
+# The following are derived from `.compatibility` in order to facilitate
+# backwards-compatibility
+Union = typing.Union
+Dict = typing.Dict
+Any = typing.Any
+AnyStr = typing.AnyStr
+IO = typing.IO
+Sequence = typing.Sequence
+Mapping = typing.Mapping
+Callable = typing.Callable
+Tuple = typing.Tuple
+Optional = typing.Optional
 
-# The following detects the presence of the typing library, and utilizes typing classes if possible.
-# All typing classes in this package are referenced in a backwards-compatible fashion, so if this library
-# is not present, the package will still function.
-
-try:
-    from typing import Union, Dict, Any, AnyStr, IO, Sequence, Mapping, Callable, Tuple, Optional, Set  # noqa
-except ImportError:
-    Union = Dict = Any = AnyStr = IO = Sequence = Mapping = Callable = Tuple = Optional = Set = None
-
-# endregion
-
-# region Constants
-
+# Constants
 _UNMARSHALLABLE_TYPES = tuple(
     set(properties.types.TYPES) | {properties.types.NoneType}
 )
-
-# endregion
 
 # region Model Classes
 
@@ -1112,10 +1098,61 @@ abc.model.Dictionary.register(Dictionary)
 # endregion
 
 
+def _typing_from_property(property_):
+    # type: (properties.Property) -> str
+    if isinstance(property_, type):
+        if property_ in (Union, Dict, Any, Sequence, IO):
+            type_hint = property_.__name__
+        else:
+            type_hint = qualified_name(property_)
+    elif isinstance(property_, properties.DateTime):
+        type_hint = 'datetime'
+    elif isinstance(property_, properties.Date):
+        type_hint = 'date'
+    elif isinstance(property_, properties.Bytes):
+        type_hint = 'bytes'
+    elif isinstance(property_, properties.Integer):
+        type_hint = 'int'
+    elif isinstance(property_, properties.Number):
+        type_hint = qualified_name(Number)
+    elif isinstance(property_, properties.Boolean):
+        type_hint = 'bool'
+    elif isinstance(property_, properties.String):
+        type_hint = 'str'
+    elif isinstance(property_, properties.Array):
+        item_types = None
+        if property_.item_types:
+            if len(property_.item_types) > 1:
+                item_types = 'Union[%s]' % (', '.join(
+                    _typing_from_property(it) for it in property_.item_types))
+            else:
+                item_types = _typing_from_property(property_.item_types[0])
+        type_hint = 'Sequence' + ('[%s]' % item_types if item_types else '')
+    elif isinstance(property_, properties.Dictionary):
+        value_types = None
+        if property_.value_types:
+            if len(property_.value_types) > 1:
+                value_types = 'Union[%s]' % (', '.join(
+                    _typing_from_property(vt) for vt in property_.value_types))
+            else:
+                value_types = _typing_from_property(property_.value_types[0])
+        type_hint = ('Dict[str, %s]' % value_types if value_types else 'dict')
+    elif property_ and property_.types:
+        if len(property_.types) > 1:
+            type_hint = 'Union[%s]' % ', '.join(
+                _typing_from_property(t) for t in property_.types)
+        else:
+            type_hint = _typing_from_property(property_.types[0])
+    else:
+        type_hint = 'Any'
+    return type_hint
+
+
 def from_meta(name, metadata, module=None, docstring=None):
     # type: (str, meta.Meta, Optional[str], Optional[str]) -> type
     """
-    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an instance of `sob.meta.Meta`.
+    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
+    instance of `sob.meta.Meta`.
 
     Arguments:
 
@@ -1123,80 +1160,12 @@ def from_meta(name, metadata, module=None, docstring=None):
 
         - class_meta (sob.meta.Meta)
 
-        - module (str): Specify the value for the class definition's `__module__` property. The invoking module will be
+        - module (str): Specify the value for the class definition's
+          `__module__` property. The invoking module will be
           used if this is not specified (if possible).
 
         - docstring (str): A docstring to associate with the class definition.
     """
-
-    def typing_from_property(property_):
-        # type: (properties.Property) -> str
-        if isinstance(property_, type):
-            if property_ in (
-                Union, Dict, Any, Sequence, IO
-            ):
-                type_hint = property_.__name__
-            else:
-                type_hint = qualified_name(property_)
-        elif isinstance(property_, properties.DateTime):
-            type_hint = 'datetime'
-        elif isinstance(property_, properties.Date):
-            type_hint = 'date'
-        elif isinstance(property_, properties.Bytes):
-            type_hint = 'bytes'
-        elif isinstance(property_, properties.Integer):
-            type_hint = 'int'
-        elif isinstance(property_, properties.Number):
-            type_hint = qualified_name(Number)
-        elif isinstance(property_, properties.Boolean):
-            type_hint = 'bool'
-        elif isinstance(property_, properties.String):
-            type_hint = 'str'
-        elif isinstance(property_, properties.Array):
-            item_types = None
-            if property_.item_types:
-                if len(property_.item_types) > 1:
-                    item_types = 'Union[%s]' % (
-                        ', '.join(
-                            typing_from_property(it)
-                            for it in property_.item_types
-                        )
-                    )
-                else:
-                    item_types = typing_from_property(property_.item_types[0])
-            type_hint = 'Sequence' + (
-                '[%s]' % item_types
-                if item_types else
-                ''
-            )
-        elif isinstance(property_, properties.Dictionary):
-            value_types = None
-            if property_.value_types:
-                if len(property_.value_types) > 1:
-                    value_types = 'Union[%s]' % (
-                        ', '.join(
-                            typing_from_property(vt)
-                            for vt in property_.value_types
-                        )
-                    )
-                else:
-                    value_types = typing_from_property(property_.value_types[0])
-            type_hint = (
-                'Dict[str, %s]' % value_types
-                if value_types else
-                'dict'
-            )
-        elif property_.types:
-            if len(property_.types) > 1:
-                type_hint = 'Union[%s]' % ', '.join(
-                    typing_from_property(t) for t in property_.types
-                )
-            else:
-                type_hint = typing_from_property(property_.types[0])
-        else:
-            type_hint = 'Any'
-        return type_hint
-
     if docstring is not None:
         if '\t' in docstring:
             docstring = docstring.replace('\t', '    ')
@@ -1217,11 +1186,14 @@ def from_meta(name, metadata, module=None, docstring=None):
             line = '    ' + line[indentation_length:]
             if len(line) > 120:
                 indent = re.match(r'^[ ]*', line).group()
-                li = len(indent)
-                words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[li:])
+                indent_length = len(indent)
+                words = re.split(
+                    r'([\w]*[\w,/"\'.;\-?`])',
+                    line[indent_length:]
+                )
                 wrapped_line = ''
                 for word in words:
-                    if (len(wrapped_line) + len(word) + li) <= 120:
+                    if (len(wrapped_line) + len(word) + indent_length) <= 120:
                         wrapped_line += word
                     else:
                         wrapped_lines.append(indent + wrapped_line)
@@ -1259,30 +1231,32 @@ def from_meta(name, metadata, module=None, docstring=None):
             '',
             '    def __init__(',
             '        self,',
-            '        _data=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]'
+            '        _data=None,  # type: Optional[Union[str, bytes, dict, '
+            'Sequence, IO]]'
         ]
-        for n, p in metadata.properties.items():
+        for property_name_, property_ in metadata.properties.items():
             out.append(
-                '        %s=None,  # type: Optional[%s]' % (n, typing_from_property(p))
+                '        %s=None,  # type: Optional[%s]' % (
+                    property_name_,
+                    _typing_from_property(property_)
+                )
             )
         out.append(
             '    ):'
         )
-        for n in metadata.properties.keys():
+        for property_name_ in metadata.properties.keys():
             out.append(
-                '        self.%s = %s' % (n, n)
+                '        self.%s = %s' % (property_name_, property_name_)
             )
         out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
-
     class_definition = '\n'.join(out)
     namespace = dict(__name__='from_meta_%s' % name)
     imports = '\n'.join([
+        '# pylint: disable=wrong-import-position',
+        BACKWARDS_COMPATIBILITY_IMPORTS,
         'import %s' % _parent_module_name,
-        '',
-        '%s()' % qualified_name(backport),
-        ''
         'try:',
         '    from typing import Union, Dict, Any, Sequence, IO',
         'except ImportError:',
@@ -1292,18 +1266,14 @@ def from_meta(name, metadata, module=None, docstring=None):
     exec(source, namespace)
     result = namespace[name]
     result._source = source
-
     if module is None:
         try:
             module = sys._getframe(1).f_globals.get('__name__', '__main__')
         except (AttributeError, ValueError):
             pass
-
     if module is not None:
         result.__module__ = module
-
     result._meta = metadata
-
     return result
 
 
@@ -1806,7 +1776,7 @@ def deserialize(data, format_):
                 object_pairs_hook=collections.OrderedDict
             )
         elif format_ == 'yaml':
-            data = yaml.load(data)
+            data = yaml.load(data, yaml.FullLoader)
     return data
 
 

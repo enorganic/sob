@@ -22,5 +22,5 @@ from .string import (
     url_relative_to
 )
 from .io import get_url as get_io_url, read
-from .types import Undefined, UNDEFINED
+from .types import Undefined, UNDEFINED, Module
 
