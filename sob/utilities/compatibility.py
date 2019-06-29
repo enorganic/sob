@@ -116,16 +116,14 @@ except ImportError as e:
 
 # A constant representing a number of compatibility imports
 BACKWARDS_COMPATIBILITY_IMPORTS = (
-    '# region Backwards Compatibility\n'
     'from __future__ import (\n'
     '   nested_scopes, generators, division, absolute_import, with_statement, '
-    'print_function, '
-    '   unicode_literals\n'
+    'print_function,\n'
+    '    unicode_literals\n'
     ')\n'    
     'from future import standard_library\n'
     'standard_library.install_aliases()\n'
     'from future.builtins import *\n'
-    '# endregion'
 )
 
 
