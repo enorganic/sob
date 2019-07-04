@@ -9,7 +9,7 @@ from __future__ import (
 )
 from .utilities.compatibility import (
     backport, collections, Generator, BACKWARDS_COMPATIBILITY_IMPORTS,
-    typing, urljoin, collections_abc
+    typing, urljoin, collections_abc, include_native_str
 )
 backport()
 
@@ -34,6 +34,7 @@ from .utilities import qualified_name, get_io_url, read, indent
 from . import (
     properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 )
+
 
 # The following are derived from `.compatibility` in order to facilitate
 # backwards-compatibility
@@ -477,15 +478,8 @@ class Object(Model):
                         types = types(value)
 
                     if types is not None:
-
-                        if (str in types) and (native_str is not str) and (native_str not in types):
-                            types = tuple(chain(*(
-                                ((type_, native_str) if (type_ is str) else (type_,))
-                                for type_ in types
-                            )))
-
+                        types = include_native_str(types)
                         if properties.Null not in types:
-
                             validation_errors.append(
                                 'Null values are not allowed in `%s.%s`, ' % (
                                     qualified_name(type(object_)), property_name
@@ -1320,11 +1314,7 @@ def marshal(
 
         # For compatibility - include `native_str` in `types` when it is not the same as `str`, and `str` is one of the
         # `types`.
-        if (str in types) and (native_str is not str) and (native_str not in types):
-            types = tuple(chain(*(
-                ((type_, native_str) if (type_ is str) else (type_,))
-                for type_ in types
-            )))
+        types = include_native_str(types)
 
         # For each potential type, attempt to marshal the data, and accept the first result which does not throw an
         # error
@@ -1457,9 +1447,7 @@ class _Unmarshal(object):
                     unmarshalled_data = self.as_container_or_simple_type
 
                 else:
-
-                    self.backport_types()
-
+                    self.types = include_native_str(self.types)
                     unmarshalled_data = (  # type: Optional[Union[abc.model.Model, Number, str, bytes, date, datetime]]
                         None
                     )
@@ -1501,7 +1489,6 @@ class _Unmarshal(object):
                             )
                         else:
                             raise first_error  # noqa (pylint erroneously identifies this as raising `None`)
-
         return unmarshalled_data
 
     @property
@@ -1536,18 +1523,6 @@ class _Unmarshal(object):
                 '%s cannot be un-marshalled' % repr(self.data)
             )
         return unmarshalled_data
-
-    def backport_types(self):
-        # type: (...) -> None
-        """
-        This examines a set of types passed to `unmarshal`, and resolves any compatibility issues with the python
-        version being utilized
-        """
-        if (str in self.types) and (native_str is not str) and (native_str not in self.types):
-            self.types = tuple(chain(*(
-                ((type_, native_str) if (type_ is str) else (type_,))
-                for type_ in self.types
-            )))  # type: Tuple[Union[type, properties.Property], ...]
 
     def get_dictionary_type(self, dictionary_type):
         # type: (type) -> type
@@ -1814,67 +1789,55 @@ def detect_format(data):
     return data, format_
 
 
+if Optional is None:
+    _ValidateTypes = None
+else:
+    _ValidateTypes = Optional[
+        Union[type, properties.Property, Object, Callable]
+    ]
+
+
 def validate(
     data,  # type: Optional[abc.model.Model]
-    types=None,  # type: Optional[Union[type, properties.Property, model.Object, Callable]]
+    types=None,  # type: _ValidateTypes
     raise_errors=True  # type: bool
 ):
     # type: (...) -> Sequence[str]
     """
-    This function verifies that all properties/items/values in an instance of `sob.abc.model.Model` are of the
-    correct data type(s), and that all required attributes are present (if applicable). If `raise_errors` is `True`
-    (this is the default)--violations will result in a validation error. If `raise_errors` is `False`--a list of error
-    messages will be returned if invalid/missing information is found, or an empty list otherwise.
+    This function verifies that all properties/items/values in an instance of
+    `sob.abc.model.Model` are of the correct data type(s), and that all
+    required attributes are present (if applicable). If `raise_errors` is
+    `True` (this is the default)--violations will result in a validation error.
+    If `raise_errors` is `False`--a list of error messages will be returned if
+    invalid/missing information is found, or an empty list otherwise.
     """
-
     if isinstance(data, Generator):
         data = tuple(data)
-
     error_messages = []
-
     error_message = None
-
     if types is not None:
-
         if callable(types):
             types = types(data)
-
-        if (str in types) and (native_str is not str) and (native_str not in types):
-
-            types = tuple(chain(*(
-                ((type_, native_str) if (type_ is str) else (type_,))
-                for type_ in types
-            )))
-
+        types = include_native_str(types)
         valid = False
-
         for type_ in types:
-
             if isinstance(type_, type) and isinstance(data, type_):
-
                 valid = True
                 break
-
             elif isinstance(type_, properties.Property):
-
                 if type_.types is None:
-
                     valid = True
                     break
-
                 try:
-
                     validate(data, type_.types, raise_errors=True)
                     valid = True
                     break
-
                 except errors.ValidationError:
-
                     pass
-
         if not valid:
             error_message = (
-                'Invalid data:\n\n%s\n\nThe data must be one of the following types:\n\n%s' % (
+                'Invalid data:\n\n%s\n\n'
+                'The data must be one of the following types:\n\n%s' % (
                     '\n'.join(
                         '  ' + line
                         for line in repr(data).split('\n')
@@ -1892,24 +1855,26 @@ def validate(
                     ))
                 )
             )
-
     if error_message is not None:
-
         if (not error_messages) or (error_message not in error_messages):
-
             error_messages.append(error_message)
-
-    if ('_validate' in dir(data)) and callable(data._validate):
-
-        error_messages.extend(
-            error_message for error_message in
-            data._validate(raise_errors=False)
-            if error_message not in error_messages
-        )
-
+    if '_validate' in dir(data):
+        validate_method = getattr(data, '_validate')
+        if callable(validate_method):
+            error_messages.extend(
+                error_message for error_message in
+                validate_method(raise_errors=False)
+                if error_message not in error_messages
+            )
     if raise_errors and error_messages:
+        # If there is no top-level error message, include a representation of
+        # the top-level data element
+        if error_message not in error_messages:
+            error_messages.insert(
+                0,
+                '\n'+ repr(data)
+            )
         raise errors.ValidationError('\n' + '\n\n'.join(error_messages))
-
     return error_messages
 
 

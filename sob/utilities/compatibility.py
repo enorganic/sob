@@ -11,6 +11,9 @@ from __future__ import (
 import inspect
 import importlib
 
+from future.utils import native_str
+from itertools import chain
+
 # Before `collections.abc` existed, the definitions we use from this module
 # were in `collections`
 try:
@@ -136,4 +139,21 @@ def backport():
     frame_info = inspect.stack()[1]
     frame = frame_info[0]
     exec(BACKWARDS_COMPATIBILITY_IMPORTS, frame.f_globals, frame.f_locals)
+
+
+def include_native_str(types):
+    # type: (Iterable[Any]) -> Iterable(Any)
+    if (
+        native_str is not str
+    ) and (
+        str in types
+    ) and (
+        native_str not in types
+    ):
+        return chain(*(
+            ((type_, native_str) if (type_ is str) else (type_,))
+            for type_ in types
+        ))
+    else:
+        return types
 
