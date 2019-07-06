@@ -214,7 +214,9 @@ def writable(
             new_hooks = deepcopy(writable(type(model)))
     if new_hooks:
         setattr(model, '_hooks', hooks)
-    return hooks
+    else:
+        new_hooks = hooks
+    return new_hooks
 
 
 def type_(model):
