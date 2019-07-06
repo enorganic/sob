@@ -1,21 +1,36 @@
-# Tell the linters what's up:
-# pylint:disable=wrong-import-position,consider-using-enumerate,useless-object-inheritance
-# mccabe:options:max-complexity=999
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
-   print_function, unicode_literals
-from ..utilities.compatibility import backport
-
-backport()
-
-from future.utils import native_str  # noqa
-
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
+    print_function, unicode_literals
+)
+from ..utilities import compatibility
+# from .. import meta
+from .model import Model
 from abc import ABCMeta, abstractmethod
 
-# We need to inherit from `ABC` in python 3x, but in python 2x ABC is absent
-try:
-    from abc import ABC
-except ImportError:
-    ABC = object
+compatibility.backport()
+
+ABC = compatibility.ABC
+Any = compatibility.typing.Any
+Optional = compatibility.typing.Optional
+Union = compatibility.typing.Union
+Sequence = compatibility.typing.Sequence
+Callable = compatibility.typing.Callable
+
+# if Any is None:
+#     _ItemsParameter = _TypesParameter = None
+# else:
+#     _ItemsParameter = Optional[
+#         Union[
+#             Sequence[
+#                 Union[type, "Property"],
+#                 "Types"
+#             ],
+#             type,
+#             "Property"
+#         ]
+#     ]
+#     _TypesParameter = Sequence[Union[type, "Property"]]
+#     _VersionsParameter = Optional[Sequence[Union[str, meta.Version]]]
 
 
 class Types(ABC):
@@ -25,7 +40,7 @@ class Types(ABC):
     @abstractmethod
     def __init__(
         self,
-        items=None  # type: Optional[Union[Sequence[Union[type, Property], Types], type, Property]]
+        items=None  # type: _ItemsParameter
     ):
         pass
 
@@ -37,15 +52,15 @@ class Property(ABC):
     @abstractmethod
     def __init__(
         self,
-        types=None,  # type: Sequence[Union[type, Property]]
+        types=None,  # type: _TypesParameter
         name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Sequence[Union[str, sob.meta.Version]]]
+        required=False,  # type: Union[bool, Callable]
+        versions=None,  # type: _VersionsParameter
     ):
         self.types = types
         self.name = name
         self.required = required
-        self.versions = versions  # type: Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
+        self.versions = versions  # type: meta.Version
 
     @property
     @abstractmethod
@@ -62,16 +77,16 @@ class Property(ABC):
     @property
     @abstractmethod
     def versions(self):
-        # type: () -> Optional[Sequence[meta.Version]]
+        # type: (...) -> Optional[Sequence[meta.Version]]
         pass
 
     @versions.setter
     @abstractmethod
     def versions(
         self,
-        versions  # type: Optional[Sequence[Union[str, collections_abc.Iterable, meta.Version]]]
+        versions  # type: _VersionsParameter
     ):
-        # type: (...) -> Optional[Union[Mapping[str, Optional[Property]], Set[Union[str, Number]]]]
+        # type: (...) -> None
         pass
 
 
@@ -101,11 +116,6 @@ class Enumerated(Property):
 
 
 class Number(Property):
-
-    pass
-
-
-class Integer(Property):
 
     pass
 

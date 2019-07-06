@@ -7,10 +7,8 @@ from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
-
 import inspect
 import importlib
-
 from future.utils import native_str
 from itertools import chain
 
@@ -29,6 +27,14 @@ try:
 except ImportError:
     _urlparse_module = importlib.import_module('urlparse')
 
+# We need ABCs to inherit from `ABC` in python 3.4+, but in previous versions
+# of python ABC is absent and we need classes to inherit from `object` in
+# order to be new-style classes
+try:
+    from abc import ABC
+except ImportError:
+    ABC = object
+
 urljoin = _urlparse_module.urljoin
 urlparse = _urlparse_module.urlparse
 
@@ -39,11 +45,13 @@ if hasattr(collections_abc, 'Generator'):
 else:
     Generator = type(n for n in (1, 2, 3))
 
-# The `typing` module did not exist prior to python version 3.5
-try:
-    import typing
-except ImportError as e:
-    # Create a dummy `typing` namespace
+
+def _get_typing_module():
+    # type: (...) -> object
+    """
+    The `typing` module did not exist prior to python version 3.5, so we create
+    a dummy namespace for older versions
+    """
     _typing_names = (
         'AbstractSet',
         'Any',
@@ -110,12 +118,22 @@ except ImportError as e:
         'ValuesView',
         'WrapperDescriptorTyp'
     )
-    typing = collections.namedtuple(
-        'typing',
-        _typing_names
-    )(
-        *([None] * len(_typing_names))
-    )
+    try:
+        typing_ = importlib.import_module('typing')
+        for name in _typing_names:
+            if not hasattr(typing_, name):
+                setattr(typing_, name, None)
+    except ImportError as e:
+        typing_ = collections.namedtuple(
+            'typing',
+            _typing_names
+        )(
+            *([None] * len(_typing_names))
+        )
+    return typing_
+
+
+typing = _get_typing_module()
 
 # A constant representing a number of compatibility imports
 BACKWARDS_COMPATIBILITY_IMPORTS = (
@@ -131,14 +149,14 @@ BACKWARDS_COMPATIBILITY_IMPORTS = (
 
 
 def backport():
-    # type: (...) -> None
+    # type: (int) -> None
     """
     This function imports future functionality and installs built-ins, if
     necessary
     """
-    frame_info = inspect.stack()[1]
-    frame = frame_info[0]
-    exec(BACKWARDS_COMPATIBILITY_IMPORTS, frame.f_globals, frame.f_locals)
+    for frame_info in inspect.stack():
+        frame = frame_info[0]
+        exec(BACKWARDS_COMPATIBILITY_IMPORTS, frame.f_globals, frame.f_locals)
 
 
 def include_native_str(types):
@@ -156,4 +174,5 @@ def include_native_str(types):
         ))
     else:
         return types
+
 

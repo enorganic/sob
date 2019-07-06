@@ -1,32 +1,34 @@
-# region Compatibility
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
 from . import compatibility
+import importlib
+import sys
+import re
+from collections import OrderedDict
+from .types import UNDEFINED, Module
+
 compatibility.backport()
-# endregion
 
-import importlib  # noqa
-import sys  # noqa
-import re  # noqa
+Union = compatibility.typing.Union
+Optional = compatibility.typing.Optional
+Iterable = compatibility.typing.Iterable
+Tuple = compatibility.typing.Tuple
+Any = compatibility.typing.Any
+Callable = compatibility.typing.Callable
+AnyStr = compatibility.typing.AnyStr
+Iterator = compatibility.typing.Iterator
+Sequence = compatibility.typing.Sequence
+IO = compatibility.typing.IO
 
-from collections import OrderedDict  # noqa
 
-from .types import UNDEFINED, Module  # noqa
-
-# region More Compatibility
-
-# Fallback imports
-try:
-    from typing import (
-        Union, Optional, Iterable, Tuple, Any, Callable, AnyStr, Iterator,
-        Sequence, IO
-    )  # noqa
-    KeyValueIterator = Iterator[Tuple[AnyStr, Any]]
-except ImportError:
-    Union = Optional = Iterable = Tuple = Any = Callable = AnyStr = None
+if Any is None:
     Iterator = Sequence = KeyValueIterator = IO = None
+else:
+    KeyValueIterator = Iterator[Tuple[AnyStr, Any]]
+
+
 try:
     from inspect import (
         signature, getargs, stack, getmodulename, getsource,
@@ -49,8 +51,6 @@ try:
     from inspect import FrameInfo
 except ImportError:
     FrameInfo = tuple
-
-# endregion
 
 
 # The `BUILTINS_DICT` is used to check for namespace conflicts

@@ -5,33 +5,32 @@ parameter/property for `urllib.request.Request`, and to support casting
 requests as `str` or `bytes` (typically for debugging purposes and/or to aid in
 producing non-language-specific API documentation).
 """
-# region Backwards Compatibility
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
-   print_function, unicode_literals
-from .utilities.compatibility import backport
-
-backport()  # noqa
-
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
+    print_function, unicode_literals
+)
+from .utilities import compatibility
 from future.utils import native_str
-
 import random
 import re
 import string
 import urllib.request
-
-try:
-    from typing import Dict, Sequence, Set, Iterable
-except ImportError:
-    Dict = Sequence = Set = None
-
 from .model import serialize
 from .abc.model import Model
-from .utilities.compatibility import collections_abc
+
+compatibility.backport()
+
+Dict = compatibility.typing.Dict
+Sequence = compatibility.typing.Sequence
+Set = compatibility.typing.Set
+Iterable = compatibility.typing.Iterable
+collections_abc = compatibility.collections_abc
 
 
 class Headers(object):
     """
-    A dictionary of headers for a `Request`, `Part`, or `MultipartRequest` instance.
+    A dictionary of headers for a `Request`, `Part`, or `MultipartRequest`
+    instance.
     """
 
     def __init__(self, items, request):

@@ -1,35 +1,32 @@
-# region Compatibility
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
 from . import compatibility
-compatibility.backport()  # noqa
-# endregion
-
-import importlib  # noqa
 import re  # noqa
-
 from unicodedata import normalize  # noqa
 from keyword import iskeyword  # noqa
-
 from .inspect import BUILTINS_DICT
 
-try:
-    urljoin = importlib.import_module('urllib.parse').urljoin
-except ImportError:
-    urljoin = importlib.import_module('urlparse').urljoin
+compatibility.backport()
 
-# The following detects the presence of the typing library
-try:
-    from typing import (
-        Union, Optional, Iterable, Tuple, Any, Callable, AnyStr, Iterator,
-        Sequence, IO
-    )  # noqa
+urljoin = compatibility.urljoin
+
+Union = compatibility.typing.Union
+Optional = compatibility.typing.Optional
+Iterable = compatibility.typing.Iterable
+Tuple = compatibility.typing.Tuple
+Any = compatibility.typing.Any
+Callable = compatibility.typing.Callable
+AnyStr = compatibility.typing.AnyStr
+Iterator = compatibility.typing.Iterator
+Sequence = compatibility.typing.Sequence
+IO = compatibility.typing.IO
+
+if Any is None:
+    KeyValueIterator = None
+else:
     KeyValueIterator = Iterator[Tuple[AnyStr, Any]]
-except ImportError:
-    Union = Optional = Iterable = Tuple = Any = Callable = AnyStr = None
-    Iterator = Sequence = KeyValueIterator = IO = None
 
 # endregion
 

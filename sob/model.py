@@ -1,22 +1,16 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
-# pylint: disable=wrong-import-position
-
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
-   print_function, unicode_literals
+    print_function, unicode_literals
 )
-from .utilities.compatibility import (
-    backport, collections, Generator, BACKWARDS_COMPATIBILITY_IMPORTS,
-    typing, urljoin, collections_abc, include_native_str
-)
-backport()
-
+from .utilities import compatibility
 # Built-In Imports
 import re
 import sys
 import json
+import collections
 from future.utils import native_str
 from copy import deepcopy
 from io import IOBase
@@ -25,35 +19,40 @@ from base64 import b64encode, b64decode
 from numbers import Number
 from datetime import date, datetime
 from itertools import chain
-
 # 3rd-Party Maintained Imports
 import yaml
-
 # Relative Imports
 from .utilities import qualified_name, get_io_url, read, indent
 from . import (
     properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 )
+# (
+#     collections, Generator, BACKWARDS_COMPATIBILITY_IMPORTS,
+#     typing, urljoin, collections_abc, include_native_str
+# )
 
+compatibility.backport()
 
-# The following are derived from `.compatibility` in order to facilitate
-# backwards-compatibility
-Union = typing.Union
-Dict = typing.Dict
-Any = typing.Any
-AnyStr = typing.AnyStr
-IO = typing.IO
-Sequence = typing.Sequence
-Mapping = typing.Mapping
-Callable = typing.Callable
-Tuple = typing.Tuple
-Optional = typing.Optional
+Union = compatibility.typing.Union
+Dict = compatibility.typing.Dict
+Any = compatibility.typing.Any
+AnyStr = compatibility.typing.AnyStr
+IO = compatibility.typing.IO
+Sequence = compatibility.typing.Sequence
+Mapping = compatibility.typing.Mapping
+Callable = compatibility.typing.Callable
+Tuple = compatibility.typing.Tuple
+Optional = compatibility.typing.Optional
+Generator = compatibility.Generator
+BACKWARDS_COMPATIBILITY_IMPORTS = compatibility.BACKWARDS_COMPATIBILITY_IMPORTS
+urljoin = compatibility.urljoin
+collections_abc = compatibility.collections_abc
+include_native_str = compatibility.include_native_str
 
 # Constants
 _UNMARSHALLABLE_TYPES = tuple(
     set(properties.types.TYPES) | {properties.types.NoneType}
 )
-
 # region Model Classes
 
 
@@ -81,7 +80,6 @@ class Object(Model):
         self._url = None  # type: Optional[str]
         self._xpath = None  # type: Optional[str]
         self._pointer = None  # type: Optional[str]
-
         if _data is not None:
             self._data_init(_data)
 
@@ -1380,35 +1378,31 @@ class _Unmarshal(object):
         item_types=None  # type: Optional[Sequence[Union[type, properties.Property]]]
     ):
         # type: (...) -> None
-
-        # Verify that the data can be parsed before attempting to un-marshall it
+        # Verify that the data can be parsed before attempting to un-marshalls
         if not isinstance(
             data,
             _UNMARSHALLABLE_TYPES
         ):
             raise errors.UnmarshalTypeError(
-                '%s, an instance of `%s`, cannot be un-marshalled. ' % (repr(data), type(data).__name__) +
+                '%s, an instance of `%s`, cannot be un-marshalled. ' % (
+                    repr(data), type(data).__name__
+                ) +
                 'Acceptable types are: ' + ', '.join((
                     qualified_name(data_type)
                     for data_type in _UNMARSHALLABLE_TYPES
                 ))
             )
-
-        # If only one type was passed for any of the following parameters--we convert it to a tuple
-        # If any parameters are abstract base classes--we convert them to the corresponding models
-
+        # If only one type was passed for any of the following parameters--we
+        # convert it to a tuple
         if types is not None:
             if not isinstance(types, collections_abc.Sequence):
                 types = (types,)
-
         if value_types is not None:
             if not isinstance(value_types, collections_abc.Sequence):
                 value_types = (value_types,)
-
         if item_types is not None:
             if not isinstance(item_types, collections_abc.Sequence):
                 item_types = (item_types,)
-
         # Instance Attributes
         self.data = data  # type: Any
         self.types = types  # type: Optional[Sequence[Union[type, properties.Property]]]
@@ -1454,24 +1448,31 @@ class _Unmarshal(object):
                     successfully_unmarshalled = False  # type: bool
                     first_error = None  # type: Optional[Exception]
                     first_error_message = None  # type: Optional[str]
-                    # Attempt to un-marshal the data as each type, in the order provided
+                    # Attempt to un-marshal the data as each type, in the order
+                    # provided
                     for type_ in self.types:
                         error = None  # type: Optional[Union[AttributeError, KeyError, TypeError, ValueError]]
                         error_message = None  # type: Optional[str]
                         try:
                             unmarshalled_data = self.as_type(type_)
-                            # If the data is un-marshalled successfully, we do not need to try any further types
+                            # If the data is un-marshalled successfully, we do
+                            # not need to try any further types
                             successfully_unmarshalled = True
                             break
-                        except (AttributeError, KeyError, TypeError, ValueError) as e:
+                        except (
+                            AttributeError, KeyError, TypeError, ValueError
+                        ) as e:
                             error = e
                             error_message = errors.get_exception_text()
                         if (error is not None) and (first_error is None):
                             first_error = error
                             first_error_message = error_message
-
                     if not successfully_unmarshalled:
-                        if (first_error is None) or isinstance(first_error, TypeError):
+                        if (
+                            first_error is None
+                        ) or isinstance(
+                            first_error, TypeError
+                        ):
                             raise errors.UnmarshalTypeError(
                                 first_error_message,
                                 data=self.data,
@@ -1488,7 +1489,9 @@ class _Unmarshal(object):
                                 item_types=self.item_types
                             )
                         else:
-                            raise first_error  # noqa (pylint erroneously identifies this as raising `None`)
+                            # pylint erroneously identifies this as raising
+                            # `None`
+                            raise first_error  # noqa
         return unmarshalled_data
 
     @property
@@ -1644,7 +1647,6 @@ class _Unmarshal(object):
                     unmarshalled_data = self.data
             else:
                 raise TypeError(self.data)
-
         return unmarshalled_data
 
 

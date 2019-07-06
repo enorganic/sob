@@ -1,17 +1,19 @@
-# region Compatibility
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
-from . import compatibility
-compatibility.backport()  # noqa
-# endregion
-
 import os  # noqa
+from io import UnsupportedOperation
+from . import compatibility
 
-from io import UnsupportedOperation  # noqa
+compatibility.backport()
 
-from .string import urljoin  # noqa
+urljoin = compatibility.urljoin
+
+IO = compatibility.typing.IO
+Any = compatibility.typing.Any
+Optional = compatibility.typing.Optional
+Union = compatibility.typing.Union
 
 
 def read(data):
@@ -40,7 +42,7 @@ def read(data):
 
 
 def get_url(file_like_object):
-    # type: (IOBase) -> Optional[str]
+    # type: (IO) -> Optional[str]
     """
     Get the URL from which an input-output (file-like) object was sourced
     """

@@ -2,30 +2,35 @@ from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
    print_function, unicode_literals
 )
-
-from sob.utilities.compatibility import backport
-
-backport()  # noqa
-
+from sob.utilities import compatibility
+compatibility.backport()
 from future.utils import native_str
-
-import numbers  # noqa
-import decimal  # noqa
-
-from copy import deepcopy  # noqa
-from datetime import date, datetime  # noqa
-
-from ..utilities.compatibility import collections, collections_abc, Generator
-from ..utilities import qualified_name
-
+import numbers
+import decimal
+import collections
+from copy import deepcopy
+from datetime import date, datetime
+from ..utilities import compatibility, qualified_name
 from .. import abc
 from ..abc.properties import Property
 
-try:
-    from typing import (
-        Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any,
-        Hashable, Collection, Tuple
-    )
+compatibility.backport()
+
+collections_abc = compatibility.collections_abc
+Generator = compatibility.Generator
+Union = compatibility.typing.Union
+Optional = compatibility.typing.Optional
+Sequence = compatibility.typing.Sequence
+Mapping = compatibility.typing.Mapping
+Set = compatibility.typing.Set
+Callable = compatibility.typing.Callable
+Dict = compatibility.typing.Dict
+Any = compatibility.typing.Any
+Hashable = compatibility.typing.Hashable
+Collection = compatibility.typing.Collection
+Tuple = compatibility.typing.Tuple
+
+if Any is not None:
     _TypeOrProperty = Union[type, abc.properties.Property]
     _ItemsParameter = Optional[
         Union[
@@ -36,10 +41,6 @@ try:
             abc.properties.Property
         ]
     ]
-except ImportError:
-    Union = Optional = Sequence = Mapping = Set = Sequence = Callable = None
-    Dict = Any = Hashable = Collection = Tuple = Iterable = None
-    _TypeOrProperty = _ItemsParameter = None
 
 
 NoneType = type(None)

@@ -1,11 +1,9 @@
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
-   print_function, unicode_literals
-from .utilities.compatibility import backport
-
-backport()  # noqa
-
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
+    print_function, unicode_literals
+)
+from .utilities import compatibility
 from future.utils import native_str
-
 import numbers
 import operator
 import re
@@ -15,18 +13,23 @@ from copy import deepcopy
 from copy import copy
 from itertools import chain
 from numbers import Number
-
-try:
-    from typing import Optional, Dict, Sequence, Tuple, Mapping, Union, Any, List
-except ImportError:
-    Optional = Sequence = Dict = Tuple = Mapping = Union = Any = List = None
-
 from . import abc, errors
 from .utilities import (
     qualified_name, properties_values, calling_function_qualified_name
 )
-from .utilities.compatibility import collections_abc
 from .properties.types import Types
+
+compatibility.backport()
+
+Optional = compatibility.typing.Optional
+Dict = compatibility.typing.Dict
+Sequence = compatibility.typing.Sequence
+Tuple = compatibility.typing.Tuple
+Mapping = compatibility.typing.Mapping
+Union = compatibility.typing.Union
+Any = compatibility.typing.Any
+List = compatibility.typing.List
+collections_abc = compatibility.collections_abc
 
 _DOT_SYNTAX_RE = re.compile(
     r'^\d+(\.\d+)*$'

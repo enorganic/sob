@@ -1,18 +1,12 @@
-# region Compatibility
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
 from . import compatibility
-compatibility.backport()  # noqa
-# endregion
 
+compatibility.backport()
 
-try:
-    from typing import Any
-except ImportError:
-    Any = None
-
+Any = compatibility.typing.Any
 
 UNDEFINED = None
 

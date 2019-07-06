@@ -1,22 +1,21 @@
-from __future__ import nested_scopes, generators, division, absolute_import, with_statement, \
-   print_function, unicode_literals
-from .utilities.compatibility import backport
-
-backport()
-
-from future.utils import native_str
-
+from __future__ import (
+    nested_scopes, generators, division, absolute_import, with_statement,
+    print_function, unicode_literals
+)
+from .utilities import compatibility
 import sys
 from traceback import format_exception
-
-try:
-    import typing
-except ImportError as e:
-    typing = None
-
-from .abc.model import Model
+# from .abc.model import Model
+# from .abc.properties import Property
 from .properties.types import TYPES
 from .utilities import qualified_name
+
+compatibility.backport()
+
+Optional = compatibility.typing.Optional
+Any = compatibility.typing.Any
+Sequence = compatibility.typing.Sequence
+Union = compatibility.typing.Union
 
 
 class ValidationError(Exception):
@@ -25,11 +24,6 @@ class ValidationError(Exception):
 
 
 class VersionError(AttributeError):
-
-    pass
-
-
-class UnmarshalValueError(ValueError):
 
     pass
 
@@ -46,21 +40,16 @@ class UnmarshalError(Exception):
     ):
         # type: (...) -> None
         """
-        Generate a comprehensible error message for data which could not be un-marshalled according to spec, and raise
-        the appropriate exception
+        Generate a comprehensible error message for data which could not be
+        un-marshalled according to spec, and raise the appropriate exception
         """
-
         self._message = None  # type: Optional[str]
         self._parameter = None  # type: Optional[str]
         self._index = None  # type: Optional[int]
         self._key = None  # type: Optional[str]
-
         error_message_lines = ['']
-
         # Identify which parameter is being used for type validation
-
         types_label = None
-
         if types:
             types_label = 'types'
         elif item_types:
@@ -69,38 +58,32 @@ class UnmarshalError(Exception):
         elif value_types:
             types_label = 'value_types'
             types = value_types
-
         # Assemble the error message
-
         # Assemble a text representation of the `data`
-
         data_lines = []
-
         lines = repr(data).strip().split('\n')
-
         if len(lines) == 1:
-
             data_lines.append(lines[0])
-
         else:
-
             data_lines.append('')
-
             for line in lines:
                 data_lines.append(
                     '     ' + line
                 )
-
-        # Assemble a text representation of the `types`, `item_types`, or `value_types`.
-
+        # Assemble a text representation of the `types`, `item_types`, or
+        # `value_types`.
         if types is None:
 
-            error_message_lines.append('The data provided is not an instance of an un-marshallable type:')
+            error_message_lines.append(
+                'The data provided is not an instance of an un-marshallable '
+                'type:'
+            )
 
         else:
 
             error_message_lines.append(
-                'The data provided does not match any of the expected types and/or property definitions:'
+                'The data provided does not match any of the expected types '
+                'and/or property definitions:'
             )
 
         error_message_lines.append(
@@ -180,12 +163,14 @@ class UnmarshalError(Exception):
 
         if self.parameter:
             messages.append(
-                'Errors encountered in attempting to un-marshal %s:' % self.parameter
+                'Errors encountered in attempting to un-marshal %s:' %
+                self.parameter
             )
 
         if self.index is not None:
             messages.append(
-                'Errors encountered in attempting to un-marshal the value at index %s:' % repr(self.index)
+                'Errors encountered in attempting to un-marshal the value at '
+                'index %s:' % repr(self.index)
             )
 
         if self.message:

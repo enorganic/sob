@@ -1,36 +1,43 @@
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
-   print_function, unicode_literals
+    print_function, unicode_literals
 )
-
-from ..utilities.compatibility import backport
-
-backport()  # noqa
-
+from ..utilities import compatibility
+compatibility.backport()
 from future.utils import native_str
-
-import numbers  # noqa
-
-from copy import deepcopy  # noqa
-from datetime import date, datetime  # noqa
-
-import iso8601  # noqa
-
+import numbers
+import collections
+from copy import deepcopy
+from datetime import date, datetime
+import iso8601
 from ..utilities import (
     qualified_name, properties_values, parameters_defaults,
     calling_function_qualified_name, indent
 )
-
-from ..utilities.compatibility import collections, collections_abc
-
 from .. import abc, meta
 from .types import Types, Null, NULL, NoneType
 
-try:
-    from typing import (
-        Union, Optional, Sequence, Mapping, Set, Sequence, Callable, Dict, Any,
-        Hashable, Collection, Tuple
-    )
+compatibility.backport()
+
+collections_abc = compatibility.collections_abc
+Union = compatibility.typing.Union
+Optional = compatibility.typing.Optional
+Sequence = compatibility.typing.Sequence
+Mapping = compatibility.typing.Mapping
+Set = compatibility.typing.Set
+Callable = compatibility.typing.Callable
+Dict = compatibility.typing.Dict
+Any = compatibility.typing.Any
+Hashable = compatibility.typing.Hashable
+Collection = compatibility.typing.Collection
+Tuple = compatibility.typing.Tuple
+Iterable = compatibility.typing.Iterable
+
+
+if Union is None:
+    _TypesOrProperties = _ItemTypes = None
+    _VersionsProperty = _VersionsParameter = None
+else:
     _TypesOrProperties = Optional[
         Sequence[Union[type, abc.properties.Property, abc.model.Model]]
     ]
@@ -45,11 +52,6 @@ try:
             Sequence[Union[type, abc.properties.Property]]
         ]
     ]
-except ImportError:
-    Union = Optional = Sequence = Mapping = Set = Callable = None
-    Any = Hashable = Collection = Tuple = Iterable = Dict = None
-    _TypesOrProperties = _ItemTypes = None
-    _VersionsProperty = _VersionsParameter = None
 
 
 class Property(object):
@@ -216,12 +218,9 @@ class Property(object):
 
     def __deepcopy__(self, memo):
         # type: (dict) -> Property
-
         new_instance = self.__class__()
-
         for a, v in properties_values(self):
             setattr(new_instance, a, deepcopy(v, memo))
-
         return new_instance
 
 

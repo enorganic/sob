@@ -1,11 +1,8 @@
-# Compatibility
 from __future__ import (
     nested_scopes, generators, division, absolute_import, with_statement,
     print_function, unicode_literals
 )
-from sob.utilities.compatibility import backport, urljoin
-backport()
-# Standard library imports
+from sob.utilities import compatibility
 import re  # noqa
 import os  # noqa
 from iso8601 import iso8601
@@ -13,14 +10,13 @@ from decimal import Decimal
 from base64 import b64encode
 from collections import OrderedDict
 from copy import deepcopy
-# `sob` package imports
 from sob import model, properties, meta, test, utilities
 from sob.request import MultipartRequest, Part
 
-try:
-    import typing
-except ImportError as e:
-    typing = None
+compatibility.backport()
+urljoin = compatibility.urljoin
+compatibility.backport()
+typing = compatibility.typing
 
 
 class A(model.Object):
