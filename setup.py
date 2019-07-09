@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.21",
+    version="0.1.22",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python class'
         'instances and vice versa'
@@ -31,8 +31,8 @@ setup(
         "iso8601>=0.1.12"
     ],
     extras_require={
-        'testing': [
-            'setuptools_setup_versions'
+        "testing": [
+            "setuptools_setup_versions>=0.0.22"
         ]
     }
 )
