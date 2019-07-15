@@ -21,6 +21,12 @@ except ImportError:
     import collections
     collections_abc = collections
 
+# Before `urllib.request` existed, this definition was in `urllib`
+try:
+    urlopen = importlib.import_module('urllib.request').urlopen
+except ImportError:
+    urlopen = importlib.import_module('urllib').urlopen
+
 # Before `urllib.parse` existed, these definitions were in `urllib`
 try:
     _urlparse_module = importlib.import_module('urllib.parse')

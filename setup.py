@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.22",
+    version="0.1.23",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python class'
         'instances and vice versa'
@@ -32,7 +32,7 @@ setup(
     ],
     extras_require={
         "testing": [
-            "setuptools_setup_versions>=0.0.22"
+            "setuptools_setup_versions>=0.0.25"
         ]
     }
 )
