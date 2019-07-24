@@ -50,11 +50,11 @@ def property_name(string):
     id_
     """
     name = re.sub(
-        r'__+',
+        r'[^\w_]+',
         '_',
         re.sub(
-            r'[^\w]+',
-            '',
+            r'__+',
+            '_',
             re.sub(
                 r'([a-zA-Z])([0-9])',
                 r'\1_\2',
