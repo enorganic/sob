@@ -11,4 +11,5 @@ dist/**
 **.egg
 **/__pycache__/**
 **/.DS_Store
-**.egg-info/*
+*.egg-info/**
+**/*.egg-info
