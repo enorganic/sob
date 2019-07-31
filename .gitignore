@@ -1,7 +1,11 @@
 *~
 **/.*
+.*
+.*/**
 **/.*/**
 !*.gitignore
+build/**
+dist/**
 **.pyc
 **.pyo
 **.egg
