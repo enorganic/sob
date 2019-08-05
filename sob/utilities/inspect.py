@@ -67,15 +67,15 @@ def _index_builtins():
 _index_builtins()
 
 
-def properties_values(object_):
-    # type: (object) -> KeyValueIterator
+def properties_values(object_, include_private=False):
+    # type: (object, bool) -> KeyValueIterator
     """
     This function iterates over an object's public (non-callable)
     properties, yielding a tuple comprised of each attribute/property name and
     value
     """
     for attribute in dir(object_):
-        if attribute[0] != '_':
+        if include_private or attribute[0] != '_':
             value = getattr(object_, attribute)
             if not callable(value):
                 yield attribute, value

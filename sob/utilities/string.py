@@ -264,20 +264,6 @@ def camel_split(string):
     )
 
 
-def properties_values(object_):
-    # type: (object) -> KeyValueIterator
-    """
-    This function iterates over an object's public (non-callable)
-    properties, yielding a tuple comprised of each attribute/property name and
-    value
-    """
-    for attribute in dir(object_):
-        if attribute[0] != '_':
-            value = getattr(object_, attribute)
-            if not callable(value):
-                yield attribute, value
-
-
 def indent(string, number_of_spaces=4, start=1, stop=None):
     # type: (str, int, int, Optional[int]) -> str
     """
