@@ -32,7 +32,7 @@ setup(
     ],
     extras_require={
         "testing": [
-            "setuptools_setup_versions>=0.0.25"
+            "setuptools_setup_versions>=0.0.26"
         ]
     }
 )
