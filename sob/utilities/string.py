@@ -34,8 +34,9 @@ else:
 def property_name(string):
     # type: (str) -> str
     """
-    Converts a "camelCased" attribute/property name, or a name which conflicts
-    with a python keyword, to a PEP-8 compliant property name.
+    Converts a "camelCased" attribute/property name, a name which conflicts
+    with a python keyword, or an otherwise non-compatible string to a PEP-8
+    compliant property name.
 
     >>> print(property_name('theBirdsAndTheBees'))
     the_birds_and_the_bees
@@ -48,37 +49,66 @@ def property_name(string):
 
     >>> print(property_name('id'))
     id_
+
+    >>> print(property_name('one2one'))  # No change needed
+    one2one
+
+    >>> print(property_name('One2One'))
+    one_2_one
     """
+    name = string  # type: str
+    # Replace accented and otherwise modified latin characters with their
+    # basic latin equivalent
+    name = normalize('NFKD', name)
+    # Replace any remaining non-latin characters with underscores
+    name = re.sub(
+        r'([^\x20-\x7F]|\s)+',
+        '_',
+        name
+    )
+    # Insert underscores between lowercase and uppercase characters
+    name = re.sub(
+        r'([a-z])([A-Z])',
+        r'\1_\2',
+        name
+    )
+    # Insert underscores between uppercase characters and following uppercase
+    # characters which are followed by lowercase characters (indicating the
+    # latter uppercase character was intended as part of a capitalized word
+    name = re.sub(
+        r'([A-Z])([A-Z])([a-z])',
+        r'\1_\2\3',
+        name
+    )
+    # Replace any two or more adjacent underscores with a single underscore
+    name = re.sub(
+        r'__+',
+        '_',
+        name
+    )
+    # Replace any series of one or more non-alphanumeric characters remaining
+    # with a single underscore
     name = re.sub(
         r'[^\w_]+',
         '_',
-        re.sub(
-            r'__+',
-            '_',
-            re.sub(
-                r'([a-zA-Z])([0-9])',
-                r'\1_\2',
-                re.sub(
-                    r'([0-9])([a-zA-Z])',
-                    r'\1_\2',
-                    re.sub(
-                        r'([A-Z])([A-Z])([a-z])',
-                        r'\1_\2\3',
-                        re.sub(
-                            r'([a-z])([A-Z])',
-                            r'\1_\2',
-                            re.sub(
-                                r'([^\x20-\x7F]|\s)+',
-                                '_',
-                                normalize('NFKD', string)
-                            )
-                        )
-                    )
-                )
-            )
-        )
+        name
     ).lower()
-    if iskeyword(name) or (name in BUILTINS_DICT):
+    # Only insert underscores between letters and numbers if camelCasing is
+    # found in the original string
+    if string != string.lower() and string != string.upper():
+        name = re.sub(
+            r'([0-9])([a-zA-Z])',
+            r'\1_\2',
+            name
+        )
+        name = re.sub(
+            r'([a-zA-Z])([0-9])',
+            r'\1_\2',
+            name
+        )
+    # Append an underscore to the keyword until it does not conflict with any
+    # python keywords or built-ins
+    while iskeyword(name) or (name in BUILTINS_DICT):
         name += '_'
     return name
 
@@ -291,7 +321,7 @@ _URL_DIRECTORY_AND_FILE_NAME_RE = re.compile(r'^(.*/)([^/]*)')
 
 
 def url_directory_and_file_name(url):
-    # type: (str) -> str
+    # type: (str) -> Tuple[str, str]
     """
     Split a URL into
     """

@@ -3,12 +3,8 @@ import os
 from subprocess import getstatusoutput
 from setuptools_setup_versions import install_requires
 
-
 # Update `setup.py` to require currently installed versions of all packages
-install_requires.update_versions('../', operator='>=')
-
-current_director = os.path.abspath(os.curdir)
-os.chdir('../')
+install_requires.update_versions(operator='>=')
 
 # Build
 status, output = getstatusoutput(
@@ -23,8 +19,6 @@ if status:
     error = OSError(output)
 else:
     print(output)
-
-os.chdir(current_director)
 
 exec(
     open('./clean.py').read(),

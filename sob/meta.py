@@ -523,46 +523,45 @@ def xpath(model, xpath_=_UNIDENTIFIED):
 
 def pointer(model, pointer_=_UNIDENTIFIED):
     # type: (abc.model.Model, Optional[str]) -> Optional[str]
-
+    """
+    Get or set a model's pointer
+    """
     if not isinstance(model, abc.model.Model):
         raise TypeError(
-            '`model` must be an instance of `%s`, not %s.' % (qualified_name(abc.model.Model), repr(model))
+            '`model` must be an instance of `%s`, not %s.' % (
+                qualified_name(abc.model.Model), repr(model)
+            )
         )
-
     if pointer_ is not _UNIDENTIFIED:
-
         if not isinstance(pointer_, (str, native_str)):
             raise TypeError(
-                '`pointer_` must be a `str`, not %s (of type `%s`).' % (repr(pointer_), type(pointer_).__name__)
+                '`pointer_` must be a `str`, not %s (of type `%s`).' %
+                (repr(pointer_), type(pointer_).__name__)
             )
-
         model._pointer = pointer_
-
         if isinstance(model, abc.model.Dictionary):
-
             for k, v in model.items():
                 if isinstance(v, abc.model.Model):
-                    pointer(v, '%s/%s' % (pointer_, k.replace('~', '~0').replace('/', '~1')))
-
+                    pointer(v, '%s/%s' % (
+                        pointer_, k.replace('~', '~0').replace('/', '~1'))
+                    )
         elif isinstance(model, abc.model.Object):
-
             for pn, property in read(model).properties.items():
-
                 k = property.name or pn
                 v = getattr(model, pn)
-
                 if isinstance(v, abc.model.Model):
-                    pointer(v, '%s/%s' % (pointer_, k.replace('~', '~0').replace('/', '~1')))
-
+                    pointer(
+                        v,
+                        '%s/%s' % (
+                            pointer_,
+                            k.replace('~', '~0').replace('/', '~1')
+                        )
+                    )
         elif isinstance(model, abc.model.Array):
-
             for i in range(len(model)):
-
                 v = model[i]
-
                 if isinstance(v, abc.model.Model):
-                    pointer(v, '%s[%s]' % (pointer_, str(i)))
-
+                    pointer(v, '%s/%s' % (pointer_, str(i)))
     return model._pointer
 
 

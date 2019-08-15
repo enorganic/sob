@@ -212,8 +212,8 @@ def writable(
     elif isinstance(model, abc.model.Model):
         if hooks is None:
             new_hooks = deepcopy(writable(type(model)))
-    if new_hooks:
-        setattr(model, '_hooks', hooks)
+    if new_hooks is not None:
+        setattr(model, '_hooks', new_hooks)
     else:
         new_hooks = hooks
     return new_hooks
