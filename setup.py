@@ -2,10 +2,10 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.30",
+    version="0.1.32",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python class'
-        'instances and vice versa'
+        ' instances and vice versa'
     ),
     url='https://github.com/davebelais/sob.git',
     author='David Belais',
@@ -13,7 +13,6 @@ setup(
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
-        # 'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 2.7',

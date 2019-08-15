@@ -26,10 +26,6 @@ from .utilities import qualified_name, get_io_url, read, indent
 from . import (
     properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 )
-# (
-#     collections, Generator, BACKWARDS_COMPATIBILITY_IMPORTS,
-#     typing, urljoin, collections_abc, include_native_str
-# )
 
 compatibility.backport()
 
@@ -96,7 +92,8 @@ class Object(Model):
                 self._dict_init(_data)
             else:
                 raise TypeError(
-                    'The `_data` parameter must be a string, file-like object, or dictionary, not `%s`' %
+                    'The `_data` parameter must be a string, file-like object,'
+                    ' or dictionary, not `%s`' %
                     repr(_data)
                 )
             meta.format_(self, format_)
@@ -128,22 +125,19 @@ class Object(Model):
         """
         Initialize this object from another `Object` (copy constructor)
         """
-
         instance_meta = meta.read(other)
-
         if meta.read(self) is not instance_meta:
             meta.write(self, deepcopy(instance_meta))
-
         instance_hooks = hooks.read(other)
-
         if hooks.read(self) is not instance_hooks:
             hooks.write(self, deepcopy(instance_hooks))
-
         for property_name in instance_meta.properties.keys():
             try:
                 setattr(self, property_name, getattr(other, property_name))
             except TypeError as error:
-                label = '\n - %s.%s: ' % (qualified_name(type(self)), property_name)
+                label = '\n - %s.%s: ' % (
+                    qualified_name(type(self)), property_name
+                )
                 if error.args:
                     error.args = tuple(
                         chain(
@@ -154,7 +148,6 @@ class Object(Model):
                 else:
                     error.args = (label + serialize(other),)
                 raise error
-
         meta.url(self, meta.url(other))
         meta.pointer(self, meta.pointer(other))
         meta.xpath(self, meta.xpath(other))
@@ -217,16 +210,15 @@ class Object(Model):
         # type: (Object, str, Any) -> None
         instance_hooks = None
         unmarshalled_value = value
-
         if property_name[0] != '_':
             instance_hooks = hooks.read(self)  # type: hooks.Object
             if instance_hooks and instance_hooks.before_setattr:
-                property_name, value = instance_hooks.before_setattr(self, property_name, value)
+                property_name, value = instance_hooks.before_setattr(
+                    self, property_name, value
+                )
             unmarshalled_value = self._unmarshal_value(property_name, value)
-
         if instance_hooks and instance_hooks.after_setattr:
             instance_hooks.after_setattr(self, property_name, value)
-
         super().__setattr__(property_name, unmarshalled_value)
 
     def _get_key_property_name(self, key):
@@ -238,7 +230,9 @@ class Object(Model):
             property_name = key
         else:
             property_name = None
-            for potential_property_name, property in instance_meta.properties.items():
+            for potential_property_name, property in (
+                instance_meta.properties.items()
+            ):
                 if key == property.name:
                     property_name = potential_property_name
                     break
@@ -336,25 +330,23 @@ class Object(Model):
 
     def __deepcopy__(self, memo):
         # type: (Optional[dict]) -> Object
-
         # Perform a regular copy operation
         new_instance = self.__copy__()
-
         # Retrieve the metadata
         meta_ = meta.read(self)
-
         # If there is metadata--copy it recursively
         if meta_ is not None:
             for property_name in meta_.properties.keys():
                 self._deepcopy_property(property_name, new_instance, memo)
-
         return new_instance
 
     def _marshal(self):
         # type: (...) -> collections.OrderedDict
         object_ = self
         instance_hooks = hooks.read(object_)
-        if (instance_hooks is not None) and (instance_hooks.before_marshal is not None):
+        if (instance_hooks is not None) and (
+            instance_hooks.before_marshal is not None
+        ):
             object_ = instance_hooks.before_marshal(object_)
         data = collections.OrderedDict()
         instance_meta = meta.read(object_)
@@ -363,7 +355,9 @@ class Object(Model):
             if value is not None:
                 key = property.name or property_name
                 data[key] = marshal_property_value(property, value)
-        if (instance_hooks is not None) and (instance_hooks.after_marshal is not None):
+        if (instance_hooks is not None) and (
+            instance_hooks.after_marshal is not None
+        ):
             data = instance_hooks.after_marshal(data)
         return data
 
@@ -924,32 +918,29 @@ class Dictionary(collections.OrderedDict, Model):
 
     def _marshal(self):
         """
-        This method marshals an instance of `Dictionary` as built-in type `OrderedDict` which can be serialized into
+        This method marshals an instance of `Dictionary` as built-in type
+        `OrderedDict` which can be serialized into
         JSON/YAML.
         """
-
         # This variable is needed because before-marshal hooks are permitted to return altered *copies* of `self`, so
         # prior to marshalling--this variable may no longer point to `self`
         data = self  # type: Union[Dictionary, collections.OrderedDict]
-
         # Check for hooks
         instance_hooks = hooks.read(data)
-
         # Execute before-marshal hooks, if applicable
-        if (instance_hooks is not None) and (instance_hooks.before_marshal is not None):
+        if (instance_hooks is not None) and (
+            instance_hooks.before_marshal is not None
+        ):
             data = instance_hooks.before_marshal(data)
-
         # Get the metadata, if any has been assigned
         instance_meta = meta.read(data)  # type: Optional[meta.Dictionary]
-
         # Check to see if value types are defined in the metadata
         if instance_meta is None:
             value_types = None
         else:
             value_types = instance_meta.value_types
-
         # Recursively convert the data to generic, serializable, data types
-        unmarshalled_data = collections.OrderedDict(
+        marshalled_data = collections.OrderedDict(
             [
                 (
                     k,
@@ -957,12 +948,14 @@ class Dictionary(collections.OrderedDict, Model):
                 ) for k, v in data.items()
             ]
         )  # type: collections.OrderedDict
-
         # Execute after-marshal hooks, if applicable
-        if (instance_hooks is not None) and (instance_hooks.after_marshal is not None):
-            unmarshalled_data = instance_hooks.after_marshal(unmarshalled_data)
-
-        return unmarshalled_data
+        if (instance_hooks is not None) and (
+            instance_hooks.after_marshal is not None
+        ):
+            marshalled_data = instance_hooks.after_marshal(
+                marshalled_data
+            )
+        return marshalled_data
 
     def _validate(self, raise_errors=True):
         # type: (Callable) -> None
@@ -1291,31 +1284,30 @@ def marshal(
     # type: (...) -> Any
 
     """
-    Recursively converts instances of `sob.abc.model.Model` into JSON/YAML serializable objects.
+    Recursively converts instances of `sob.abc.model.Model` into JSON/YAML
+    serializable objects.
     """
-
-    if hasattr(data, '_marshal'):
-        return data._marshal()  # noqa (this is *our* protected member, so linters can piss off)
-
-    # Don't do anything with `None`--this just means an attributes is not used for this instance (and explicit
-    # `null` would be passed as `.properties.NULL`
+    try:
+        return getattr(data, '_marshal')()
+    except AttributeError:
+        pass
+    # Don't do anything with `None`--this just means an attributes is not used
+    # for this instance (and explicit `null` would be passed as
+    # `.properties.NULL`
     if data is None:
         return data
-
-    # If `types` is a callable function, it should return an iterator of types and/or property definitions
+    # If `types` is a callable function, it should return an iterator of types
+    # and/or property definitions
     if callable(types):
         types = types(data)
-
-    # If data types have been provided, validate the un-marshalled data by attempting to initialize the provided type(s)
-    # with `data`
+    # If data types have been provided, validate the un-marshalled data by
+    # attempting to initialize the provided type(s) with `data`
     if types is not None:
-
-        # For compatibility - include `native_str` in `types` when it is not the same as `str`, and `str` is one of the
-        # `types`.
+        # For compatibility - include `native_str` in `types` when it is not
+        # the same as `str`, and `str` is one of the `types`.
         types = include_native_str(types)
-
-        # For each potential type, attempt to marshal the data, and accept the first result which does not throw an
-        # error
+        # For each potential type, attempt to marshal the data, and accept the
+        # first result which does not throw an error
         matched = False
         for type_ in types:
             if isinstance(type_, properties.Property):
@@ -1328,40 +1320,32 @@ def marshal(
             elif isinstance(type_, type) and isinstance(data, type_):
                 matched = True
                 break
-
-        # If no matches are found, raise a `TypeError` with sufficient information about the data and `types` to debug
+        # If no matches are found, raise a `TypeError` with sufficient
+        # information about the data and `types` to debug
         if not matched:
             raise TypeError(
-                '%s cannot be interpreted as any of the designated types: %s' % (
+                '%s cannot be interpreted as any of the designated types: %s' %
+                (
                     repr(data),
                     repr(types)
                 )
             )
-
     if value_types is not None:
         for k, v in data.items():
             data[k] = marshal(v, types=value_types)
-
     if item_types is not None:
-
         for i in range(len(data)):
             data[i] = marshal(data[i], types=item_types)
-
     if isinstance(data, Decimal):
         return float(data)
-
     if isinstance(data, (date, datetime)):
         return data.isoformat()
-
     if isinstance(data, native_str):
         return data
-
     if isinstance(data, (bytes, bytearray)):
         return str(b64encode(data), 'ascii')
-
     if hasattr(data, '__bytes__'):
         return str(b64encode(bytes(data)), 'ascii')
-
     return data
 
 
@@ -1688,10 +1672,10 @@ def serialize(data, format_='json'):
     instance_hooks = None
 
     if isinstance(data, abc.model.Model):
-
         instance_hooks = hooks.read(data)
-
-        if (instance_hooks is not None) and (instance_hooks.before_serialize is not None):
+        if (instance_hooks is not None) and (
+            instance_hooks.before_serialize is not None
+        ):
             data = instance_hooks.before_serialize(data)
 
     if format_ not in ('json', 'yaml'):
@@ -1739,7 +1723,8 @@ def deserialize(data, format_):
     """
     if format_ not in ('json', 'yaml'):
         raise NotImplementedError(
-            'Deserialization of data in the format %s is not currently supported.' % repr(format_)
+            'Deserialization of data in the format %s is not currently '
+            'supported.' % repr(format_)
         )
     if not isinstance(data, (str, bytes)):
         data = read(data)

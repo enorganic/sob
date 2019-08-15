@@ -26,8 +26,6 @@ class Hooks(object):
         after_unmarshal=None,  # Optional[Callable]
         before_serialize=None,  # Optional[Callable]
         after_serialize=None,  # Optional[Callable]
-        before_deserialize=None,  # Optional[Callable]
-        after_deserialize=None,  # Optional[Callable]
         before_validate=None,  # Optional[Callable]
         after_validate=None,  # Optional[Callable]
     ):
@@ -37,8 +35,6 @@ class Hooks(object):
         self.after_unmarshal = after_unmarshal
         self.before_serialize = before_serialize
         self.after_serialize = after_serialize
-        self.before_deserialize = before_deserialize
-        self.after_deserialize = after_deserialize
         self.before_validate = before_validate
         self.after_validate = after_validate
 
@@ -82,8 +78,6 @@ class Object(Hooks):
             after_unmarshal=after_unmarshal,
             before_serialize=before_serialize,
             after_serialize=after_serialize,
-            before_deserialize=before_deserialize,
-            after_deserialize=after_deserialize,
             before_validate=before_validate,
             after_validate=after_validate
         )
@@ -119,8 +113,6 @@ class Array(Hooks):
             after_unmarshal=after_unmarshal,
             before_serialize=before_serialize,
             after_serialize=after_serialize,
-            before_deserialize=before_deserialize,
-            after_deserialize=after_deserialize,
             before_validate=before_validate,
             after_validate=after_validate
         )
@@ -154,8 +146,6 @@ class Dictionary(Hooks):
             after_unmarshal=after_unmarshal,
             before_serialize=before_serialize,
             after_serialize=after_serialize,
-            before_deserialize=before_deserialize,
-            after_deserialize=after_deserialize,
             before_validate=before_validate,
             after_validate=after_validate
         )
