@@ -80,12 +80,6 @@ def property_name(string):
         r'\1_\2\3',
         name
     )
-    # Replace any two or more adjacent underscores with a single underscore
-    name = re.sub(
-        r'__+',
-        '_',
-        name
-    )
     # Replace any series of one or more non-alphanumeric characters remaining
     # with a single underscore
     name = re.sub(
@@ -106,6 +100,12 @@ def property_name(string):
             r'\1_\2',
             name
         )
+    # Replace any two or more adjacent underscores with a single underscore
+    name = re.sub(
+        r'__+',
+        '_',
+        name
+    )
     # Append an underscore to the keyword until it does not conflict with any
     # python keywords or built-ins
     while iskeyword(name) or (name in BUILTINS_DICT):
