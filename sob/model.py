@@ -49,6 +49,8 @@ include_native_str = compatibility.include_native_str
 _UNMARSHALLABLE_TYPES = tuple(
     set(properties.types.TYPES) | {properties.types.NoneType}
 )
+_LINE_LENGTH = 79  # type: int
+
 # region Model Classes
 
 
@@ -1133,6 +1135,35 @@ def _typing_from_property(property_):
     return type_hint
 
 
+def _get_class_declaration(
+    name,  # type: str
+    superclass  # type: type
+):
+    # type: (...) -> str
+    """
+    Construct a class declaration
+    """
+    qualified_superclass_name = qualified_name(superclass)  # type: str
+    # If the class declaration line is longer than 79 characters--break it
+    # up (attempt to conform to PEP8)
+    class_declaration = (
+        'class %s(%s):' % (
+            name,
+            qualified_superclass_name
+        )
+        if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH else
+        'class %s(\n    %s\n):' % (
+            name,
+            qualified_superclass_name
+        )
+    )  # type: str
+    # If the line is still too long for PEP8--add a comment to prevent
+    # linters from getting hung up
+    if len(class_declaration) > _LINE_LENGTH:
+        class_declaration += '  # noqa'
+    return class_declaration
+
+
 def from_meta(name, metadata, module=None, docstring=None):
     # type: (str, meta.Meta, Optional[str], Optional[str]) -> type
     """
@@ -1169,7 +1200,7 @@ def from_meta(name, metadata, module=None, docstring=None):
         wrapped_lines = []
         for line in lines:
             line = '    ' + line[indentation_length:]
-            if len(line) > 120:
+            if len(line) > _LINE_LENGTH:
                 indent = re.match(r'^[ ]*', line).group()
                 indent_length = len(indent)
                 words = re.split(
@@ -1178,7 +1209,9 @@ def from_meta(name, metadata, module=None, docstring=None):
                 )
                 wrapped_line = ''
                 for word in words:
-                    if (len(wrapped_line) + len(word) + indent_length) <= 120:
+                    if (
+                        len(wrapped_line) + len(word) + indent_length
+                    ) <= _LINE_LENGTH:
                         wrapped_line += word
                     else:
                         wrapped_lines.append(indent + wrapped_line)
@@ -1194,21 +1227,21 @@ def from_meta(name, metadata, module=None, docstring=None):
         )
     if isinstance(metadata, meta.Dictionary):
         out = [
-            'class %s(%s):' % (name, qualified_name(Dictionary))
+            _get_class_declaration(name, Dictionary)
         ]
         if docstring is not None:
             out.append(docstring)
         out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Array):
         out = [
-            'class %s(%s):' % (name, qualified_name(Array))
+            _get_class_declaration(name, Array)
         ]
         if docstring is not None:
             out.append(docstring)
         out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Object):
         out = [
-            'class %s(%s):' % (name, qualified_name(Object))
+            _get_class_declaration(name, Object)
         ]
         if docstring is not None:
             out.append(docstring)
@@ -1219,13 +1252,31 @@ def from_meta(name, metadata, module=None, docstring=None):
             '        _data=None,  # type: Optional[Union[str, bytes, dict, '
             'Sequence, IO]]'
         ]
-        for property_name_, property_ in metadata.properties.items():
-            out.append(
-                '        %s=None,  # type: Optional[%s]' % (
+        metadata_properties_items = tuple(
+            metadata.properties.items()
+        )  # type: Tuple[Tuple[str, abc.properties.Property], ...]
+        metadata_properties_items_length = len(
+            metadata_properties_items
+        )  # type: int
+        for property_index, name_and_property in enumerate(
+            metadata_properties_items
+        ):
+            property_name_, property_ = name_and_property
+            parameter_declaration = (
+                '        %s=None%s  # type: Optional[%s]' % (
                     property_name_,
+                    (
+                        ''
+                        if (
+                            property_index + 1 ==
+                            metadata_properties_items_length
+                        ) else
+                        ','
+                    ),
                     _typing_from_property(property_)
                 )
-            )
+            )  # type: str
+            out.append(parameter_declaration)
         out.append(
             '    ):'
         )
