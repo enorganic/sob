@@ -1146,21 +1146,23 @@ def _get_class_declaration(
     qualified_superclass_name = qualified_name(superclass)  # type: str
     # If the class declaration line is longer than 79 characters--break it
     # up (attempt to conform to PEP8)
-    class_declaration = (
-        'class %s(%s):' % (
+    if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
+        class_declaration = 'class %s(%s):' % (
             name,
             qualified_superclass_name
-        )
-        if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH else
-        'class %s(\n    %s\n):' % (
+        )  # type: str
+    else:
+        class_declaration = 'class %s(%s\n    %s\n):' % (
             name,
+            # If the first line is still too long for PEP8--add a comment to
+            # prevent linters from getting hung up
+            (
+                '  # noqa'
+                if name + 7 > _LINE_LENGTH else
+                ''
+            ),
             qualified_superclass_name
-        )
-    )  # type: str
-    # If the line is still too long for PEP8--add a comment to prevent
-    # linters from getting hung up
-    if len(class_declaration) > _LINE_LENGTH:
-        class_declaration += '  # noqa'
+        )  # type: str
     return class_declaration
 
 
@@ -1294,9 +1296,9 @@ def from_meta(name, metadata, module=None, docstring=None):
         BACKWARDS_COMPATIBILITY_IMPORTS,
         'import %s' % _parent_module_name,
         'try:',
-        '    from typing import Union, Dict, Any, Sequence, IO',
+        '    from typing import Union, Dict, Any, Sequence, IO, Optional',
         'except ImportError:',
-        '    Union = Dict = Any = Sequence = IO = None',
+        '    Union = Dict = Any = Sequence = IO = Optional = None',
     ])
     source = '%s\n\n\n%s' % (imports, class_definition)
     exec(source, namespace)
