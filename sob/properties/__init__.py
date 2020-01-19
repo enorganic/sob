@@ -54,6 +54,27 @@ else:
     ]
 
 
+def _repr_list_or_tuple(list_or_tuple):
+    # type: (Union[list, tuple]) -> str
+    """
+    Return a multi-line string representation of a `list` or `tuple`
+    """
+    lines = []  # type: List[str]
+    for item in list_or_tuple:
+        if isinstance(item, (list, tuple)):
+            repr_item = _repr_list_or_tuple(item)  # type: str
+        else:
+            repr_item = repr(item)  # type: str
+        for line in repr_item.split('\n'):
+            lines.append(
+                '    ' + line
+            )
+    if isinstance(list_or_tuple, list):
+        return '[\n%s\n]' % ',\n'.join(lines)
+    else:
+        return '(\n%s\n)' % ',\n'.join(lines)
+
+
 class Property(object):
     """
     This is the base class for defining a property.
@@ -181,6 +202,8 @@ class Property(object):
             if isinstance(value, type) else
             "'%s'" % str(value)
             if isinstance(value, meta.Version) else
+            _repr_list_or_tuple(value)
+            if type(value) in (list, tuple) else
             repr(value)
         )
         return '    %s=%s,' % (argument, indent(value_representation))

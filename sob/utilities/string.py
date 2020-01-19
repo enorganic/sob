@@ -349,3 +349,91 @@ def url_relative_to(absolute_url, base_url):
             base_url = url_directory_and_file_name(base_url[:-1])[0]
         relative_url += absolute_url[len(base_url):]
     return relative_url
+
+
+_LINE_LENGTH = 79  # type: int
+
+
+def split_long_comment_line(
+    line,
+    max_line_length=_LINE_LENGTH,
+    prefix='#'
+):
+    # type: (str, int, str) -> str
+    """
+    Split a comment (or docstring) line
+
+    >>> print(split_long_comment_line(
+    ...     '    Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
+    ...     'Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.'
+    ... ))
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
+        odio a urna elementum, eu tempor nisl efficitur.
+    """
+    if len(line) > max_line_length:
+        indent_ = re.match(
+            (
+                r'^[ ]*(?:%s[ ]*)?' % prefix
+                if prefix else
+                r'^[ ]*'
+            ),
+            line
+        ).group()  # type: str
+        indent_length = len(indent_)
+        words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
+        lines = []  # type: List[str]
+        wrapped_line = ''  # type: str
+        for word in words:
+            if (
+                len(wrapped_line) + len(word) + indent_length
+            ) <= max_line_length:
+                wrapped_line += word
+            else:
+                lines.append(indent_ + wrapped_line.rstrip())
+                wrapped_line = '' if not word.strip() else word
+        if wrapped_line:
+            lines.append(indent_ + wrapped_line.rstrip())
+        wrapped_line = '\n'.join(lines)
+    else:
+        wrapped_line = line  # type: str
+    return wrapped_line
+
+
+def split_long_docstring_lines(docstring, max_line_length=_LINE_LENGTH):
+    # type: (str, int) -> str
+    """
+    Split long docstring lines
+
+    >>> print(split_long_docstring_lines(
+    ...     '    Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
+    ...     'Nullam faucibu odio a urna elementum, eu tempor nisl efficitu'
+    ... ))
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
+        odio a urna elementum, eu tempor nisl efficitu
+    """
+    indent_ = '    '  # type: str
+    if '\t' in docstring:
+        docstring = docstring.replace('\t', indent_)
+    lines = docstring.split('\n')
+    indentation_length = float('inf')
+    for line in lines:
+        match = re.match(r'^[ ]+', line)
+        if match:
+            indentation_length = min(indentation_length, len(match.group()))
+        else:
+            indentation_length = 0
+            break
+    wrapped_lines = []
+    for line in lines:
+        wrapped_lines.append(
+            split_long_comment_line(
+                indent_ + line[indentation_length:],
+                max_line_length,
+                prefix=''
+            )
+        )
+    return '\n'.join(wrapped_lines)
+    #     [indent_ + '"""'] +
+    #     wrapped_lines +
+    #     [indent_ + '"""']
+    # )

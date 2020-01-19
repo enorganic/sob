@@ -149,7 +149,7 @@ BACKWARDS_COMPATIBILITY_IMPORTS = (
     ')\n'    
     'from future import standard_library\n'
     'standard_library.install_aliases()\n'
-    'from future.builtins import *\n'
+    'from future.builtins import *  # noqa\n'
 )
 
 

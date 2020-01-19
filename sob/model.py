@@ -23,6 +23,7 @@ from itertools import chain
 import yaml
 # Relative Imports
 from .utilities import qualified_name, get_io_url, read, indent
+from .utilities.string import split_long_docstring_lines
 from . import (
     properties, meta, errors, hooks, abc, __name__ as _parent_module_name
 )
@@ -39,6 +40,7 @@ Mapping = compatibility.typing.Mapping
 Callable = compatibility.typing.Callable
 Tuple = compatibility.typing.Tuple
 Optional = compatibility.typing.Optional
+List = compatibility.typing.List
 Generator = compatibility.Generator
 BACKWARDS_COMPATIBILITY_IMPORTS = compatibility.BACKWARDS_COMPATIBILITY_IMPORTS
 urljoin = compatibility.urljoin
@@ -1158,7 +1160,7 @@ def _get_class_declaration(
             # prevent linters from getting hung up
             (
                 '  # noqa'
-                if name + 7 > _LINE_LENGTH else
+                if len(name) + 7 > _LINE_LENGTH else
                 ''
             ),
             qualified_superclass_name
@@ -1184,69 +1186,33 @@ def from_meta(name, metadata, module=None, docstring=None):
 
         - docstring (str): A docstring to associate with the class definition.
     """
+    repr_docstring = None  # type: Optional[str]
     if docstring is not None:
-        if '\t' in docstring:
-            docstring = docstring.replace('\t', '    ')
-        lines = docstring.split('\n')
-        indentation_length = float('inf')
-        for line in lines:
-            match = re.match(r'^[ ]+', line)
-            if match:
-                indentation_length = min(
-                    indentation_length,
-                    len(match.group())
-                )
-            else:
-                indentation_length = 0
-                break
-        wrapped_lines = []
-        for line in lines:
-            line = '    ' + line[indentation_length:]
-            if len(line) > _LINE_LENGTH:
-                indent = re.match(r'^[ ]*', line).group()
-                indent_length = len(indent)
-                words = re.split(
-                    r'([\w]*[\w,/"\'.;\-?`])',
-                    line[indent_length:]
-                )
-                wrapped_line = ''
-                for word in words:
-                    if (
-                        len(wrapped_line) + len(word) + indent_length
-                    ) <= _LINE_LENGTH:
-                        wrapped_line += word
-                    else:
-                        wrapped_lines.append(indent + wrapped_line)
-                        wrapped_line = '' if not word.strip() else word
-                if wrapped_line:
-                    wrapped_lines.append(indent + wrapped_line)
-            else:
-                wrapped_lines.append(line)
-        docstring = '\n'.join(
-            ['    """'] +
-            wrapped_lines +
-            ['    """']
-        )
+        repr_docstring = (
+            '    """\n'
+            '%s\n'
+            '    """'
+        ) % split_long_docstring_lines(docstring)
     if isinstance(metadata, meta.Dictionary):
         out = [
             _get_class_declaration(name, Dictionary)
         ]
-        if docstring is not None:
-            out.append(docstring)
+        if repr_docstring is not None:
+            out.append(repr_docstring)
         out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Array):
         out = [
             _get_class_declaration(name, Array)
         ]
-        if docstring is not None:
-            out.append(docstring)
+        if repr_docstring is not None:
+            out.append(repr_docstring)
         out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Object):
         out = [
             _get_class_declaration(name, Object)
         ]
-        if docstring is not None:
-            out.append(docstring)
+        if repr_docstring is not None:
+            out.append(repr_docstring)
         out += [
             '',
             '    def __init__(',
@@ -1264,18 +1230,27 @@ def from_meta(name, metadata, module=None, docstring=None):
             metadata_properties_items
         ):
             property_name_, property_ = name_and_property
+            repr_comma = (
+                ''
+                if (
+                    property_index + 1 ==
+                    metadata_properties_items_length
+                ) else
+                ','
+            )  # type: str
+            repr_property_typing = _typing_from_property(property_)
             parameter_declaration = (
-                '        %s=None%s  # type: Optional[%s]' % (
+                '        %s=None%s  # type: Optional[%s]%s' % (
                     property_name_,
-                    (
-                        ''
-                        if (
-                            property_index + 1 ==
-                            metadata_properties_items_length
-                        ) else
-                        ','
-                    ),
-                    _typing_from_property(property_)
+                    repr_comma,
+                    repr_property_typing,
+                    '  # noqa' if (
+                        33 +
+                        len(property_name_) +
+                        len(repr_comma) +
+                        len(repr_property_typing)
+                    ) > _LINE_LENGTH else
+                    ''
                 )
             )  # type: str
             out.append(parameter_declaration)
@@ -1292,9 +1267,9 @@ def from_meta(name, metadata, module=None, docstring=None):
     class_definition = '\n'.join(out)
     namespace = dict(__name__='from_meta_%s' % name)
     imports = '\n'.join([
-        '# pylint: disable=wrong-import-position',
         BACKWARDS_COMPATIBILITY_IMPORTS,
-        'import %s' % _parent_module_name,
+        'import %s  # noqa' % _parent_module_name,
+        'import numbers  # noqa',
         'try:',
         '    from typing import Union, Dict, Any, Sequence, IO, Optional',
         'except ImportError:',
