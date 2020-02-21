@@ -2058,7 +2058,8 @@ class _MarshalProperty(object):
                     value = str(value)
                 else:
                     raise TypeError(
-                        'The date2str function should return a `str`, not a `%s`: %s' % (
+                        'The date2str function should return a `str`, not a '
+                        '`%s`: %s' % (
                             type(value).__name__,
                             repr(value)
                         )
@@ -2121,3 +2122,63 @@ def marshal_property_value(property, value):
     Marshal a property value
     """
     return _MarshalProperty(property)(value)
+
+
+def _replace_object_nulls(
+    object_instance,  # type: sob.abc.model.Object,
+    replacement_value=None  # type: Any
+):
+
+    for property_name, value in sob.utilities.inspect.properties_values(
+        object_instance
+    ):  # type: Tuple[str, Any]
+        if value is sob.properties.NULL:
+            setattr(object_instance, property_name, replacement_value)
+        elif isinstance(value, Model):
+            replace_nulls(value, replacement_value)
+
+
+def _replace_array_nulls(
+    array_instance,  # type: sob.abc.model.Array
+    replacement_value=None  # type: Any
+):
+    # type: (...) -> None
+    for index, value in enumerate(array_instance):
+        if value is properties.NULL:
+            array_instance[index] = replacement_value
+        elif isinstance(value, Model):
+            replace_nulls(value, replacement_value)
+
+
+def _replace_dictionary_nulls(
+    dictionary_instance,  # type: abc.model.Dictionary
+    replacement_value=None  # type: Any
+):
+    # type: (...) -> None
+    for key, value in dictionary_instance.items():
+        if value is properties.NULL:
+            dictionary_instance[key] = replacement_value
+        elif isinstance(replacement_value, Model):
+            replace_nulls(value, replacement_value)
+
+
+def replace_nulls(
+    model_instance,  # type: abc.model.Model
+    replacement_value=None  # type: Any
+):
+    # type: (...) -> None
+    """
+    This function replaces all instances of `sob.properties.NULL`.
+
+    Parameters:
+
+    - model_instance (sob.model.Model)
+    - replacement_value (typing.Any):
+      The value with which nulls will be replaced. This defaults to `None`.
+    """
+    if isinstance(model_instance, Object):
+        _replace_object_nulls(model_instance, replacement_value)
+    elif isinstance(model_instance, Array):
+        _replace_array_nulls(model_instance, replacement_value)
+    elif isinstance(model_instance, Dictionary):
+        _replace_dictionary_nulls(model_instance, replacement_value)
