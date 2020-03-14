@@ -25,7 +25,8 @@ import yaml
 from .utilities import qualified_name, get_io_url, read, indent
 from .utilities.string import split_long_docstring_lines
 from . import (
-    properties, meta, errors, hooks, abc, __name__ as _parent_module_name
+    properties, meta, errors, hooks, abc, __name__ as _parent_module_name,
+    utilities
 )
 
 compatibility.backport()
@@ -2128,11 +2129,10 @@ def _replace_object_nulls(
     object_instance,  # type: sob.abc.model.Object,
     replacement_value=None  # type: Any
 ):
-
-    for property_name, value in sob.utilities.inspect.properties_values(
+    for property_name, value in utilities.inspect.properties_values(
         object_instance
     ):  # type: Tuple[str, Any]
-        if value is sob.properties.NULL:
+        if value is properties.NULL:
             setattr(object_instance, property_name, replacement_value)
         elif isinstance(value, Model):
             replace_nulls(value, replacement_value)
