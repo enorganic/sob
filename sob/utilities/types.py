@@ -11,7 +11,7 @@ Any = compatibility.typing.Any
 UNDEFINED = None
 
 
-class Undefined(object):
+class Undefined:
     """
     This class is intended to indicate that a parameter has not been passed
     to a keyword argument in situations where `None` is to be used as a

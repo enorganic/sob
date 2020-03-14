@@ -1,14 +1,9 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from ..utilities import compatibility
-compatibility.backport()
 from future.utils import native_str
 import numbers
 import collections
 from copy import deepcopy
 from datetime import date, datetime
+import collections.abc
 import iso8601
 from ..utilities import (
     qualified_name, properties_values, parameters_defaults,
@@ -17,45 +12,15 @@ from ..utilities import (
 from .. import abc, meta
 from .types import Types, Null, NULL, NoneType
 
-compatibility.backport()
-
-collections_abc = compatibility.collections_abc
-Union = compatibility.typing.Union
-Optional = compatibility.typing.Optional
-Sequence = compatibility.typing.Sequence
-Mapping = compatibility.typing.Mapping
-Set = compatibility.typing.Set
-Callable = compatibility.typing.Callable
-Dict = compatibility.typing.Dict
-Any = compatibility.typing.Any
-Hashable = compatibility.typing.Hashable
-Collection = compatibility.typing.Collection
-Tuple = compatibility.typing.Tuple
-Iterable = compatibility.typing.Iterable
+from typing import (
+    Union, Optional, Sequence, Set, Callable, Dict, Any,
+    Collection, Tuple, Iterable
+)
 
 
-if Union is None:
-    _TypesOrProperties = _ItemTypes = None
-    _VersionsProperty = _VersionsParameter = None
-else:
-    _TypesOrProperties = Optional[
-        Sequence[Union[type, abc.properties.Property, abc.model.Model]]
-    ]
-    _VersionsParameter = Optional[
-        Sequence[Union[str, collections_abc.Iterable, meta.Version]]
-    ]
-    _VersionsProperty = Optional[Sequence[meta.Version]]
-    _ItemTypes = Optional[
-        Union[
-            type,
-            Callable,
-            Sequence[Union[type, abc.properties.Property]]
-        ]
-    ]
-
-
-def _repr_list_or_tuple(list_or_tuple):
-    # type: (Union[list, tuple]) -> str
+def _repr_list_or_tuple(
+    list_or_tuple: Union[list, tuple]
+) -> str:
     """
     Return a multi-line string representation of a `list` or `tuple`
     """
@@ -75,7 +40,7 @@ def _repr_list_or_tuple(list_or_tuple):
         return '(\n%s\n)' % ',\n'.join(lines)
 
 
-class Property(object):
+class Property:
     """
     This is the base class for defining a property.
 
@@ -117,35 +82,57 @@ class Property(object):
 
     def __init__(
         self,
-        types=None,  # type: Sequence[Union[type, Property]]
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Sequence[Union[str, meta.Version]]]
+        types: Sequence[Union[type, 'Property']] = None,
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Sequence[Union[str, meta.Version]]] = None
     ):
-        self._types = None  # type: Optional[Sequence[Union[type, Property]]]
+        self._types: Optional[Sequence[Union[type, Property]]] = None
         self.types = types
         self.name = name
         self.required = required
-        self._versions = None  # type: _VersionsProperty
-        self.versions = versions  # type: _VersionsParameter
+        self._versions: Optional[Sequence[meta.Version]] = None
+        self.versions: Optional[
+            Sequence[
+                Union[
+                    str,
+                    collections.abc.Iterable,
+                    meta.Version
+                ]
+            ]
+        ] = versions
 
     @property
-    def types(self):
+    def types(self) -> Optional[Sequence[Union[type, 'Property']]]:
         return self._types
 
     @types.setter
     def types(
         self,
-        types_or_properties  # type: _TypesOrProperties
-    ):
-        # type: (...) -> None
+        types_or_properties: Optional[
+            Sequence[
+                Union[
+                    type, abc.properties.Property, abc.model.Model
+                ]
+            ]
+        ]
+    ) -> None:
         if types_or_properties is not None:
             if callable(types_or_properties):
                 if native_str is not str:
                     _types_or_properties = types_or_properties
 
-                    def types_or_properties(d):
-                        # type: (_TypesOrProperties) -> Types
+                    def types_or_properties(
+                        d: Optional[
+                            Sequence[
+                                Union[
+                                    type,
+                                    abc.properties.Property,
+                                    abc.model.Model
+                                ]
+                            ]
+                        ]
+                    ) -> Types:
                         return Types(_types_or_properties(d))
 
             else:
@@ -153,20 +140,26 @@ class Property(object):
         self._types = types_or_properties
 
     @property
-    def versions(self):
-        # type: () -> _VersionsProperty
+    def versions(self) -> Optional[Sequence[meta.Version]]:
         return self._versions
 
     @versions.setter
     def versions(
         self,
-        versions  # type: _VersionsParameter
-    ):
-        # type: (...) -> None
+        versions: Optional[
+            Sequence[
+                Union[
+                    str,
+                    collections.abc.Iterable,
+                    meta.Version
+                ]
+            ]
+        ]
+    ) -> None:
         if versions is not None:
             if isinstance(versions, (str, Number, meta.Version)):
                 versions = (versions,)
-            if isinstance(versions, collections_abc.Iterable):
+            if isinstance(versions, collections.abc.Iterable):
                 versions = tuple(
                     (v if isinstance(v, meta.Version) else meta.Version(v))
                     for v in versions
@@ -188,8 +181,11 @@ class Property(object):
         self._versions = versions
 
     @staticmethod
-    def _repr_argument(argument, value, defaults):
-        # type: (str, Any, Dict[str, Any]) -> Optional[str]
+    def _repr_argument(
+        argument: str,
+        value: Any,
+        defaults: Dict[str, Any]
+    ) -> Optional[str]:
         if (
             (argument not in defaults) or
             defaults[argument] == value or
@@ -224,23 +220,16 @@ class Property(object):
         else:
             return ''.join(lines)
 
-    def __copy__(self):
-
+    def __copy__(self) -> 'Property':
         new_instance = self.__class__()
-
         for a in dir(self):
-
             if a[0] != '_' and a != 'data':
-
                 v = getattr(self, a)
-
                 if not callable(v):
                     setattr(new_instance, a, v)
-
         return new_instance
 
-    def __deepcopy__(self, memo):
-        # type: (dict) -> Property
+    def __deepcopy__(self, memo: dict) -> 'Property':
         new_instance = self.__class__()
         for a, v in properties_values(self):
             setattr(new_instance, a, deepcopy(v, memo))
@@ -257,10 +246,10 @@ class String(Property):
 
     def __init__(
         self,
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Collection]
-    ):
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Collection] = None
+    ) -> None:
         super().__init__(
             types=(str,),
             name=name,
@@ -290,7 +279,7 @@ class Date(Property):
 
     def __init__(
         self,
-        name=None,  # type: Optional[str]
+        name: Optional[str] = None, 
         required=False,  # type: Union[bool, collections.Callable]
         versions=None,  # type: Optional[Collection]
         date2str=date.isoformat,  # type: Optional[Callable]
@@ -407,7 +396,7 @@ class Enumerated(Property):
             callable(values) or
             isinstance(
                 values,
-                (collections_abc.Sequence, collections_abc.Set)
+                (collections.abc.Sequence, collections.abc.Set)
             )
         ):
             raise TypeError(
@@ -502,7 +491,13 @@ class Array(Property):
 
     def __init__(
         self,
-        item_types=None,  # type: _ItemTypes
+        item_types: Optional[
+            Union[
+                type,
+                Callable,
+                Sequence[Union[type, abc.properties.Property]]
+            ]
+        ] = None,
         name=None,  # type: Optional[str]
         required=False,  # type: Union[bool, collections.Callable]
         versions=None,  # type: Optional[Collection]
@@ -522,15 +517,24 @@ class Array(Property):
         return self._item_types
 
     @item_types.setter
-    def item_types(self, item_types):
-        # type: (_ItemTypes) -> None
+    def item_types(
+        self,
+        item_types: Optional[
+            Union[
+                type,
+                Callable,
+                Sequence[Union[type, abc.properties.Property]]
+            ]
+        ]
+    ) -> None:
         if item_types is not None:
             if callable(item_types):
                 if native_str is not str:
                     _item_types = item_types
 
-                    def item_types(d):
-                        # type: (Sequence[Union[type, Property, abc.model.Object]]) -> Types
+                    def item_types(
+                        d: Sequence[Union[type, Property, abc.model.Object]]
+                    ) -> Types:
                         return Types(_item_types(d))
             else:
                 item_types = Types(item_types)

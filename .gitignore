@@ -3,9 +3,9 @@
 .*
 .*/**
 **/.*/**
-!*.gitignore
 build/**
 dist/**
+venv/**
 **.pyc
 **.pyo
 **.egg
@@ -13,3 +13,5 @@ dist/**
 **/.DS_Store
 *.egg-info/**
 **/*.egg-info
+!*.gitignore
+!.tox

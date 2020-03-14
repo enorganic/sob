@@ -57,7 +57,7 @@ _LINE_LENGTH = 79  # type: int
 # region Model Classes
 
 
-class Model(object):
+class Model:
 
     pass
 
@@ -1291,7 +1291,7 @@ def from_meta(name, metadata, module=None, docstring=None):
     return result
 
 
-class _Marshal(object):
+class _Marshal:
 
     def __init__(
         self,
@@ -1378,7 +1378,7 @@ def marshal(
     return data
 
 
-class _Unmarshal(object):
+class _Unmarshal:
     """
     This class should be used exclusively by wrapper function `unmarshal`.
     """
@@ -1894,7 +1894,7 @@ def validate(
     return error_messages
 
 
-class _UnmarshalProperty(object):
+class _UnmarshalProperty:
     """
     This is exclusively for use by wrapper function `unmarshal_property_value`.
     """
@@ -2038,7 +2038,7 @@ def unmarshal_property_value(property, value):
     return _UnmarshalProperty(property)(value)
 
 
-class _MarshalProperty(object):
+class _MarshalProperty:
     """
     This is exclusively for use by wrapper function `marshal_property_value`.
     """

@@ -668,7 +668,7 @@ def test_utilities():
         'test_sob.test_utilities'
     )
 
-    class TestCallingFunctionQualifiedNameA(object):
+    class TestCallingFunctionQualifiedNameA:
 
         __module__ = 'sob.test'
 
@@ -685,7 +685,7 @@ def test_utilities():
 
     TestCallingFunctionQualifiedNameA()
 
-    class TestCallingFunctionQualifiedNameB(object):
+    class TestCallingFunctionQualifiedNameB:
 
         def __init__(self):
             if hasattr(type(self), '__qualname__'):
@@ -704,9 +704,9 @@ def test_utilities():
 
     TestCallingFunctionQualifiedNameB()
 
-    class TestCallingFunctionQualifiedNameC(object):
+    class TestCallingFunctionQualifiedNameC:
 
-        class TestCallingFunctionQualifiedNameD(object):
+        class TestCallingFunctionQualifiedNameD:
 
             def __init__(self):
                 if hasattr(type(self), '__qualname__'):
