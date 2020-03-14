@@ -242,7 +242,7 @@ def parameters_defaults(function):
     default values, or `UNDEFINED` in the case of
     positional arguments.
 
-    >>> class X(object):
+    >>> class X:
     ...
     ...    def __init__(self, a, b, c, d=1, e=2, f=3):
     ...        pass

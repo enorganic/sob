@@ -5,10 +5,6 @@ parameter/property for `urllib.request.Request`, and to support casting
 requests as `str` or `bytes` (typically for debugging purposes and/or to aid in
 producing non-language-specific API documentation).
 """
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
 from .utilities import compatibility
 from future.utils import native_str
 import random
@@ -27,7 +23,7 @@ Iterable = compatibility.typing.Iterable
 collections_abc = compatibility.collections_abc
 
 
-class Headers(object):
+class Headers:
     """
     A dictionary of headers for a `Request`, `Part`, or `MultipartRequest`
     instance.
@@ -172,7 +168,7 @@ class Headers(object):
         return self.copy()
 
 
-class Data(object):
+class Data:
     """
     One of a multipart request's parts.
     """

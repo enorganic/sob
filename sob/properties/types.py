@@ -52,7 +52,7 @@ class DefinitionExistsError(Exception):
     pass
 
 
-class Null(object):  # noqa - inheriting from `object` needed for python 2x
+class Null:  # noqa - inheriting from `object` needed for python 2x
     """
     Instances of this class represent an *explicit* null value, rather than the
     absence of a property/attribute/element, as would be inferred from a value

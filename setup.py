@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.1.47",
+    version="0.2.0",
     description=(
         'A framework for serializing/deserializing JSON/YAML into a python '
         'class instances and vice versa'
@@ -11,20 +11,22 @@ setup(
     author='David Belais',
     author_email='david@belais.me',
     license='MIT',
-    python_requires='>=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4',
+    python_requires='>=3.5, <4',
     keywords='rest api serialization serialize',
     packages=find_packages(),
     install_requires=[
         "future>=0.18.2",
-        "pyyaml>=5.1.1",
+        "pyyaml>=5.3",
         "iso8601>=0.1.12"
     ],
     extras_require={
         "test": [
-            "setuptools_setup_versions>=0.0.29"
+            "setuptools_setup_versions>=0.0.30",
+            "readme-md-docstrings>=0.0.8"
         ],
         "dev": [
-            "setuptools_setup_versions>=0.0.29"
+            "setuptools_setup_versions>=0.0.30",
+            "readme-md-docstrings>=0.0.8"
         ]
     }
 )

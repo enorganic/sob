@@ -28,9 +28,9 @@ def test_types():
 
 if __name__ == '__main__':
     test_strings()
-    # test_compatibility()
-    # test_inspect()
-    # test_io()
-    # test_strings()
-    # test_types()
+    test_compatibility()
+    test_inspect()
+    test_io()
+    test_strings()
+    test_types()
 

@@ -36,7 +36,7 @@ _DOT_SYNTAX_RE = re.compile(
 )
 
 
-class Meta(object):
+class Meta:
 
     def __copy__(self):
         new_instance = self.__class__()

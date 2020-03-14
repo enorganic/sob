@@ -2,26 +2,24 @@
 This test suite aims to tot
 """
 # region Backwards Compatibility
-from __future__ import absolute_import, division, generators, nested_scopes, print_function, unicode_literals, \
-    with_statement
+from __future__ import (
+    absolute_import, division, generators, nested_scopes, print_function,
+    unicode_literals, with_statement
+)
 
 import numbers
 from copy import deepcopy
-from datetime import timedelta, datetime
+from datetime import datetime
 
 from future import standard_library
-from future.types.newbytes import newbytes
-from future.utils import native_bytes
 
 standard_library.install_aliases()
 
 from builtins import *
 # endregion
 
-from sob import properties, meta, model, test, utilities, hooks, errors
-from sob.request import Request, MultipartRequest, Part
+from sob import properties, meta, model, hooks, errors
 
-import re
 from numbers import Number
 from typing import Optional, Union, Sequence, IO
 

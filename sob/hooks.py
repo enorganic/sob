@@ -16,7 +16,7 @@ Optional = compatibility.typing.Optional
 Union = compatibility.typing.Union
 
 
-class Hooks(object):
+class Hooks:
 
     def __init__(
         self,
