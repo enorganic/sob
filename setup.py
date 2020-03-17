@@ -11,7 +11,7 @@ setup(
     author='David Belais',
     author_email='david@belais.me',
     license='MIT',
-    python_requires='>=3.5, <4',
+    python_requires='>=3.6, <4',
     keywords='rest api serialization serialize',
     packages=find_packages(),
     install_requires=[
@@ -21,10 +21,12 @@ setup(
     ],
     extras_require={
         "test": [
-            "setuptools_setup_versions>=0.0.29"
+            "setuptools-setup-versions>=0.0.30",
+            "readme-md-docstrings>=0.0.8"
         ],
         "dev": [
-            "setuptools_setup_versions>=0.0.29"
+            "setuptools-setup-versions>=0.0.30",
+            "readme-md-docstrings>=0.0.8"
         ]
     }
 )

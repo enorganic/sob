@@ -1,36 +1,7 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from ..utilities import compatibility
-# from .. import meta
+from typing import Optional, Union, Sequence, Callable
+from abc import ABCMeta, abstractmethod, ABC
 from .model import Model
-from abc import ABCMeta, abstractmethod
-
-compatibility.backport()
-
-ABC = compatibility.ABC
-Any = compatibility.typing.Any
-Optional = compatibility.typing.Optional
-Union = compatibility.typing.Union
-Sequence = compatibility.typing.Sequence
-Callable = compatibility.typing.Callable
-
-# if Any is None:
-#     _ItemsParameter = _TypesParameter = None
-# else:
-#     _ItemsParameter = Optional[
-#         Union[
-#             Sequence[
-#                 Union[type, "Property"],
-#                 "Types"
-#             ],
-#             type,
-#             "Property"
-#         ]
-#     ]
-#     _TypesParameter = Sequence[Union[type, "Property"]]
-#     _VersionsParameter = Optional[Sequence[Union[str, meta.Version]]]
+from ..meta import Version
 
 
 class Types(ABC):
@@ -40,8 +11,17 @@ class Types(ABC):
     @abstractmethod
     def __init__(
         self,
-        items=None  # type: _ItemsParameter
-    ):
+        items: Optional[
+            Union[
+                Sequence[
+                    Union[type, "Property"],
+                    "Types"
+                ],
+                type,
+                "Property"
+            ]
+        ] = None
+    ) -> None:
         pass
 
 
@@ -52,26 +32,27 @@ class Property(ABC):
     @abstractmethod
     def __init__(
         self,
-        types=None,  # type: _TypesParameter
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, Callable]
-        versions=None,  # type: _VersionsParameter
-    ):
+        types: Sequence[Union[type, 'Property']] = None,
+        name: Optional[str] = None,
+        required: Union[bool, Callable] = False,
+        versions: Optional[Sequence[Union[str, Version]]] = None
+    ) -> None:
         self.types = types
         self.name = name
         self.required = required
-        self.versions = versions  # type: meta.Version
+        self.versions = versions
 
     @property
     @abstractmethod
-    def types(self):
-        # type: (...) -> Optional[Sequence[Union[type, Property, Model]]]
+    def types(self) -> Optional[Sequence[Union[type, 'Property', Model]]]:
         pass
 
     @types.setter
     @abstractmethod
-    def types(self, types_or_properties):
-        # type: (Optional[Sequence[Union[type, Property, Model]]]) -> None
+    def types(
+        self,
+        types_or_properties: Optional[Sequence[Union[type, 'Property', Model]]]
+    ) -> None:
         pass
 
     @property
@@ -84,77 +65,72 @@ class Property(ABC):
     @abstractmethod
     def versions(
         self,
-        versions  # type: _VersionsParameter
-    ):
-        # type: (...) -> None
+        versions: Optional[Sequence[Union[str, Version]]]
+    ) -> None:
         pass
 
 
-class String(Property):
+class String(Property, ABC):
 
     pass
 
 
-class Date(Property):
+class Date(Property, ABC):
 
     pass
 
 
-class DateTime(Property):
+class DateTime(Property, ABC):
 
     pass
 
 
-class Bytes(Property):
+class Bytes(Property, ABC):
 
     pass
 
 
-class Enumerated(Property):
+class Enumerated(Property, ABC):
 
     pass
 
 
-class Number(Property):
+class Number(Property, ABC):
 
     pass
 
 
-class Integer(Property):
+class Integer(Property, ABC):
 
     pass
 
 
-class Boolean(Property):
+class Boolean(Property, ABC):
 
     pass
 
 
-class Array(Property):
+class Array(Property, ABC):
 
     @property
     @abstractmethod
-    def item_types(self):
-        # type: (...) -> Types
+    def item_types(self) -> Types:
         pass
 
     @item_types.setter
     @abstractmethod
-    def item_types(self, item_types):
-        # type: (Types) -> None
+    def item_types(self, item_types: Types) -> None:
         pass
 
 
-class Dictionary(Property):
+class Dictionary(Property, ABC):
 
     @property
     @abstractmethod
-    def value_types(self):
-        # type: (...) -> Types
+    def value_types(self) -> Types:
         pass
 
     @value_types.setter
     @abstractmethod
-    def value_types(self, value_types_):
-        # type: (Types) -> None
+    def value_types(self, value_types_: Types) -> None:
         pass

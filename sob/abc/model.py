@@ -1,15 +1,11 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from ..utilities import compatibility
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
+from typing import Iterable, Any, List
 
-compatibility.backport()
-
-ABC = compatibility.ABC
-Iterable = compatibility.typing.Iterable
-Any = compatibility.typing.Any
+__any__: List[str] = [
+    'Model',
+    'Dictionary',
+    'Array'
+]
 
 
 class Model(ABC):
@@ -25,13 +21,11 @@ class Object(Model):
 class Dictionary(Model):
 
     @abstractmethod
-    def keys(self):
-        # type: (...) -> Iterable[str]
+    def keys(self) -> Iterable[str]:
         pass
 
     @abstractmethod
-    def values(self):
-        # type: (...) -> Iterable[Any]
+    def values(self) -> Iterable[Any]:
         pass
 
 
@@ -42,8 +36,7 @@ class Array(Model):
         # type: (Any) -> None
         pass
 
-    def __iter__(self):
-        # type: (...) -> Iterable[Any]
+    def __iter__(self) -> Iterable[Any]:
         pass
 
 

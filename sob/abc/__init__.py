@@ -1,6 +1,6 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
+from typing import List
+
 from . import model, properties
+
+__all__: List[str] = ['model', 'properties']
 

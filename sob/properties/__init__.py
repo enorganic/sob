@@ -1,4 +1,7 @@
-from future.utils import native_str
+"""
+This module defines classes for describing properties of a model.
+"""
+
 import numbers
 import collections
 from copy import deepcopy
@@ -13,8 +16,8 @@ from .. import abc, meta
 from .types import Types, Null, NULL, NoneType
 
 from typing import (
-    Union, Optional, Sequence, Set, Callable, Dict, Any,
-    Collection, Tuple, Iterable
+    Union, Optional, Sequence, Set, Callable, Dict, Any, Collection, Tuple,
+    Iterable, List
 )
 
 
@@ -24,12 +27,12 @@ def _repr_list_or_tuple(
     """
     Return a multi-line string representation of a `list` or `tuple`
     """
-    lines = []  # type: List[str]
+    lines: List[str] = []
     for item in list_or_tuple:
         if isinstance(item, (list, tuple)):
-            repr_item = _repr_list_or_tuple(item)  # type: str
+            repr_item: str = _repr_list_or_tuple(item)
         else:
-            repr_item = repr(item)  # type: str
+            repr_item: str = repr(item)
         for line in repr_item.split('\n'):
             lines.append(
                 '    ' + line
@@ -112,29 +115,44 @@ class Property:
         types_or_properties: Optional[
             Sequence[
                 Union[
-                    type, abc.properties.Property, abc.model.Model
+                    type,
+                    abc.properties.Property,
+                    abc.model.Model
                 ]
             ]
         ]
     ) -> None:
         if types_or_properties is not None:
             if callable(types_or_properties):
-                if native_str is not str:
-                    _types_or_properties = types_or_properties
+                original_function = types_or_properties
 
-                    def types_or_properties(
-                        d: Optional[
-                            Sequence[
-                                Union[
-                                    type,
-                                    abc.properties.Property,
-                                    abc.model.Model
-                                ]
+                def types_or_properties(
+                    data: Optional[
+                        Sequence[
+                            Union[
+                                type,
+                                abc.properties.Property,
+                                abc.model.Model
                             ]
                         ]
-                    ) -> Types:
-                        return Types(_types_or_properties(d))
+                    ] = None
+                ) -> Types:
+                    returned_types: Optional[
+                        Sequence[
+                            Union[
+                                type,
+                                abc.properties.Property,
+                                abc.model.Model
+                            ]
+                        ]
+                    ] = original_function(data)
+                    return (
+                        returned_types
+                        if isinstance(returned_types, Types) else
+                        Types(returned_types)
+                    )
 
+                types_or_properties.__name__ = original_function.__name__
             else:
                 types_or_properties = Types(types_or_properties)
         self._types = types_or_properties
@@ -300,18 +318,17 @@ abc.properties.Date.register(Date)
 
 class DateTime(Property):
     """
-    See `sob.properties.Property`
+    (See [`sob.properties.Property`](#Property))
 
-    Additional Properties:
+    + Parameters:
 
-        - datetime2str (collections.Callable): A function, taking one argument
-          (a python `datetime` json_object), and returning a date-time string
-          in the desired format. The default is `datetime.isoformat`--returning
-          an iso8601 compliant date-time string.
-
-        - str2datetime (collections.Callable): A function, taking one argument
-          (a datetime string), and returning a python `datetime` json_object.
-          By default, this is `iso8601.parse_date`.
+    - datetime2str (collections.Callable): A function, taking one argument
+      (a python `datetime` json_object), and returning a date-time string
+      in the desired format. The default is `datetime.isoformat`--returning
+      an iso8601 compliant date-time string.
+    - str2datetime (collections.Callable): A function, taking one argument
+      (a datetime string), and returning a python `datetime` json_object.
+      By default, this is `iso8601.parse_date`.
     """
 
     def __init__(
@@ -337,7 +354,9 @@ abc.properties.DateTime.register(Date)
 
 class Bytes(Property):
     """
-    See `sob.properties.Property`
+    (See [`sob.properties.Property`](#Property))
+
+    This class represents a property with binary values
     """
 
     def __init__(
@@ -359,22 +378,22 @@ abc.properties.Bytes.register(Date)
 
 class Enumerated(Property):
     """
-    See `sob.properties.Property`...
+    (See [`sob.properties.Property`](#Property))
 
     + Properties:
 
-        - values ([Any]):  A list or set of possible values.
+    - values ([Any]):  A list or set of possible values.
     """
 
     def __init__(
         self,
-        types=None,  # type: Optional[Sequence[Union[type, Property]]]
-        values=None,  # type: Optional[Union[Sequence, Set]]
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Collection]
-    ):
-        self._values = None
+        types: Optional[Sequence[Union[type, Property]]] = None,
+        values: Optional[Union[Sequence, Set]] = None,
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Collection] = None
+    ) -> None:
+        self._values: Optional[Set[Any]] = None
         super().__init__(
             types=types,
             name=name,
@@ -384,13 +403,11 @@ class Enumerated(Property):
         self.values = values  # type: Optional[Sequence]
 
     @property
-    def values(self):
-        # type: () -> Optional[Union[Tuple, Callable]]
+    def values(self) -> Optional[Union[Set, Callable]]:
         return self._values
 
     @values.setter
-    def values(self, values):
-        # type: (Iterable) -> None
+    def values(self, values: Optional[Union[Sequence, Set]]) -> None:
         if not (
             (values is None) or
             callable(values) or
@@ -403,7 +420,11 @@ class Enumerated(Property):
                 '`values` must be a finite set or sequence, not `%s`.' %
                 qualified_name(type(values))
             )
-        self._values = values
+        self._values = (
+            set(values)
+            if isinstance(values, collections.abc.Sequence) else
+            values
+        )
 
 
 abc.properties.Enumerated.register(Enumerated)
@@ -416,11 +437,10 @@ class Number(Property):
 
     def __init__(
         self,
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Collection]
-    ):
-        # type: (...) -> None
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Collection] = None
+    ) -> None:
         super().__init__(
             types=(numbers.Number,),
             name=name,
@@ -439,10 +459,10 @@ class Integer(Property):
 
     def __init__(
         self,
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Collection]
-    ):
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Collection] = None
+    ) -> None:
         super().__init__(
             types=(int,),
             name=name,
@@ -483,10 +503,10 @@ class Array(Property):
 
     + Properties:
 
-        - item_types (type|Property|[type|Property]): The type(s) of
-          values/objects contained in the array. Similar to
-          `sob.properties.Property().value_types`, but applied to items in the
-          array, not the array itself.
+    - item_types (type|Property|[type|Property]): The type(s) of values/objects
+      contained in the array. Similar to
+      `sob.properties.Property().types`, but applied to items in the
+      array, not the array itself.
     """
 
     def __init__(
@@ -512,8 +532,7 @@ class Array(Property):
         )
 
     @property
-    def item_types(self):
-        # type: (...) -> Types
+    def item_types(self) -> Types:
         return self._item_types
 
     @item_types.setter
@@ -529,13 +548,20 @@ class Array(Property):
     ) -> None:
         if item_types is not None:
             if callable(item_types):
-                if native_str is not str:
-                    _item_types = item_types
+                original_function: Callable = item_types
 
-                    def item_types(
-                        d: Sequence[Union[type, Property, abc.model.Object]]
-                    ) -> Types:
-                        return Types(_item_types(d))
+                def item_types(
+                    array: abc.model.Array
+                ) -> Types:
+                    returned_item_types: Sequence[
+                        Union[type, Property, abc.model.Object]
+                    ] = original_function(array)
+                    return (
+                        returned_item_types
+                        if isinstance(returned_item_types, Types) else
+                        Types(returned_item_types)
+                    )
+
             else:
                 item_types = Types(item_types)
         self._item_types = item_types
@@ -550,17 +576,20 @@ class Dictionary(Property):
 
     + Properties:
 
-        - value_types (type|Property|[type|Property]): The type(s) of values/objects comprising the mapped
-          values. Similar to `sob.properties.Property.types`, but applies to *values* in the dictionary
-          object, not the dictionary itself.
+    - value_types (type|Property|[type|Property]): The type(s) of
+      values/objects comprising the mapped values. Similar to
+      `sob.properties.Property.types`, but applies to *values* in the
+      dictionary object, not the dictionary itself.
     """
 
     def __init__(
         self,
-        value_types=None,  # type: Optional[Union[type, Sequence[Union[type, Property]]]]
-        name=None,  # type: Optional[str]
-        required=False,  # type: Union[bool, collections.Callable]
-        versions=None,  # type: Optional[Collection]
+        value_types: Optional[
+            Union[type, Sequence[Union[type, Property]]]
+        ] = None,
+        name: Optional[str] = None,
+        required: Union[bool, collections.Callable] = False,
+        versions: Optional[Collection] = None
     ):
         self._value_types = None
         self.value_types = value_types
@@ -576,39 +605,75 @@ class Dictionary(Property):
         return self._value_types
 
     @value_types.setter
-    def value_types(self, value_types_):
-        # type: (Optional[Sequence[Union[type, Property, abc.model.Object]]]) -> None
+    def value_types(
+        self,
+        value_types_: Union[
+            Optional[
+                Sequence[
+                    Union[
+                        type,
+                        Property,
+                        abc.model.Object
+                    ]
+                ]
+            ],
+            Callable
+        ]
+    ) -> None:
         """
-        The `types` can be either:
+        The `value_types_` can be either:
 
             - A sequence of types and/or `sob.properties.Property` instances.
 
-            - A function which accepts exactly one argument (a dictionary), and which returns a sequence of types and/or
+            - A function which accepts exactly one argument (a dictionary),
+              and which returns a sequence of types and/or
               `sob.properties.Property` instances.
 
-        If more than one type or property definition is provided, un-marshalling is attempted using each `value_type`,
-        in sequential order. If a value could be cast into more than one of the `types` without throwing a
-        `ValueError`, `TypeError`, or `sob.errors.ValidationError`, the value type occuring *first* in the sequence
-        will be used.
+        If more than one type or property definition is provided,
+        un-marshalling is attempted using each `value_type`, in sequential
+        order. If a value could be cast into more than one of the `types`
+        without throwing a `ValueError`, `TypeError`, or
+        `sob.errors.ValidationError`, the value type occurring *first* in the
+        sequence will be used.
         """
-
         if value_types_ is not None:
-
             if callable(value_types_):
+                original_value_types_function = value_types_
 
-                if native_str is not str:
-
-                    original_value_types_ = value_types_
-
-                    def value_types_(data):
-                        # type: (Sequence[Union[type, Property, abc.model.Object]]) -> Types
-                        return Types(original_value_types_(data))
+                def value_types_(
+                    data: Optional[Dict[str, Any]] = None
+                ) -> Types:
+                    """
+                    This function wraps the output of the user-defined
+                    function in order to cast any output as a `Types` instance
+                    """
+                    original_value_types: Union[
+                        Optional[
+                            Sequence[
+                                Union[
+                                    type,
+                                    Property,
+                                    abc.model.Object
+                                ]
+                            ]
+                        ],
+                        Callable
+                    ] = (
+                        original_value_types_function(data)
+                    )
+                    return (
+                        original_value_types
+                        if isinstance(original_value_types, Types) else
+                        Types(original_value_types)
+                    )
 
             else:
-
+                # Whether `value_types_` is already an instance of `Type` or
+                # not, we cast it in order to ensure the instance is copied
+                # rather than referenced
                 value_types_ = Types(value_types_)
-
         self._value_types = value_types_
 
 
 abc.properties.Dictionary.register(Dictionary)
+
