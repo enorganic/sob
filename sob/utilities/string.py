@@ -1,38 +1,12 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from . import compatibility
-import re  # noqa
-from unicodedata import normalize  # noqa
-from keyword import iskeyword  # noqa
+import re
+from keyword import iskeyword
+from typing import List, Optional, Tuple
+from unicodedata import normalize
+
 from .inspect import BUILTINS_DICT
 
-compatibility.backport()
 
-urljoin = compatibility.urljoin
-
-Union = compatibility.typing.Union
-Optional = compatibility.typing.Optional
-Iterable = compatibility.typing.Iterable
-Tuple = compatibility.typing.Tuple
-Any = compatibility.typing.Any
-Callable = compatibility.typing.Callable
-AnyStr = compatibility.typing.AnyStr
-Iterator = compatibility.typing.Iterator
-Sequence = compatibility.typing.Sequence
-IO = compatibility.typing.IO
-
-if Any is None:
-    KeyValueIterator = None
-else:
-    KeyValueIterator = Iterator[Tuple[AnyStr, Any]]
-
-# endregion
-
-
-def property_name(string):
-    # type: (str) -> str
+def property_name(string: str) -> str:
     """
     Converts a "camelCased" attribute/property name, a name which conflicts
     with a python keyword, or an otherwise non-compatible string to a PEP-8
@@ -56,7 +30,7 @@ def property_name(string):
     >>> print(property_name('One2One'))
     one_2_one
     """
-    name = string  # type: str
+    name: str = string
     # Replace accented and otherwise modified latin characters with their
     # basic latin equivalent
     name = normalize('NFKD', name)
@@ -153,8 +127,7 @@ _UNNACCENTED_ALPHANUMERIC_CHARACTERS = (
 )
 
 
-def camel(string, capitalize=False):
-    # type: (str, bool) -> str
+def camel(string: str, capitalize: bool = False) -> str:
     """
     This function returns a camelCased representation of the input string.
     When/if an input string corresponds to a python keyword,
@@ -212,8 +185,7 @@ def camel(string, capitalize=False):
     return character_string
 
 
-def camel_split(string):
-    # test: (str) -> str
+def camel_split(string: str) -> Tuple[str, ...]:
     """
     Split a string of camelCased words into a tuple.
 
@@ -294,15 +266,17 @@ def camel_split(string):
     )
 
 
-def indent(string, number_of_spaces=4, start=1, stop=None):
-    # type: (str, int, int, Optional[int]) -> str
+def indent(
+    string: str,
+    number_of_spaces: int = 4,
+    start: int = 1,
+    stop: Optional[int] = None
+) -> str:
     """
     Indent text by `number_of_spaces` starting at line index `start` and
     stopping at line index `stop`.
     """
-
     indented_text = string
-
     if ('\n' in string) or start == 0:
         lines = string.split('\n')
         if stop:
@@ -313,29 +287,29 @@ def indent(string, number_of_spaces=4, start=1, stop=None):
         for i in range(start, stop):
             lines[i] = (' ' * number_of_spaces) + lines[i]
         indented_text = '\n'.join(lines)
-
     return indented_text
 
 
 _URL_DIRECTORY_AND_FILE_NAME_RE = re.compile(r'^(.*/)([^/]*)')
 
 
-def url_directory_and_file_name(url):
-    # type: (str) -> Tuple[str, str]
+def url_directory_and_file_name(url: str) -> Tuple[str, str]:
     """
-    Split a URL into
+    Split a URL into a directory path and file name
     """
-    return _URL_DIRECTORY_AND_FILE_NAME_RE.match(url).groups()
+    directory: str
+    file_name: str
+    directory, file_name = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url).groups()
+    return directory, file_name
 
 
-def url_relative_to(absolute_url, base_url):
-    # type: (str, str) -> str
+def url_relative_to(absolute_url: str, base_url: str) -> str:
     """
     Returns a relative URL given an absolute URL and a base URL
     """
     # If no portion of the absolute URL is shared with the base URL--the
     # absolute URL will be returned
-    relative_url = absolute_url  # type: str
+    relative_url: str = absolute_url
     base_url = url_directory_and_file_name(base_url)[0]
     if base_url:
         relative_url = ''
@@ -351,15 +325,14 @@ def url_relative_to(absolute_url, base_url):
     return relative_url
 
 
-_LINE_LENGTH = 79  # type: int
+_LINE_LENGTH: int = 79
 
 
 def split_long_comment_line(
-    line,
-    max_line_length=_LINE_LENGTH,
-    prefix='#'
-):
-    # type: (str, int, str) -> str
+    line: str,
+    max_line_length: int = _LINE_LENGTH,
+    prefix: str = '#'
+) -> str:
     """
     Split a comment (or docstring) line
 
@@ -371,18 +344,18 @@ def split_long_comment_line(
         odio a urna elementum, eu tempor nisl efficitur.
     """
     if len(line) > max_line_length:
-        indent_ = re.match(
+        indent_: str = re.match(
             (
                 r'^[ ]*(?:%s[ ]*)?' % prefix
                 if prefix else
                 r'^[ ]*'
             ),
             line
-        ).group()  # type: str
+        ).group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
-        lines = []  # type: List[str]
-        wrapped_line = ''  # type: str
+        lines: List[str] = []
+        wrapped_line: str = ''
         for word in words:
             if (
                 len(wrapped_line) + len(word) + indent_length
@@ -395,12 +368,14 @@ def split_long_comment_line(
             lines.append(indent_ + wrapped_line.rstrip())
         wrapped_line = '\n'.join(lines)
     else:
-        wrapped_line = line  # type: str
+        wrapped_line: str = line
     return wrapped_line
 
 
-def split_long_docstring_lines(docstring, max_line_length=_LINE_LENGTH):
-    # type: (str, int) -> str
+def split_long_docstring_lines(
+    docstring: str,
+    max_line_length: int = _LINE_LENGTH
+) -> str:
     """
     Split long docstring lines
 
@@ -411,7 +386,7 @@ def split_long_docstring_lines(docstring, max_line_length=_LINE_LENGTH):
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
         odio a urna elementum, eu tempor nisl efficitu
     """
-    indent_ = '    '  # type: str
+    indent_: str = '    '
     if '\t' in docstring:
         docstring = docstring.replace('\t', indent_)
     lines = docstring.split('\n')
@@ -433,7 +408,3 @@ def split_long_docstring_lines(docstring, max_line_length=_LINE_LENGTH):
             )
         )
     return '\n'.join(wrapped_lines)
-    #     [indent_ + '"""'] +
-    #     wrapped_lines +
-    #     [indent_ + '"""']
-    # )

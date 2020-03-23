@@ -1,33 +1,22 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from .utilities import (
-    compatibility, calling_function_qualified_name, qualified_name
-)
 from copy import deepcopy
+from typing import Callable, Optional, Union
+
 from . import abc
-
-compatibility.backport()
-
-Any = compatibility.typing.Any
-Callable = compatibility.typing.Callable
-Optional = compatibility.typing.Optional
-Union = compatibility.typing.Union
+from .utilities import calling_function_qualified_name, qualified_name
 
 
 class Hooks:
 
     def __init__(
         self,
-        before_marshal=None,  # type: Optional[Callable]
-        after_marshal=None,  # type: Optional[Callable]
-        before_unmarshal=None,  # Optional[Callable]
-        after_unmarshal=None,  # Optional[Callable]
-        before_serialize=None,  # Optional[Callable]
-        after_serialize=None,  # Optional[Callable]
-        before_validate=None,  # Optional[Callable]
-        after_validate=None,  # Optional[Callable]
+        before_marshal: Optional[Callable] = None,
+        after_marshal: Optional[Callable] = None,
+        before_unmarshal: Optional[Callable] = None,
+        after_unmarshal: Optional[Callable] = None,
+        before_serialize: Optional[Callable] = None,
+        after_serialize: Optional[Callable] = None,
+        before_validate: Optional[Callable] = None,
+        after_validate: Optional[Callable] = None
     ):
         self.before_marshal = before_marshal
         self.after_marshal = after_marshal
@@ -41,8 +30,7 @@ class Hooks:
     def __copy__(self):
         return self.__class__(**vars(self))
 
-    def __deepcopy__(self, memo=None):
-        # type: (dict) -> Hooks
+    def __deepcopy__(self, memo: dict = None) -> 'Hooks':
         return self.__class__(**{
             key: deepcopy(value, memo=memo)
             for key, value in vars(self).items()
@@ -56,20 +44,20 @@ class Object(Hooks):
 
     def __init__(
         self,
-        before_marshal=None,  # Optional[Callable]
-        after_marshal=None,  # Optional[Callable]
-        before_unmarshal=None,  # Optional[Callable]
-        after_unmarshal=None,  # Optional[Callable]
-        before_serialize=None,  # Optional[Callable]
-        after_serialize=None,  # Optional[Callable]
-        before_deserialize=None,  # Optional[Callable]
-        after_deserialize=None,  # Optional[Callable]
-        before_validate=None,  # Optional[Callable]
-        after_validate=None,  # Optional[Callable]
-        before_setattr=None,  # Optional[Callable]
-        after_setattr=None,  # Optional[Callable]
-        before_setitem=None,  # Optional[Callable]
-        after_setitem=None,  # Optional[Callable]
+        before_marshal: Optional[Callable] = None,
+        after_marshal: Optional[Callable] = None,
+        before_unmarshal: Optional[Callable] = None,
+        after_unmarshal: Optional[Callable] = None,
+        before_serialize: Optional[Callable] = None,
+        after_serialize: Optional[Callable] = None,
+        before_deserialize: Optional[Callable] = None,
+        after_deserialize: Optional[Callable] = None,
+        before_validate: Optional[Callable] = None,
+        after_validate: Optional[Callable] = None,
+        before_setattr: Optional[Callable] = None,
+        after_setattr: Optional[Callable] = None,
+        before_setitem: Optional[Callable] = None,
+        after_setitem: Optional[Callable] = None
     ):
         super().__init__(
             before_marshal=before_marshal,
@@ -91,20 +79,20 @@ class Array(Hooks):
 
     def __init__(
         self,
-        before_marshal=None,  # Optional[Callable]
-        after_marshal=None,  # Optional[Callable]
-        before_unmarshal=None,  # Optional[Callable]
-        after_unmarshal=None,  # Optional[Callable]
-        before_serialize=None,  # Optional[Callable]
-        after_serialize=None,  # Optional[Callable]
-        before_deserialize=None,  # Optional[Callable]
-        after_deserialize=None,  # Optional[Callable]
-        before_validate=None,  # Optional[Callable]
-        after_validate=None,  # Optional[Callable]
-        before_setitem=None,  # Optional[Callable]
-        after_setitem=None,  # Optional[Callable]
-        before_append=None,  # Optional[Callable]
-        after_append=None,  # Optional[Callable]
+        before_marshal: Optional[Callable] = None,
+        after_marshal: Optional[Callable] = None,
+        before_unmarshal: Optional[Callable] = None,
+        after_unmarshal: Optional[Callable] = None,
+        before_serialize: Optional[Callable] = None,
+        after_serialize: Optional[Callable] = None,
+        before_deserialize: Optional[Callable] = None,
+        after_deserialize: Optional[Callable] = None,
+        before_validate: Optional[Callable] = None,
+        after_validate: Optional[Callable] = None,
+        before_setitem: Optional[Callable] = None,
+        after_setitem: Optional[Callable] = None,
+        before_append: Optional[Callable] = None,
+        after_append: Optional[Callable] = None
     ):
         super().__init__(
             before_marshal=before_marshal,
@@ -126,18 +114,18 @@ class Dictionary(Hooks):
 
     def __init__(
         self,
-        before_marshal=None,  # Optional[Callable]
-        after_marshal=None,  # Optional[Callable]
-        before_unmarshal=None,  # Optional[Callable]
-        after_unmarshal=None,  # Optional[Callable]
-        before_serialize=None,  # Optional[Callable]
-        after_serialize=None,  # Optional[Callable]
-        before_deserialize=None,  # Optional[Callable]
-        after_deserialize=None,  # Optional[Callable]
-        before_validate=None,  # Optional[Callable]
-        after_validate=None,  # Optional[Callable]
-        before_setitem=None,  # Optional[Callable]
-        after_setitem=None,  # Optional[Callable]
+        before_marshal: Optional[Callable] = None,
+        after_marshal: Optional[Callable] = None,
+        before_unmarshal: Optional[Callable] = None,
+        after_unmarshal: Optional[Callable] = None,
+        before_serialize: Optional[Callable] = None,
+        after_serialize: Optional[Callable] = None,
+        before_deserialize: Optional[Callable] = None,
+        after_deserialize: Optional[Callable] = None,
+        before_validate: Optional[Callable] = None,
+        after_validate: Optional[Callable] = None,
+        before_setitem: Optional[Callable] = None,
+        after_setitem: Optional[Callable] = None
     ):
         super().__init__(
             before_marshal=before_marshal,
@@ -154,9 +142,8 @@ class Dictionary(Hooks):
 
 
 def read(
-    model_instance  # type: Union[type, abc.model.Model]
-):
-    # type: (...) -> Hooks
+    model_instance: Union[type, abc.model.Model]
+) -> Hooks:
     """
     Read metadata from a model instance (the returned metadata may be
     inherited, and therefore should not be written to)
@@ -168,9 +155,8 @@ def read(
 
 
 def writable(
-    model  # type: Union[type, abc.model.Model]
-):
-    # type: (...) -> Hooks
+    model: Union[type, abc.model.Model]
+) -> Hooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
@@ -209,8 +195,7 @@ def writable(
     return new_hooks
 
 
-def type_(model):
-    # type: (Union[type, abc.model.Model]) -> type
+def type_(model: Union[type, abc.model.Model]) -> type:
     """
     Get the type of metadata required for an object
     """
@@ -249,14 +234,13 @@ def type_(model):
 
 
 def write(
-    model,  # type: Union[type, abc.model.Model]
-    meta  # type: Hooks
-):
-    # type: (...) -> None
+    model: Union[type, abc.model.Model],
+    meta: Hooks
+) -> None:
     """
     Write metadata to a class or instance
     """
-    # Validate the metadata is of the correct type
+    # Verify that the metadata is of the correct type
     meta_type = type_(model)
     if not isinstance(meta, meta_type):
         raise ValueError(

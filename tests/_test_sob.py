@@ -1,42 +1,24 @@
 """
-This test suite aims to tot
+This test suite aims to TODO
 """
-# region Backwards Compatibility
-from __future__ import (
-    absolute_import, division, generators, nested_scopes, print_function,
-    unicode_literals, with_statement
-)
-
 import numbers
+import typing
 from copy import deepcopy
 from datetime import datetime
-
-from future import standard_library
-
-standard_library.install_aliases()
-
-from builtins import *
-# endregion
-
-from sob import properties, meta, model, hooks, errors
-
 from numbers import Number
-from typing import Optional, Union, Sequence, IO
+from typing import IO, Optional, Sequence, Union
 
-try:
-    import typing
-except ImportError as e:
-    typing = None
+from sob import errors, hooks, meta, model, properties
 
 
 class Measurement(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        quantity=None,  # type: Optional[Number]
-        unit_of_measure=None,  # type: Optional[str]
-    ):
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        quantity: Optional[Number] = None,
+        unit_of_measure: Optional[str] = None,
+    ) -> None:
         self.quantity = quantity
         self.unit_of_measure = unit_of_measure
         super().__init__(_)
@@ -149,11 +131,11 @@ class SpatialPosition(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        x=None,  # type: Optional[numbers.Number]
-        y=None,  # type: Optional[numbers.Number]
-        z=None,  # type: Optional[numbers.Number]
-        unit_of_measure=None,  # type: Optional[str]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        x: Optional[numbers.Number] = None,
+        y: Optional[numbers.Number] = None,
+        z: Optional[numbers.Number] = None,
+        unit_of_measure: Optional[str] = None,
     ):
         self.x = x
         self.y = y
@@ -176,10 +158,10 @@ class Vector(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        x=None,  # type: Optional[numbers.Number]
-        y=None,  # type: Optional[numbers.Number]
-        z=None,  # type: Optional[numbers.Number]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        x: Optional[numbers.Number] = None,
+        y: Optional[numbers.Number] = None,
+        z: Optional[numbers.Number] = None,
     ):
         self.x = x
         self.y = y
@@ -194,10 +176,10 @@ meta.writable(Vector).properties = dict(
 )
 
 
-def after_validate_vector(vector):
-    # type: (Vector) -> None
+def after_validate_vector(vector: Vector) -> None:
     """
-    Verifies that the direction vector is normalized (sum of all coordinates is equal to 1)
+    Verifies that the direction vector is normalized (sum of all coordinates
+    is equal to 1)
     """
     assert vector.x + vector.y + vector.z == 1
 
@@ -209,9 +191,9 @@ class SpaceTimeCoordinates(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        spacial_coordinates=None,  # type: Optional[SpatialPosition]
-        time=None,  # type: Optional[datetime]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        spacial_coordinates: Optional[SpatialPosition] = None,
+        time: Optional[datetime] = None,
     ):
         self.spacial_coordinates = spacial_coordinates
         self.time = time
@@ -234,9 +216,9 @@ class Frequency(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        quantity=None,  # type: Optional[numbers.Number]
-        unit_of_measure=None,  # type: Optional[str]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        quantity: Optional[numbers.Number] = None,
+        unit_of_measure: Optional[str] = None,
     ):
         self.quantity = quantity
         self.unit_of_measure = unit_of_measure
@@ -265,9 +247,9 @@ class Speed(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        distance=None,  # type: Optional[Length]
-        frequency=None,  # type: Optional[Frequency]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        distance: Optional[Length] = None,
+        frequency: Optional[Frequency] = None,
     ):
         self.distance = distance
         self.frequency = frequency
@@ -290,9 +272,9 @@ class Velocity(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        direction=None,  # type: Optional[Vector]
-        magnitude=None,  # type: Optional[Speed]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        direction: Optional[Vector] = None,
+        magnitude: Optional[Speed] = None,
     ):
         self.direction = direction
         self.magnitude = magnitude
@@ -320,9 +302,9 @@ class Spin(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        axis=None,  # type: Optional[Vector]
-        frequency=None,  # type: Optional[Frequency]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        axis: Optional[Vector] = None,
+        frequency: Optional[Frequency] = None,
     ):
         self.axis = axis
         self.frequency = frequency
@@ -345,10 +327,10 @@ class Orbit(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        spin=None,  # type: Optional[Spin]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        radius=None,  # type: Optional[Length]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        spin: Optional[Spin] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        radius: Optional[Length] = None,
     ):
         self.rotation = spin
         self.origin = origin
@@ -381,24 +363,28 @@ meta.writable(RotationMatrix).item_types = [
 ]
 
 
-def after_validate_rotation_matrix(rotation_matrix):
-    # type: (RotationMatrix) -> RotationMatrix
+def after_validate_rotation_matrix(
+    rotation_matrix: RotationMatrix
+) -> RotationMatrix:
     """
-    This function checks to make sure that the matrix contains 3 rows of 3 numbers, and throws a validation error
-    otherwise.
+    This function checks to make sure that the matrix contains 3 rows of 3
+    numbers, and throws a validation error otherwise.
     """
     row_quantity = len(rotation_matrix)
     if row_quantity != 3:
         raise errors.ValidationError(
-            'A rotation matrix must consist of exactly 3 rows (currently has %s)' % str(row_quantity)
+            'A rotation matrix must consist of exactly 3 rows (currently has '
+            '%s)' % str(row_quantity)
         )
     i = 1
     for row in rotation_matrix:
         row_length = len(row)
         if row_length != 3:
             raise errors.ValidationError(
-                'Each row in a rotation matrix must consist of exactly 3 numbers,'
-                'row %s contains %s numbers:\n%s' % (str(i), str(row_length), repr(rotation_matrix))
+                'Each row in a rotation matrix must consist of exactly 3 '
+                'numbers, row %s contains %s numbers:\n%s' % (
+                    str(i), str(row_length), repr(rotation_matrix)
+                )
             )
         i += 1
     return rotation_matrix
@@ -411,12 +397,12 @@ class Matter(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Velocity]
-        acceleration=None,  # type: Optional[Acceleration]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Velocity] = None,
+        acceleration: Optional[Acceleration] = None,
     ):
         self.name = name
         self.mass = mass
@@ -451,15 +437,16 @@ class Nucleus(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        spin=None,  # type: Optional[Spin]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        spin: Optional[Spin] = None,
     ):
-        super().__init__(_)  # This needs to come before attribute assignment when inheriting
+        # This needs to come before attribute assignment when inheriting
+        super().__init__(_)
         self.name = name
         self.mass = mass
         self.origin = origin
@@ -480,13 +467,13 @@ class Neutron(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Velocity]
-        acceleration=None,  # type: Optional[Acceleration]
-        orbit=None,  # type: Optional[Orbit]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Velocity] = None,
+        acceleration: Optional[Acceleration] = None,
+        orbit: Optional[Orbit] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -529,16 +516,16 @@ class Atom(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        mass=None,  # type: Optional[Measurement]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        nucleus=None,  # type: Optional[Nucleus]
-        protons=None,  # type: Optional[Sequence[Proton]]
-        electrons=None,  # type: Optional[Sequence[Electron]]
-        neutrons=None,  # type: Optional[Sequence[Neutron]]
-        name=None,  # type: Optional[str]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        mass: Optional[Measurement] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        nucleus: Optional[Nucleus] = None,
+        protons: Optional[Sequence[Proton]] = None,
+        electrons: Optional[Sequence[Electron]] = None,
+        neutrons: Optional[Sequence[Neutron]] = None,
+        name: Optional[str] = None,
     ):
         super().__init__(_)
         self.origin = origin
@@ -580,13 +567,13 @@ class Molecule(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        atoms=None,  # type: Optional[Sequence[Atom]]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        atoms: Optional[Sequence[Atom]] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -615,14 +602,14 @@ class Ion(Molecule):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        atoms=None,  # type: Optional[Sequence[Atom]]
-        charge=None  # type: Optional[int]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        atoms: Optional[Sequence[Atom]] = None,
+        charge: Optional[int] = None
     ):
         super().__init__(_)
         self.name = name
@@ -643,13 +630,13 @@ class Body(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        contents=None,  # type: Optional[Sequence[Body, Ion, Molucule, Atom]]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        contents: Optional[Sequence['Body', Ion, 'Molucule', Atom]] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -677,16 +664,16 @@ class Satellite(Matter):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        axial_rotation=None,   # type: Optional[Spin]
-        orbital_rotation=None,   # type: Optional[Orbit]
-        satellites=None,  # type: Optional[Sequence[Satellite]]
-        contents=None,  # type: Optional[Sequence[Body]]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        axial_rotation: Optional[Spin] = None,
+        orbital_rotation: Optional[Orbit] = None,
+        satellites: Optional[Sequence['Satellite']] = None,
+        contents: Optional[Sequence[Body]] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -735,17 +722,17 @@ class Comet(Satellite):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        spin=None,   # type: Optional[Spin]
-        orbit=None,   # type: Optional[Orbit]
-        satellites=None,  # type: Optional[Sequence[Satellite]]
-        nucleus=None,  # type: Optional[Body]
-        tail=None,  # type: Optional[Sequence[Ion, Molecule, Atom]]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        spin: Optional[Spin] = None,
+        orbit: Optional[Orbit] = None,
+        satellites: Optional[Sequence[Satellite]] = None,
+        nucleus: Optional[Body] = None,
+        tail: Optional[Sequence[Ion, Molecule, Atom]] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -778,17 +765,17 @@ class DwarfPlanet(Satellite):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-        name=None,  # type: Optional[str]
-        mass=None,  # type: Optional[Measurement]
-        origin=None,  # type: Optional[SpaceTimeCoordinates]
-        velocity=None,  # type: Optional[Vector]
-        acceleration=None,  # type: Optional[Vector]
-        spin=None,   # type: Optional[Spin]
-        orbit=None,   # type: Optional[Orbit]
-        satellites=None,  # type: Optional[Sequence[Satellite]]
-        contents=None,  # type: Optional[Sequence[Body]]
-        dwarf=None,  # type: Optional[bool]
+        _: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        name: Optional[str] = None,
+        mass: Optional[Measurement] = None,
+        origin: Optional[SpaceTimeCoordinates] = None,
+        velocity: Optional[Vector] = None,
+        acceleration: Optional[Vector] = None,
+        spin: Optional[Spin] = None,
+        orbit: Optional[Orbit] = None,
+        satellites: Optional[Sequence[Satellite]] = None,
+        contents: Optional[Sequence[Body]] = None,
+        dwarf: Optional[bool] = None,
     ):
         super().__init__(_)
         self.name = name
@@ -851,8 +838,7 @@ meta.writable(Galaxy).properties['satellites'].item_types = [
 ]
 
 
-def before_validate_galaxy(galaxy):
-    # type: (Galaxy) -> Galaxy
+def before_validate_galaxy(galaxy: Galaxy) -> Galaxy:
     if not galaxy.satellites:
         raise errors.ValidationError(
             'All galaxies must contain at least one star or galaxy.'
@@ -867,9 +853,9 @@ class Universe(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[Union[str, bytes, dict, typing.Sequence, IO]]
-        name=None,  # type: Optional[str]
-        galaxies=None,  # type: Optional[Sequence[Galaxy]]
+        _: Optional[Union[str, bytes, dict, typing.Sequence, IO]] = None,
+        name: Optional[str] = None,
+        galaxies: Optional[Sequence[Galaxy]] = None
     ):
         self.name = name
         self.galaxies = galaxies

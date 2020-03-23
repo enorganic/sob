@@ -3,17 +3,16 @@ This module defines a class for describing data types associated with a
 property.
 """
 
-import numbers
-import decimal
 import collections.abc
+import decimal
+import numbers
 from copy import deepcopy
 from datetime import date, datetime
-from typing import Generator, Union, Optional, Sequence, Dict, Any, Hashable
+from typing import Any, Dict, Generator, Hashable, Optional, Sequence, Union
 
-from ..utilities import qualified_name
 from .. import abc
 from ..abc.properties import Property
-
+from ..utilities import qualified_name
 
 NoneType = type(None)
 NULL: Optional['Null'] = None
@@ -35,7 +34,7 @@ class Null:
     referenced through the constant `NULL` from this same module.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         if NULL is not None:
             raise DefinitionExistsError(
                 '%s may only be defined once.' % repr(self)
@@ -121,7 +120,7 @@ class Types(list):
                 abc.properties.Property
             ]
         ] = None
-    ):
+    ) -> None:
         if isinstance(items, (type, Property)):
             items = (items,)
         if items is None:

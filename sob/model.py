@@ -1,119 +1,140 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from .utilities import compatibility
-# Built-In Imports
-import re
-import sys
-import json
+import builtins
 import collections
-from future.utils import native_str
-from copy import deepcopy
-from io import IOBase
-from decimal import Decimal
-from base64 import b64encode, b64decode
-from numbers import Number
+import collections.abc
+import json
+import sys
+from base64 import b64decode, b64encode
+from copy import deepcopy, copy
 from datetime import date, datetime
+from decimal import Decimal
+from io import IOBase
 from itertools import chain
-# 3rd-Party Maintained Imports
+from numbers import Number
+from typing import (
+    Any, Callable, Dict, Generator, IO, Iterable, List, Mapping, Optional,
+    Sequence, Set, Tuple, Union
+)
+from urllib.parse import urljoin
+from urllib.response import addbase
+
 import yaml
-# Relative Imports
-from .utilities import qualified_name, get_io_url, read, indent
-from .utilities.string import split_long_docstring_lines
+from more_itertools import chunked
+
 from . import (
-    properties, meta, errors, hooks, abc, __name__ as _parent_module_name,
+    __name__ as _parent_module_name, abc, errors, hooks, meta, properties,
     utilities
 )
+from .properties.types import NULL, Null
+from .utilities import indent, qualified_name
+from .utilities.assertion import assert_argument_is_instance
+from .utilities.io import get_url, read
+from .utilities.string import split_long_docstring_lines
+from .utilities.types import Module, UNDEFINED, Undefined
 
-compatibility.backport()
-
-Union = compatibility.typing.Union
-Dict = compatibility.typing.Dict
-Any = compatibility.typing.Any
-AnyStr = compatibility.typing.AnyStr
-IO = compatibility.typing.IO
-Sequence = compatibility.typing.Sequence
-Mapping = compatibility.typing.Mapping
-Callable = compatibility.typing.Callable
-Tuple = compatibility.typing.Tuple
-Optional = compatibility.typing.Optional
-List = compatibility.typing.List
-Generator = compatibility.Generator
-BACKWARDS_COMPATIBILITY_IMPORTS = compatibility.BACKWARDS_COMPATIBILITY_IMPORTS
-urljoin = compatibility.urljoin
-collections_abc = compatibility.collections_abc
-include_native_str = compatibility.include_native_str
-
-# Constants
 _UNMARSHALLABLE_TYPES = tuple(
     set(properties.types.TYPES) | {properties.types.NoneType}
 )
-_LINE_LENGTH = 79  # type: int
-
-# region Model Classes
+_LINE_LENGTH: int = 79
 
 
 class Model:
+    """
+    This serves as a base class for the [Object](#Object), [Array](#Array) and
+    [Dictionary](#Dictionary) classes. This class should not be instantiated
+    directly, and should not be sub-classed directly--please use `Object`,
+    `Array` and/or `Dictionary` as a superclass instead.
+    """
 
-    pass
+    _format: Optional[str] = None
+    _meta: Optional[meta.Object] = None
+    _hooks: Optional[hooks.Object] = None
+
+    def __init__(self) -> None:
+        self._meta: Optional[meta.Meta] = None
+        self._hooks: Optional[meta.Meta] = None
+        self._url: Optional[str] = None
+        self._pointer: Optional[str] = None
+
+    def _init_url(
+        self,
+        data: Optional[Union[Sequence, Set, Dict, 'Model']]
+    ) -> None:
+        if isinstance(data, IOBase):
+            url: Optional[str] = None
+            if hasattr(data, 'url'):
+                url = data.url
+            elif hasattr(data, 'name'):
+                url = urljoin('file:', data.name)
+            if url is not None:
+                meta.url(self, url)
+
+    def _init_format(
+        self,
+        data: Optional[Union[Sequence, Set, Dict, 'Model']] = None
+    ) -> Any:
+        deserialized_data: Any
+        format_: str
+        deserialized_data, format_ = detect_format(data)
+        if format_ is not None:
+            meta.format_(self, format_)
+        return deserialized_data
+
+    def _init_pointer(self) -> None:
+        if meta.pointer(self) is None:
+            meta.pointer(self, '#')
 
 
 abc.model.Model.register(Model)
 
 
 class Object(Model):
-
-    _format = None  # type: Optional[str]
-    _meta = None  # type: Optional[meta.Object]
-    _hooks = None  # type: Optional[hooks.Object]
+    """
+    This serves as a base class for representing deserialized and un-marshalled
+    data for which a discrete set of properties are known in advance, and for
+    which enforcing adherence to a predetermined attribution and type
+    requirements is desirable.
+    """
 
     def __init__(
         self,
-        _data=None,  # type: Optional[Union[str, bytes, dict, Sequence, IO]]
-    ):
-        # type: (...) -> None
-        self._meta = None  # type: Optional[meta.Object]
-        self._hooks = None  # type: Optional[hooks.Object]
-        self._url = None  # type: Optional[str]
-        self._xpath = None  # type: Optional[str]
-        self._pointer = None  # type: Optional[str]
+        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+    ) -> None:
+        self._meta: Optional[meta.Object]
+        self._hooks: Optional[hooks.Object]
+        Model.__init__(self)
+        deserialized_data: Any = self._init_format(_data)
+        self._data_init(deserialized_data)
+        self._init_url(_data)
+        self._init_pointer()
+
+    def _data_init(
+        self,
+        _data: Optional[Union[str, bytes, dict, Sequence, IO]]
+    ) -> None:
         if _data is not None:
-            self._data_init(_data)
-
-    def _data_init(self, _data):
-        # type: (Union[str, bytes, dict, Sequence, IO]) -> None
-        if isinstance(_data, Object):
-            self._copy_init(_data)
-        else:
-            url = None
-            if isinstance(_data, IOBase):
-                url = get_io_url(_data)
-            _data, format_ = detect_format(_data)
-            if isinstance(_data, dict):
-                self._dict_init(_data)
+            if isinstance(_data, Object):
+                self._copy_init(_data)
             else:
-                raise TypeError(
-                    'The `_data` parameter must be a string, file-like object,'
-                    ' or dictionary, not `%s`' %
-                    repr(_data)
-                )
-            meta.format_(self, format_)
-            meta.url(self, url)
-            meta.pointer(self, '#')
-            meta.xpath(self, '')
+                url = None
+                if isinstance(_data, IOBase):
+                    url = get_url(_data)
+                _data, format_ = detect_format(_data)
+                assert_argument_is_instance('_data', _data, dict)
+                self._dict_init(_data)
+                meta.format_(self, format_)
+                meta.url(self, url)
+                meta.pointer(self, '#')
 
-    def _dict_init(self, dictionary):
-        # type: (dict) -> None
+    def _dict_init(self, dictionary: dict) -> None:
         """
         Initialize this object from a dictionary
         """
         for property_name, value in dictionary.items():
             if value is None:
-                value = properties.NULL
+                value = NULL
             try:
                 self[property_name] = value
             except KeyError as error:
@@ -125,8 +146,7 @@ class Object(Model):
                     )
                 )
 
-    def _copy_init(self, other):
-        # type: (Object) -> None
+    def _copy_init(self, other: abc.model.Object) -> None:
         """
         Initialize this object from another `Object` (copy constructor)
         """
@@ -155,18 +175,18 @@ class Object(Model):
                 raise error
         meta.url(self, meta.url(other))
         meta.pointer(self, meta.pointer(other))
-        meta.xpath(self, meta.xpath(other))
         meta.format_(self, meta.format_(other))
 
-    def __hash__(self):
-        # type (...) -> None
+    def __hash__(self) -> int:
         """
         Make this usable in contexts requiring a hashable object
         """
         return id(self)
 
-    def _get_property_definition(self, property_name):
-        # type: (str) -> Property
+    def _get_property_definition(
+        self,
+        property_name: str
+    ) -> abc.properties.Property:
         """
         Get a property's definition
         """
@@ -180,8 +200,7 @@ class Object(Model):
                 )
             )
 
-    def _unmarshal_value(self, property_name, value):
-        # type: (str, Any) -> Any
+    def _unmarshal_value(self, property_name: str, value: Any) -> Any:
         """
         Unmarshall a property value
         """
@@ -191,7 +210,7 @@ class Object(Model):
             if isinstance(value, Generator):
                 value = tuple(value)
             try:
-                value = unmarshal_property_value(property_definition, value)
+                value = _unmarshal_property_value(property_definition, value)
             except (TypeError, ValueError) as error:
                 message = '\n - %s.%s: ' % (
                     qualified_name(type(self)),
@@ -211,12 +230,11 @@ class Object(Model):
 
         return value
 
-    def __setattr__(self, property_name, value):
-        # type: (Object, str, Any) -> None
-        instance_hooks = None
+    def __setattr__(self, property_name: str, value: Any) -> None:
+        instance_hooks: Optional[hooks.Object] = None
         unmarshalled_value = value
         if property_name[0] != '_':
-            instance_hooks = hooks.read(self)  # type: hooks.Object
+            instance_hooks = hooks.read(self)
             if instance_hooks and instance_hooks.before_setattr:
                 property_name, value = instance_hooks.before_setattr(
                     self, property_name, value
@@ -226,8 +244,7 @@ class Object(Model):
             instance_hooks.after_setattr(self, property_name, value)
         super().__setattr__(property_name, unmarshalled_value)
 
-    def _get_key_property_name(self, key):
-        # type: (str) -> str
+    def _get_key_property_name(self, key: str) -> str:
         instance_meta = meta.read(self)
         if (key in instance_meta.properties) and (
             instance_meta.properties[key].name in (None, )
@@ -250,10 +267,9 @@ class Object(Model):
                 )
         return property_name
 
-    def __setitem__(self, key, value):
-        # type: (str, Any) -> None
+    def __setitem__(self, key: str, value: Any) -> None:
         # Before set-item hooks
-        hooks_ = hooks.read(self)  # type: hooks.Object
+        hooks_: hooks.Object = hooks.read(self)
         if hooks_ and hooks_.before_setitem:
             key, value = hooks_.before_setitem(self, key, value)
         # Get the corresponding property name
@@ -264,11 +280,10 @@ class Object(Model):
         if hooks_ and hooks_.after_setitem:
             hooks_.after_setitem(self, key, value)
 
-    def __delattr__(self, key):
-        # type: (str) -> None
+    def __delattr__(self, key: str) -> None:
         """
-        Deleting attributes with defined metadata is not allowed--doing this is instead interpreted as setting that
-        attribute to `None`
+        Deleting attributes with defined metadata is not allowed--doing this
+        is instead interpreted as setting that attribute to `None`.
         """
         instance_meta = meta.read(self)
         if key in instance_meta.properties:
@@ -276,10 +291,9 @@ class Object(Model):
         else:
             super().__delattr__(key)
 
-    def __getitem__(self, key):
-        # type: (str, Any) -> None
+    def __getitem__(self, key: str) -> None:
         """
-        Retrieve a value using the item assignment operators `[]`
+        Retrieve a value using the item assignment operators `[]`.
         """
         # Get the corresponding property name
         instance_meta = meta.read(self)
@@ -303,12 +317,15 @@ class Object(Model):
         # Retrieve the value assigned to the corresponding property
         return getattr(self, property_name)
 
-    def __copy__(self):
-        # type: () -> Object
+    def __copy__(self) -> 'Object':
         return self.__class__(self)
 
-    def _deepcopy_property(self, property_name, other, memo):
-        # type: (Object, str, dict) -> None
+    def _deepcopy_property(
+        self,
+        property_name: str,
+        other: 'Object',
+        memo: dict
+    ) -> None:
         """
         Deep-copy a property from this object to another
         """
@@ -333,20 +350,18 @@ class Object(Model):
                 error.args = (label + serialize(self),)
             raise error
 
-    def __deepcopy__(self, memo):
-        # type: (Optional[dict]) -> Object
+    def __deepcopy__(self, memo: Optional[dict]) -> 'Object':
         # Perform a regular copy operation
         new_instance = self.__copy__()
         # Retrieve the metadata
-        meta_ = meta.read(self)
+        meta_: meta.Object = meta.read(self)
         # If there is metadata--copy it recursively
         if meta_ is not None:
             for property_name in meta_.properties.keys():
                 self._deepcopy_property(property_name, new_instance, memo)
         return new_instance
 
-    def _marshal(self):
-        # type: (...) -> collections.OrderedDict
+    def _marshal(self) -> Dict[str, Any]:
         object_ = self
         instance_hooks = hooks.read(object_)
         if (instance_hooks is not None) and (
@@ -355,24 +370,22 @@ class Object(Model):
             object_ = instance_hooks.before_marshal(object_)
         data = collections.OrderedDict()
         instance_meta = meta.read(object_)
-        for property_name, property in instance_meta.properties.items():
+        for property_name, property_ in instance_meta.properties.items():
             value = getattr(object_, property_name)
             if value is not None:
-                key = property.name or property_name
-                data[key] = marshal_property_value(property, value)
+                key = property_.name or property_name
+                data[key] = _marshal_property_value(property_, value)
         if (instance_hooks is not None) and (
             instance_hooks.after_marshal is not None
         ):
             data = instance_hooks.after_marshal(data)
         return data
 
-    def __str__(self):
-        # type: (...) -> str
+    def __str__(self) -> str:
         return serialize(self)
 
     @staticmethod
-    def _repr_argument(parameter, value):
-        # type: (str, Any) -> str
+    def _repr_argument(parameter: str, value: Any) -> str:
         value_representation = (
             qualified_name(value) if isinstance(value, type) else
             repr(value)
@@ -385,8 +398,7 @@ class Object(Model):
             value_representation = '\n'.join(indented_lines)
         return '    %s=%s,' % (parameter, value_representation)
 
-    def __repr__(self):
-        # type: (...) -> str
+    def __repr__(self) -> str:
         representation = [
             '%s(' % qualified_name(type(self))
         ]
@@ -406,8 +418,7 @@ class Object(Model):
         else:
             return ''.join(representation)
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
         if type(self) is not type(other):
             return False
         instance_meta = meta.read(self)
@@ -423,173 +434,209 @@ class Object(Model):
                 return False
         return True
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
+    def __ne__(self, other: Any) -> bool:
         return False if self == other else True
 
-    def __iter__(self):
-        instance_meta = meta.read(self)
-        for property_name, property in instance_meta.properties.items():
-            yield property.name or property_name
+    def __iter__(self) -> Iterable[str]:
+        instance_meta: meta.Object = meta.read(self)
+        for property_name, property_ in instance_meta.properties.items():
+            yield property_.name or property_name
 
-    def _validate(self, raise_errors=True):
-        # type: (bool) -> None
-
-        validation_errors = []
-        object_ = self
-
-        instance_hooks = hooks.read(self)
-
-        if (instance_hooks is not None) and (instance_hooks.before_validate is not None):
-            object_ = instance_hooks.before_validate(object_)
-
-        instance_meta = meta.read(object_)
-
-        for property_name, property in instance_meta.properties.items():
-
-            value = getattr(object_, property_name)
-
-            if value is None:
-
-                if callable(property.required):
-                    required = property.required(object_)
-                else:
-                    required = property.required
-
-                if required:
-
-                    validation_errors.append(
-                        'The property `%s` is required for `%s`:\n%s' % (
-                            property_name,
-                            qualified_name(type(object_)),
-                            str(object_)
+    def _get_property_validation_error_messages(
+        self,
+        property_name: str,
+        property_: properties.Property,
+        value: Any
+    ) -> Iterable[str]:
+        error_messages: List[str] = []
+        if value is None:
+            if property_.required:
+                yield (
+                    'The property `%s` is required for `%s`:\n%s' % (
+                        property_name,
+                        qualified_name(type(self)),
+                        str(self)
+                    )
+                )
+        elif value is NULL:
+            if (
+                (property_.types is not None) and
+                (Null not in property_.types)
+            ):
+                error_messages.append(
+                    'Null values are not allowed in `{}.{}`, '
+                    'permitted types include: {}.'.format(
+                        qualified_name(type(self)),
+                        property_name,
+                        ', '.join(
+                            f'`{qualified_name(type_)}`'
+                            for type_ in property_.types
                         )
                     )
-            else:
+                )
+        else:
+            error_message: str
+            for error_message in validate(
+                value,
+                property_.types,
+                raise_errors=False
+            ):
+                yield (
+                    'Error encountered while attempting to validate '
+                    '`{}.{}}`:\n\n{}}'.format(
+                        qualified_name(type(self)),
+                        property_name,
+                        error_message
+                    )
+                )
 
-                if value is properties.NULL:
-
-                    types = property.types
-
-                    if callable(types):
-                        types = types(value)
-
-                    if types is not None:
-                        types = include_native_str(types)
-                        if properties.Null not in types:
-                            validation_errors.append(
-                                'Null values are not allowed in `%s.%s`, ' % (
-                                    qualified_name(type(object_)), property_name
-                                ) +
-                                'permitted types include: %s.' % ', '.join(
-                                    '`%s`' % qualified_name(type_) for type_ in types
-                                )
-                            )
-                else:
-
-                    try:
-                        value_validation_error_messages = validate(value, property.types, raise_errors=False)
-
-                        if value_validation_error_messages:
-
-                            index = 0
-
-                            for error_message in value_validation_error_messages:
-                                value_validation_error_messages[index] = (
-                                    'Error encountered ' +
-                                    'while attempting to validate property `%s`:\n\n' % property_name +
-                                    error_message
-                                )
-
-                            validation_errors.extend(value_validation_error_messages)
-
-                    except errors.ValidationError as error:
-
-                        message = '%s.%s:\n' % (qualified_name(type(object_)), property_name)
-
-                        if error.args:
-                            error.args = tuple(chain(
-                                (error.args[0] + message,),
-                                error.args[1:]
-                            ))
-                        else:
-                            error.args = (
-                                message,
-                            )
-
-        if (instance_hooks is not None) and (instance_hooks.after_validate is not None):
-            instance_hooks.after_validate(object_)
-        if raise_errors and validation_errors:
-            raise errors.ValidationError('\n'.join(validation_errors))
-        return validation_errors
+    def _validate(self, raise_errors: bool = True) -> None:
+        """
+        This method verifies that all required properties are present, and
+        that all property values are of the correct type.
+        """
+        validation_error_messages: List[str] = []
+        validated_object: Object = self
+        instance_hooks: hooks.Object = hooks.read(self)
+        if instance_hooks and instance_hooks.before_validate:
+            validated_object = instance_hooks.before_validate(self)
+        instance_meta: meta.Object = meta.read(validated_object)
+        property_name: str
+        property_: properties.Property
+        error_message: str
+        for property_name, property_ in instance_meta.properties.items():
+            for error_message in (
+                validated_object._get_property_validation_error_messages(
+                    property_name,
+                    property_,
+                    getattr(validated_object, property_name)
+                )
+            ):
+                validation_error_messages.append(error_message)
+        if (
+            instance_hooks is not None
+        ) and (
+            instance_hooks.after_validate is not None
+        ):
+            instance_hooks.after_validate(validated_object)
+        if raise_errors and validation_error_messages:
+            raise errors.ValidationError(
+                '\n'.join(validation_error_messages)
+            )
+        return validation_error_messages
 
 
 abc.model.Object.register(Object)
 
 
 class Array(list, Model):
+    """
+    This can serve as either a base-class for typed (or untyped) sequences, or
+    can be instantiated directly.
 
-    _format = None  # type: Optional[str]
-    _hooks = None  # type: Optional[hooks.Array]
-    _meta = None  # type: Optional[meta.Array]
+    Parameters:
+
+    - items (list|set|io.IOBase|str|bytes)
+    - item_types ([type|sob.properties.Property])
+
+    Typing can be enforced at the instance level by
+    passing the keyword argument `item_types` with a list of types or
+    properties.
+
+    Typing can be enforced at the class level by assigning a list
+    of types as follows:
+
+    ```python
+    import sob
+
+    class ArraySubClass(sob.model.Array):
+
+        pass
+
+    sob.meta.writable(ArraySubClass).item_types = [
+        sob.properties.String,
+        sob.properties.Integer
+    ]
+    ```
+    """
+
+    _hooks: Optional[hooks.Array]
+    _meta: Optional[meta.Array]
 
     def __init__(
         self,
-        items=None,  # type: Optional[Union[Sequence, Set]]
-        item_types=(
-            None
-        ),  # type: Optional[Union[Sequence[Union[type, properties.Property]], type, properties.Property]]
-    ):
-        self._meta = None  # type: Optional[meta.Array]
-        self._hooks = None  # type: Optional[hooks.Array]
-        self._url = None  # type: Optional[str]
-        self._xpath = None  # type: Optional[str]
-        self._pointer = None  # type: Optional[str]
+        items: Optional[Union[Sequence, Set, IO, str, bytes]] = None,
+        item_types: Optional[
+            Union[
+                Sequence[
+                    Union[
+                        type,
+                        properties.Property
+                    ]
+                ],
+                type,
+                properties.Property
+            ]
+        ] = None
+    ) -> None:
+        self._meta: Optional[meta.Array]
+        self._hooks: Optional[hooks.Array]
+        Model.__init__(self)
+        deserialized_items: Any = self._init_format(items)
+        self._init_item_types(deserialized_items, item_types)
+        self._init_items(deserialized_items)
+        self._init_url(items)
+        self._init_pointer()
 
-        url = None
-
-        if isinstance(items, IOBase):
-            if hasattr(items, 'url'):
-                url = items.url
-            elif hasattr(items, 'name'):
-                url = urljoin('file:', items.name)
-        items, format_ = detect_format(items)
+    def _init_item_types(
+        self,
+        items: Optional[Union[Sequence, Set]],
+        item_types: Optional[
+            Union[
+                Sequence[
+                    Union[
+                        type,
+                        properties.Property
+                    ]
+                ],
+                type,
+                properties.Property
+            ]
+        ]
+    ) -> None:
         if item_types is None:
+            # If no item types are explicitly attributed, but the initial items
+            # are an instance of `Array`, we adopt the item types from that
+            # `Array` instance.
             if isinstance(items, Array):
-                m = meta.read(items)
-                if meta.read(self) is not m:
-                    meta.write(self, deepcopy(m))
+                items_meta = meta.read(items)
+                if meta.read(self) is not items_meta:
+                    meta.write(self, deepcopy(items_meta))
         else:
             meta.writable(self).item_types = item_types
+
+    def _init_items(
+        self,
+        items: Optional[Union[Sequence, Set]]
+    ) -> None:
         if items is not None:
             for item in items:
                 self.append(item)
-            if meta.pointer(self) is None:
-                meta.pointer(self, '#')
-            if meta.xpath(self) is None:
-                meta.xpath(self, '')
-        if url is not None:
-            meta.url(self, url)
-        if format_ is not None:
-            meta.format_(self, format_)
-
-    def _copy_init(self, other):
-        pass
 
     def __hash__(self):
         return id(self)
 
     def __setitem__(
         self,
-        index,  # type: int
-        value,  # type: Any
-    ):
-        instance_hooks = hooks.read(self)  # type: hooks.Object
+        index: int,
+        value: Any,
+    ) -> None:
+        instance_hooks: hooks.Object = hooks.read(self)
 
         if instance_hooks and instance_hooks.before_setitem:
             index, value = instance_hooks.before_setitem(self, index, value)
 
-        m = meta.read(self)  # type: Optional[meta.Array]
+        m: Optional[meta.Array] = meta.read(self)
 
         if m is None:
             item_types = None
@@ -602,36 +649,26 @@ class Array(list, Model):
         if instance_hooks and instance_hooks.after_setitem:
             instance_hooks.after_setitem(self, index, value)
 
-    def append(self, value):
-        # type: (Any) -> None
+    def append(self, value: Any) -> None:
         if not isinstance(value, _UNMARSHALLABLE_TYPES):
             raise errors.UnmarshalTypeError(data=value)
-
-        instance_hooks = hooks.read(self)  # type: hooks.Array
-
+        instance_hooks: hooks.Array = hooks.read(self)
         if instance_hooks and instance_hooks.before_append:
             value = instance_hooks.before_append(self, value)
-
-        instance_meta = meta.read(self)  # type: Optional[meta.Array]
-
+        instance_meta: Optional[meta.Array] = meta.read(self)
         if instance_meta is None:
             item_types = None
         else:
             item_types = instance_meta.item_types
-
         value = unmarshal(value, types=item_types)
-
         super().append(value)
-
         if instance_hooks and instance_hooks.after_append:
             instance_hooks.after_append(self, value)
 
-    def __copy__(self):
-        # type: () -> Array
+    def __copy__(self) -> 'Array':
         return self.__class__(self)
 
-    def __deepcopy__(self, memo=None):
-        # type: (Optional[dict]) -> Array
+    def __deepcopy__(self, memo: Optional[dict] = None) -> 'Array':
         new_instance = self.__class__()
         im = meta.read(self)
         cm = meta.read(type(self))
@@ -645,7 +682,7 @@ class Array(list, Model):
             new_instance.append(deepcopy(i, memo=memo))
         return new_instance
 
-    def _marshal(self):
+    def _marshal(self) -> tuple:
         a = self
         h = hooks.read(a)
         if (h is not None) and (h.before_marshal is not None):
@@ -663,37 +700,30 @@ class Array(list, Model):
 
     def _validate(
         self,
-        raise_errors=True
-    ):
-        # type: (bool) -> None
+        raise_errors: bool = True
+    ) -> List[str]:
         validation_errors = []
         a = self
         h = hooks.read(a)
-
         if (h is not None) and (h.before_validate is not None):
             a = h.before_validate(a)
-
         m = meta.read(a)
-
         if m.item_types is not None:
-
             for i in a:
-
-                validation_errors.extend(validate(i, m.item_types, raise_errors=False))
-
+                validation_errors.extend(
+                    validate(i, m.item_types, raise_errors=False)
+                )
         if (h is not None) and (h.after_validate is not None):
             h.after_validate(a)
-
         if raise_errors and validation_errors:
             raise errors.ValidationError('\n'.join(validation_errors))
-
         return validation_errors
 
     @staticmethod
-    def _repr_item(item):
-        # type: (Any) -> str
+    def _repr_item(item: Any) -> str:
         """
-        A string representation of an item in this array which can be used to recreate the item
+        A string representation of an item in this array which can be used to
+        recreate the item
         """
         item_representation = (
             qualified_name(item) if isinstance(item, type) else
@@ -706,7 +736,8 @@ class Array(list, Model):
 
     def __repr__(self):
         """
-        A string representation of this array which can be used to recreate the array
+        A string representation of this array which can be used to recreate the
+        array
         """
         instance_meta = meta.read(self)
         class_meta = meta.read(type(self))
@@ -723,7 +754,10 @@ class Array(list, Model):
             representation_lines.append(
                 '    ]' + (
                     ','
-                    if instance_meta != class_meta and instance_meta.item_types else
+                    if (
+                        instance_meta != class_meta and
+                        instance_meta.item_types
+                    ) else
                     ''
                 )
             )
@@ -738,8 +772,7 @@ class Array(list, Model):
             representation_lines = ''.join(representation_lines)
         return representation_lines
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
         if type(self) is not type(other):
             return False
         length = len(self)
@@ -750,8 +783,7 @@ class Array(list, Model):
                 return False
         return True
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
+    def __ne__(self, other: Any) -> bool:
         if self == other:
             return False
         else:
@@ -765,119 +797,142 @@ abc.model.Array.register(Array)
 
 
 class Dictionary(collections.OrderedDict, Model):
+    """
+    This can serve as either a base-class for typed (or untyped) dictionaries,
+    or can be instantiated directly.
 
-    _format = None  # type: Optional[str]
-    _hooks = None  # type: Optional[hooks.Dictionary]
-    _meta = None  # type: Optional[meta.Dictionary]
+    Parameters:
+
+    - items (list|set|io.IOBase|str|bytes)
+    - value_types ([type|sob.properties.Property])
+
+    Typing can be enforced at the instance level by
+    passing the keyword argument `value_types` with a list of types or
+    properties.
+
+    Typing can be enforced at the class level by assigning a list
+    of types as follows:
+
+    ```python
+    import sob
+
+    class DictionarySubClass(sob.model.Dictionary):
+
+        pass
+
+    sob.meta.writable(DictionarySubClass).value_types = [
+        sob.properties.String,
+        sob.properties.Integer
+    ]
+    ```
+    """
+
+    _hooks: Optional[hooks.Dictionary]
+    _meta: Optional[meta.Dictionary]
 
     def __init__(
         self,
-        items=None,  # type: Optional[Mapping]
-        value_types=(
-            None
-        ),  # type: Optional[Union[Sequence[Union[type, properties.Property]], type, properties.Property]]
-    ):
-        self._meta = None  # type: Optional[meta.Dictionary]
-        self._hooks = None  # type: Optional[hooks.Dictionary]
-        self._url = None  # type: Optional[str]
-        self._xpath = None  # type: Optional[str]
-        self._pointer = None  # type: Optional[str]
+        items: Optional[Union[Mapping, IO, str, bytes]] = None,
+        value_types: Optional[
+            Union[
+                Sequence[
+                    Union[
+                        type,
+                        properties.Property
+                    ]
+                ],
+                type,
+                properties.Property
+            ]
+        ] = None
+    ) -> None:
+        self._meta: Optional[meta.Dictionary]
+        self._hooks: Optional[hooks.Dictionary]
+        Model.__init__(self)
+        deserialized_items: Any = self._init_format(items)
+        self._init_value_types(deserialized_items, value_types)
+        self._init_items(deserialized_items)
+        self._init_url(items)
+        self._init_pointer()
 
-        url = None
-
-        if isinstance(items, IOBase):
-
-            if hasattr(items, 'url'):
-                url = items.url
-            elif hasattr(items, 'name'):
-                url = urljoin('file:', items.name)
-
-        items, format_ = detect_format(items)
-
-        if value_types is None:
-
-            if isinstance(items, Dictionary):
-
-                m = meta.read(items)
-
-                if meta.read(self) is not m:
-                    meta.write(self, deepcopy(m))
-        else:
-
-            meta.writable(self).value_types = value_types
-
+    def _init_items(
+        self,
+        items: Optional[Mapping]
+    ) -> None:
         if items is None:
-
             super().__init__()
-
         else:
-
             if isinstance(items, (collections.OrderedDict, Dictionary)):
                 items = items.items()
             elif isinstance(items, dict):
-                items = sorted(items.items(), key=lambda kv: kv)
-
+                items = sorted(
+                    items.items(),
+                    key=lambda key_value: key_value
+                )
             super().__init__(items)
 
-            if meta.pointer(self) is None:
-                meta.pointer(self, '#')
+    def _init_value_types(
+        self,
+        items: Optional[Union[Sequence, Set]],
+        value_types: Optional[
+            Union[
+                Sequence[
+                    Union[
+                        type,
+                        properties.Property
+                    ]
+                ],
+                type,
+                properties.Property
+            ]
+        ]
+    ) -> None:
+        if value_types is None:
+            # If no value types are explicitly attributed, but the initial
+            # items are an instance of `Dictionary`, we adopt the item types
+            # from that `Array` instance.
+            if isinstance(items, Dictionary):
+                values_meta = meta.read(items)
+                if meta.read(self) is not values_meta:
+                    meta.write(self, deepcopy(values_meta))
+        else:
+            meta.writable(self).value_types = value_types
 
-            if meta.xpath(self) is None:
-                meta.xpath(self, '')
-
-        if url is not None:
-            meta.url(self, url)
-
-        if format_ is not None:
-            meta.format_(self, format_)
-
-    def __hash__(self):
+    def __hash__(self) -> int:
         return id(self)
 
     def __setitem__(
         self,
-        key,  # type: int
-        value  # type: Any
-    ):
-        instance_hooks = hooks.read(self)  # type: hooks.Dictionary
-
+        key: int,
+        value: Any
+    ) -> None:
+        instance_hooks: hooks.Dictionary = hooks.read(self)
         if instance_hooks and instance_hooks.before_setitem:
             key, value = instance_hooks.before_setitem(self, key, value)
-
-        instance_meta = meta.read(self)  # type: Optional[meta.Dictionary]
-
+        instance_meta: Optional[meta.Dictionary] = meta.read(self)
         if instance_meta is None:
             value_types = None
         else:
             value_types = instance_meta.value_types
-
         try:
-
             unmarshalled_value = unmarshal(
                 value,
                 types=value_types
             )
-
         except TypeError as error:
-
             message = "\n - %s['%s']: " % (
                 qualified_name(type(self)),
                 key
             )
-
             if error.args and isinstance(error.args[0], str):
-
                 error.args = tuple(
                     chain(
                         (message + error.args[0],),
                         error.args[1:]
                     )
                 )
-
             else:
-
                 error.args = (message + repr(value),)
-
             raise error
 
         if value is None:
@@ -891,8 +946,7 @@ class Dictionary(collections.OrderedDict, Model):
         if instance_hooks and instance_hooks.after_setitem:
             instance_hooks.after_setitem(self, key, unmarshalled_value)
 
-    def __copy__(self):
-        # type: (Dictionary) -> Dictionary
+    def __copy__(self) -> 'Dictionary':
         new_instance = self.__class__()
         im = meta.read(self)
         cm = meta.read(type(self))
@@ -906,8 +960,7 @@ class Dictionary(collections.OrderedDict, Model):
             new_instance[k] = v
         return new_instance
 
-    def __deepcopy__(self, memo=None):
-        # type: (dict) -> Dictionary
+    def __deepcopy__(self, memo: dict = None) -> 'Dictionary':
         new_instance = self.__class__()
         im = meta.read(self)
         cm = meta.read(type(self))
@@ -921,15 +974,16 @@ class Dictionary(collections.OrderedDict, Model):
             new_instance[k] = deepcopy(v, memo=memo)
         return new_instance
 
-    def _marshal(self):
+    def _marshal(self) -> Dict[str, Any]:
         """
         This method marshals an instance of `Dictionary` as built-in type
         `OrderedDict` which can be serialized into
         JSON/YAML.
         """
-        # This variable is needed because before-marshal hooks are permitted to return altered *copies* of `self`, so
-        # prior to marshalling--this variable may no longer point to `self`
-        data = self  # type: Union[Dictionary, collections.OrderedDict]
+        # This variable is needed because before-marshal hooks are permitted to
+        # return altered *copies* of `self`, so prior to marshalling--this
+        # variable may no longer point to `self`
+        data: Union[Dictionary, collections.OrderedDict] = self
         # Check for hooks
         instance_hooks = hooks.read(data)
         # Execute before-marshal hooks, if applicable
@@ -938,21 +992,21 @@ class Dictionary(collections.OrderedDict, Model):
         ):
             data = instance_hooks.before_marshal(data)
         # Get the metadata, if any has been assigned
-        instance_meta = meta.read(data)  # type: Optional[meta.Dictionary]
+        instance_meta: Optional[meta.Dictionary] = meta.read(data)
         # Check to see if value types are defined in the metadata
         if instance_meta is None:
             value_types = None
         else:
             value_types = instance_meta.value_types
         # Recursively convert the data to generic, serializable, data types
-        marshalled_data = collections.OrderedDict(
+        marshalled_data: Dict[str, Any] = collections.OrderedDict(
             [
                 (
                     k,
                     marshal(v, types=value_types)
                 ) for k, v in data.items()
             ]
-        )  # type: collections.OrderedDict
+        )
         # Execute after-marshal hooks, if applicable
         if (instance_hooks is not None) and (
             instance_hooks.after_marshal is not None
@@ -962,45 +1016,34 @@ class Dictionary(collections.OrderedDict, Model):
             )
         return marshalled_data
 
-    def _validate(self, raise_errors=True):
-        # type: (Callable) -> None
+    def _validate(self, raise_errors=True) -> List[str]:
         """
         Recursively validate
         """
-
         validation_errors = []
         d = self
         h = d._hooks or type(d)._hooks
-
         if (h is not None) and (h.before_validate is not None):
             d = h.before_validate(d)
-
-        m = meta.read(d)  # type: Optional[meta.Dictionary]
-
+        m: Optional[meta.Dictionary] = meta.read(d)
         if m is None:
             value_types = None
         else:
             value_types = m.value_types
-
         if value_types is not None:
-
             for k, v in d.items():
-
-                value_validation_errors = validate(v, value_types, raise_errors=False)\
-
+                value_validation_errors = validate(
+                    v, value_types, raise_errors=False
+                )
                 validation_errors.extend(value_validation_errors)
-
         if (h is not None) and (h.after_validate is not None):
             h.after_validate(d)
-
         if raise_errors and validation_errors:
             raise errors.ValidationError('\n'.join(validation_errors))
-
         return validation_errors
 
     @staticmethod
-    def _repr_item(key, value):
-        # type: (str, Any) -> str
+    def _repr_item(key: str, value: Any) -> str:
         value_representation = (
             qualified_name(value) if isinstance(value, type) else
             repr(value)
@@ -1018,12 +1061,13 @@ class Dictionary(collections.OrderedDict, Model):
                 '        ),'
             ])
         else:
-            representation = '        (%s, %s),' % (repr(key), value_representation)
+            representation = f'        ({repr(key)}, {value_representation}),'
         return representation
 
     def __repr__(self):
         """
-        Return a string representation of this object which can be used to re-assemble the object programmatically
+        Return a string representation of this object which can be used to
+        re-assemble the object programmatically
         """
         class_meta = meta.read(type(self))
         instance_meta = meta.read(self)
@@ -1043,7 +1087,10 @@ class Dictionary(collections.OrderedDict, Model):
             representation_lines.append(
                 '    ]' + (
                     ','
-                    if instance_meta != class_meta and instance_meta.value_types else
+                    if (
+                        instance_meta != class_meta and
+                        instance_meta.value_types
+                    ) else
                     ''
                 )
             )
@@ -1059,8 +1106,7 @@ class Dictionary(collections.OrderedDict, Model):
             representation = ''.join(representation_lines)
         return representation
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
         if type(self) is not type(other):
             return False
         keys = tuple(self.keys())
@@ -1072,8 +1118,7 @@ class Dictionary(collections.OrderedDict, Model):
                 return False
         return True
 
-    def __ne__(self, other):
-        # type: (Any) -> bool
+    def __ne__(self, other: Any) -> bool:
         if self == other:
             return False
         else:
@@ -1085,77 +1130,107 @@ class Dictionary(collections.OrderedDict, Model):
 
 abc.model.Dictionary.register(Dictionary)
 
-# endregion
+
+def _type_hint_from_property_types(
+    property_types: Optional[properties.types.Types]
+) -> str:
+    type_hint: str = ''
+    if property_types is not None:
+        if len(property_types) > 1:
+            type_hint = 'Union[\n{}\n]'.format(
+                ',\n'.join(
+                    indent(
+                        _type_hint_from_property(item_type),
+                        start=0
+                    )
+                    for item_type in property_types
+                )
+            )
+        else:
+            type_hint = _type_hint_from_property(property_types[0])
+    return type_hint
 
 
-def _typing_from_property(property_):
-    # type: (properties.Property) -> str
-    if isinstance(property_, type):
-        if property_ in (Union, Dict, Any, Sequence, IO):
-            type_hint = property_.__name__
-        else:
-            type_hint = qualified_name(property_)
-    elif isinstance(property_, properties.DateTime):
-        type_hint = 'datetime'
-    elif isinstance(property_, properties.Date):
-        type_hint = 'date'
-    elif isinstance(property_, properties.Bytes):
-        type_hint = 'bytes'
-    elif isinstance(property_, properties.Integer):
-        type_hint = 'int'
-    elif isinstance(property_, properties.Number):
-        type_hint = qualified_name(Number)
-    elif isinstance(property_, properties.Boolean):
-        type_hint = 'bool'
-    elif isinstance(property_, properties.String):
-        type_hint = 'str'
-    elif isinstance(property_, properties.Array):
-        item_types = None
-        if property_.item_types:
-            if len(property_.item_types) > 1:
-                item_types = 'Union[%s]' % (', '.join(
-                    _typing_from_property(it) for it in property_.item_types))
+def _type_hint_from_type(type_: type) -> str:
+    if type_ in (Union, Dict, Any, Sequence, IO):
+        type_hint = type_.__name__
+    else:
+        type_hint = qualified_name(type_)
+        # If this class was declared in the same module, we put it in
+        # quotes since it won't necessarily have been declared already
+        if (
+            ('.' not in type_hint)
+            and not
+            hasattr(builtins, type_hint)
+        ):
+            if len(type_hint) > 60:
+                type_hint_lines: List[str] = ['(']
+                for chunk in chunked(type_hint, 57):
+                    type_hint_lines.append(
+                        f"    '{''.join(chunk)}'"
+                    )
+                type_hint_lines.append(')')
+                type_hint = '\n'.join(type_hint_lines)
             else:
-                item_types = _typing_from_property(property_.item_types[0])
-        type_hint = 'Sequence' + ('[%s]' % item_types if item_types else '')
-    elif isinstance(property_, properties.Dictionary):
-        value_types = None
-        if property_.value_types:
-            if len(property_.value_types) > 1:
-                value_types = 'Union[%s]' % (', '.join(
-                    _typing_from_property(vt) for vt in property_.value_types))
-            else:
-                value_types = _typing_from_property(property_.value_types[0])
-        type_hint = ('Dict[str, %s]' % value_types if value_types else 'dict')
-    elif property_ and property_.types:
-        if len(property_.types) > 1:
-            type_hint = 'Union[%s]' % ', '.join(
-                _typing_from_property(t) for t in property_.types)
+                type_hint = f"'{type_hint}'"
+    return type_hint
+
+
+def _type_hint_from_property(
+    property_or_type: Union[properties.Property, type]
+) -> str:
+    type_hint: str
+    if isinstance(property_or_type, type):
+        type_hint = _type_hint_from_type(property_or_type)
+    elif isinstance(property_or_type, properties.Array):
+        item_type_hint: str = _type_hint_from_property_types(
+            property_or_type.item_types
+        )
+        if item_type_hint:
+            type_hint = (
+                'Sequence[\n'
+                f'    {indent(item_type_hint)}\n'
+                ']'
+            )
         else:
-            type_hint = _typing_from_property(property_.types[0])
+            type_hint = 'Sequence'
+    elif isinstance(property_or_type, properties.Dictionary):
+        value_type_hint: str = _type_hint_from_property_types(
+            property_or_type.item_types
+        )
+        if value_type_hint:
+            type_hint = (
+                'Dict[\n'
+                '    str,\n'
+                f'    {indent(value_type_hint)}\n'
+                ']'
+            )
+        else:
+            type_hint = 'dict'
+    elif property_or_type and property_or_type.types:
+        type_hint = _type_hint_from_property_types(property_or_type.types)
     else:
         type_hint = 'Any'
     return type_hint
 
 
 def _get_class_declaration(
-    name,  # type: str
-    superclass  # type: type
-):
-    # type: (...) -> str
+    name: str,
+    superclass: type
+) -> str:
     """
     Construct a class declaration
     """
-    qualified_superclass_name = qualified_name(superclass)  # type: str
+    qualified_superclass_name: str = qualified_name(superclass)
     # If the class declaration line is longer than 79 characters--break it
     # up (attempt to conform to PEP8)
     if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
-        class_declaration = 'class %s(%s):' % (
+        class_declaration: str = 'class %s(%s):' % (
             name,
             qualified_superclass_name
-        )  # type: str
+        )
     else:
-        class_declaration = 'class %s(%s\n    %s\n):' % (
+        class_declaration: str = 'class %s(%s\n    %s\n):' % (
             name,
             # If the first line is still too long for PEP8--add a comment to
             # prevent linters from getting hung up
@@ -1165,38 +1240,40 @@ def _get_class_declaration(
                 ''
             ),
             qualified_superclass_name
-        )  # type: str
+        )
     return class_declaration
 
 
-def from_meta(name, metadata, module=None, docstring=None):
-    # type: (str, meta.Meta, Optional[str], Optional[str]) -> type
+def _repr_class_docstring(docstring: str = '') -> str:
     """
-    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
-    instance of `sob.meta.Meta`.
-
-    Arguments:
-
-        - name (str): The name of the class.
-
-        - class_meta (sob.meta.Meta)
-
-        - module (str): Specify the value for the class definition's
-          `__module__` property. The invoking module will be
-          used if this is not specified (if possible).
-
-        - docstring (str): A docstring to associate with the class definition.
+    Return a representation of a docstring for use in a class constructor.
     """
-    repr_docstring = None  # type: Optional[str]
-    if docstring is not None:
+    repr_docstring: str = ''
+    if docstring:
         repr_docstring = (
             '    """\n'
             '%s\n'
             '    """'
         ) % split_long_docstring_lines(docstring)
+    return repr_docstring
+
+
+def _class_definition_from_meta(
+    name: str,
+    metadata: meta.Meta,
+    docstring: Optional[str] = None
+) -> str:
+    """
+    This returns a `str` defining a model class, as determined by an
+    instance of `sob.meta.Meta`.
+    """
+    repr_docstring: str = _repr_class_docstring(docstring)
     if isinstance(metadata, meta.Dictionary):
         out = [
-            _get_class_declaration(name, Dictionary)
+            _get_class_declaration(
+                name,
+                Dictionary
+            )
         ]
         if repr_docstring is not None:
             out.append(repr_docstring)
@@ -1205,58 +1282,60 @@ def from_meta(name, metadata, module=None, docstring=None):
         out = [
             _get_class_declaration(name, Array)
         ]
-        if repr_docstring is not None:
+        if repr_docstring:
             out.append(repr_docstring)
         out.append('\n    pass\n\n')
     elif isinstance(metadata, meta.Object):
         out = [
             _get_class_declaration(name, Object)
         ]
-        if repr_docstring is not None:
+        if repr_docstring:
             out.append(repr_docstring)
         out += [
             '',
             '    def __init__(',
             '        self,',
-            '        _data=None,  # type: Optional[Union[str, bytes, dict, '
-            'Sequence, IO]]'
+            '        _data: Optional[',
+            '            Union[str, bytes, dict, Sequence, IO]',
+            '        ] = None,'
         ]
-        metadata_properties_items = tuple(
+        metadata_properties_items: Tuple[
+            Tuple[str, abc.properties.Property],
+            ...
+        ] = tuple(
             metadata.properties.items()
-        )  # type: Tuple[Tuple[str, abc.properties.Property], ...]
-        metadata_properties_items_length = len(
+        )
+        metadata_properties_items_length: int = len(
             metadata_properties_items
-        )  # type: int
+        )
+        property_index: int
+        name_and_property: Tuple[str, abc.properties.Property]
         for property_index, name_and_property in enumerate(
             metadata_properties_items
         ):
+            property_name_: str
+            property_: abc.properties.Property
             property_name_, property_ = name_and_property
-            repr_comma = (
+            repr_comma: str = (
                 ''
                 if (
                     property_index + 1 ==
                     metadata_properties_items_length
                 ) else
                 ','
-            )  # type: str
-            repr_property_typing = _typing_from_property(property_)
-            parameter_declaration = (
-                '        %s=None%s  # type: Optional[%s]%s' % (
-                    property_name_,
-                    repr_comma,
-                    repr_property_typing,
-                    '  # noqa' if (
-                        33 +
-                        len(property_name_) +
-                        len(repr_comma) +
-                        len(repr_property_typing)
-                    ) > _LINE_LENGTH else
-                    ''
-                )
-            )  # type: str
+            )
+            repr_property_typing: str = indent(
+                _type_hint_from_property(property_),
+                12
+            )
+            parameter_declaration: str = (
+                f'        {property_name_}: Optional[\n'
+                f'            {repr_property_typing}\n'
+                f'        ] = None{repr_comma}'
+            )
             out.append(parameter_declaration)
         out.append(
-            '    ):'
+            '    ) -> None:'
         )
         for property_name_ in metadata.properties.keys():
             out.append(
@@ -1265,117 +1344,214 @@ def from_meta(name, metadata, module=None, docstring=None):
         out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
-    class_definition = '\n'.join(out)
-    namespace = dict(__name__='from_meta_%s' % name)
+    return '\n'.join(out)
+
+
+def from_meta(
+    name: str,
+    metadata: meta.Meta,
+    module: Optional[str] = None,
+    docstring: Optional[str] = None
+) -> type:
+    """
+    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
+    instance of `sob.meta.Meta`.
+
+    Parameters:
+
+        - name (str): The name of the class.
+        - class_meta ([sob.meta.Meta](#Meta))
+        - module (str): Specify the value for the class definition's
+          `__module__` property. The invoking module will be
+          used if this is not specified (if possible).
+        - docstring (str): A docstring to associate with the class definition.
+    """
+    class_definition: str = _class_definition_from_meta(
+        name, metadata, docstring
+    )
+    namespace: Dict[str, Any] = dict(__name__='from_meta_%s' % name)
     imports = '\n'.join([
-        BACKWARDS_COMPATIBILITY_IMPORTS,
-        'import %s  # noqa' % _parent_module_name,
-        'import numbers  # noqa',
-        'try:',
-        '    from typing import Union, Dict, Any, Sequence, IO, Optional',
-        'except ImportError:',
-        '    Union = Dict = Any = Sequence = IO = Optional = None',
+        f'import {_parent_module_name}',
+        'import numbers',
+        'from typing import Union, Dict, Any, Sequence, IO, Optional'
     ])
     source = '%s\n\n\n%s' % (imports, class_definition)
     exec(source, namespace)
-    result = namespace[name]
-    result._source = source
+    model_class: type = namespace[name]
+    model_class._source = source
+    # For pickling to work, the __module__ variable needs to be set to the
+    # frame where the model class is created. We bypass this step in
+    # environments where sys._getframe is not defined or where the user has
+    # specified a particular module.
     if module is None:
         try:
-            module = sys._getframe(1).f_globals.get('__name__', '__main__')
+            module: Module = getattr(sys, '_getframe')(1).f_globals.get(
+                '__name__',
+                '__main__'
+            )
         except (AttributeError, ValueError):
             pass
     if module is not None:
-        result.__module__ = module
-    result._meta = metadata
-    return result
+        model_class.__module__ = module or '__main__'
+    model_class._meta = metadata
+    return model_class
 
 
-class _Marshal:
+def _marshal_collection(
+    data: Dict[str, Any],
+    value_types: Optional[
+        Sequence[Union[type, properties.Property, Callable]]
+    ] = None,
+    item_types: Optional[
+        Sequence[Union[type, properties.Property, Callable]]
+    ] = None
+) -> Union[Dict[str, Any], List[Any]]:
+    if isinstance(data, dict):
+        return _marshal_dict(
+            data,
+            value_types
+        )
+    elif isinstance(data, collections.abc.Sequence):
+        return _marshal_sequence(
+            data,
+            item_types
+        )
 
-    def __init__(
-        self,
-        data,  # type: Any
-        types=None,  # type: Optional[Sequence[Union[type, properties.Property, Callable]]]
-        value_types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-        item_types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-    ):
-        # type: (...) -> None
-        pass
+
+def _marshal_dict(
+    data: Dict[str, Any],
+    value_types: Optional[
+        Sequence[Union[type, properties.Property, Callable]]
+    ] = None
+) -> Dict[str, Any]:
+    key: str
+    value: Any
+    marshalled_data: Dict[str, Any] = copy(data)
+    for key, value in marshalled_data.items():
+        marshalled_data[key] = marshal(value, value_types=value_types)
+    return marshalled_data
+
+
+def _marshal_sequence(
+    data: Sequence[Any],
+    item_types: Optional[
+        Sequence[Union[type, properties.Property, Callable]]
+    ] = None
+) -> List[str]:
+    index: int
+    value: Any
+    marshalled_data: List[str] = list(data)
+    for index, value in enumerate(marshalled_data):
+        marshalled_data[index] = marshal(value, item_types=item_types)
+    return marshalled_data
+
+
+def _marshal_typed(
+    data: Any,
+    types: Sequence[Union[type, properties.Property]] = None
+) -> Any:
+    """
+    This attempts to initialize the provided type(s) with `data`, and accepts
+    the first which does not raise an error
+    """
+    # For each potential type, attempt to marshal the data, and accept the
+    # first result which does not throw an error
+    marshalled_data: Any = UNDEFINED
+    for type_ in types:
+        if isinstance(type_, properties.Property):
+            try:
+                marshalled_data = _marshal_property_value(type_, data)
+                break
+            except TypeError:
+                pass
+        elif isinstance(type_, type) and isinstance(data, type_):
+            marshalled_data = data
+            break
+    # If no matches are found, raise a `TypeError` with sufficient
+    # information about the data and `types` to debug
+    if marshalled_data is UNDEFINED:
+        raise TypeError(
+            '%s cannot be interpreted as any of the designated types: %s' %
+            (
+                repr(data),
+                repr(types)
+            )
+        )
+    return marshalled_data
 
 
 def marshal(
-    data,  # type: Any
-    types=None,  # type: Optional[Sequence[Union[type, properties.Property, Callable]]]
-    value_types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-    item_types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-):
-    # type: (...) -> Any
-
+    data: Any,
+    types: Optional[
+        Sequence[Union[type, properties.Property, Callable]]
+    ] = None,
+    value_types: Optional[Sequence[Union[type, properties.Property]]] = None,
+    item_types: Optional[Sequence[Union[type, properties.Property]]] = None,
+) -> Any:
     """
-    Recursively converts instances of `sob.abc.model.Model` into JSON/YAML
-    serializable objects.
+    Recursively converts data which is not serializable using the `json` module
+    into formats which *can* be represented as JSON.
     """
-    try:
-        return getattr(data, '_marshal')()
-    except AttributeError:
-        pass
-    # Don't do anything with `None`--this just means an attributes is not used
-    # for this instance (and explicit `null` would be passed as
-    # `.properties.NULL`
+    marshalled_data: Any = data
     if data is None:
-        return data
-    # If `types` is a callable function, it should return an iterator of types
-    # and/or property definitions
-    if callable(types):
-        types = types(data)
-    # If data types have been provided, validate the un-marshalled data by
-    # attempting to initialize the provided type(s) with `data`
-    if types is not None:
-        # For compatibility - include `native_str` in `types` when it is not
-        # the same as `str`, and `str` is one of the `types`.
-        types = include_native_str(types)
-        # For each potential type, attempt to marshal the data, and accept the
-        # first result which does not throw an error
-        matched = False
-        for type_ in types:
-            if isinstance(type_, properties.Property):
-                try:
-                    data = marshal_property_value(type_, data)
-                    matched = True
-                    break
-                except TypeError:
-                    pass
-            elif isinstance(type_, type) and isinstance(data, type_):
-                matched = True
-                break
-        # If no matches are found, raise a `TypeError` with sufficient
-        # information about the data and `types` to debug
-        if not matched:
-            raise TypeError(
-                '%s cannot be interpreted as any of the designated types: %s' %
-                (
-                    repr(data),
-                    repr(types)
-                )
-            )
-    if value_types is not None:
-        for k, v in data.items():
-            data[k] = marshal(v, types=value_types)
-    if item_types is not None:
-        for i in range(len(data)):
-            data[i] = marshal(data[i], types=item_types)
-    if isinstance(data, Decimal):
-        return float(data)
-    if isinstance(data, (date, datetime)):
-        return data.isoformat()
-    if isinstance(data, native_str):
-        return data
-    if isinstance(data, (bytes, bytearray)):
-        return str(b64encode(data), 'ascii')
-    if hasattr(data, '__bytes__'):
-        return str(b64encode(bytes(data)), 'ascii')
-    return data
+        # Don't do anything with `None`--this just means an attributes is not
+        # used for this instance (an explicit `null` would be passed as
+        # `sob.properties.types.NULL`).
+        pass
+    elif isinstance(data, abc.model.Model):
+        marshalled_data = getattr(data, '_marshal')()
+    elif types is not None:
+        marshalled_data = _marshal_typed(data, types)
+    elif isinstance(data, Decimal):
+        # Instances of `decimal.Decimal` can'ts be serialized as JSON, so we
+        # convert them to `float`
+        marshalled_data = float(data)
+    elif isinstance(data, (date, datetime)):
+        marshalled_data = data.isoformat()
+    elif isinstance(data, str):
+        marshalled_data = data
+    elif isinstance(data, (bytes, bytearray)):
+        # Convert `bytes` to base-64 encoded strings
+        marshalled_data = str(b64encode(data), 'ascii')
+    elif isinstance(
+        data,
+        (
+            dict, set,
+            collections.abc.Sequence
+        )
+    ):
+        marshalled_data = _marshal_collection(
+            data,
+            value_types=value_types,
+            item_types=item_types
+        )
+    elif hasattr(data, '__bytes__'):
+        # Convert objects which can be *cast* as `bytes` to
+        # base-64 encoded strings
+        marshalled_data = str(b64encode(bytes(data)), 'ascii')
+    return marshalled_data
+
+
+def _is_non_string_sequence_or_set_instance(value: Any) -> bool:
+    return (
+        isinstance(
+            value,
+            (collections.abc.Set, collections.abc.Sequence)
+        )
+    ) and (
+        not isinstance(value, (str, bytes))
+    )
+
+
+def _is_non_string_sequence_or_set_subclass(type_: type) -> bool:
+    return (
+        issubclass(
+            type_,
+            (collections.abc.Set, collections.abc.Sequence)
+        )
+    ) and (
+        not issubclass(type_, (str, bytes))
+    )
 
 
 class _Unmarshal:
@@ -1385,12 +1561,13 @@ class _Unmarshal:
 
     def __init__(
         self,
-        data,  # type: Any
-        types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-        value_types=None,  # type: Optional[Sequence[Union[type, properties.Property]]]
-        item_types=None  # type: Optional[Sequence[Union[type, properties.Property]]]
-    ):
-        # type: (...) -> None
+        data: Any,
+        types: Optional[Sequence[Union[type, properties.Property]]] = None,
+        value_types: Optional[
+            Sequence[Union[type, properties.Property]]
+        ] = None,
+        item_types: Optional[Sequence[Union[type, properties.Property]]] = None
+    ) -> None:
         # Verify that the data can be parsed before attempting to un-marshalls
         if not isinstance(
             data,
@@ -1408,144 +1585,164 @@ class _Unmarshal:
         # If only one type was passed for any of the following parameters--we
         # convert it to a tuple
         if types is not None:
-            if not isinstance(types, collections_abc.Sequence):
+            if not isinstance(types, collections.abc.Sequence):
                 types = (types,)
         if value_types is not None:
-            if not isinstance(value_types, collections_abc.Sequence):
+            if not isinstance(value_types, collections.abc.Sequence):
                 value_types = (value_types,)
         if item_types is not None:
-            if not isinstance(item_types, collections_abc.Sequence):
+            if not isinstance(item_types, collections.abc.Sequence):
                 item_types = (item_types,)
         # Instance Attributes
-        self.data = data  # type: Any
-        self.types = types  # type: Optional[Sequence[Union[type, properties.Property]]]
-        self.value_types = value_types   # type: Optional[Sequence[Union[type, properties.Property]]]
-        self.item_types = item_types   # type: Optional[Sequence[Union[type, properties.Property]]]
-        self.meta = None  # type: Optional[meta.Meta]
+        self.data: Any = data
+        self.types: Optional[
+            Sequence[Union[type, properties.Property]]
+        ] = types
+        self.value_types: Optional[
+            Sequence[Union[type, properties.Property]]
+        ] = value_types
+        self.item_types: Optional[
+            Sequence[Union[type, properties.Property]]
+        ] = item_types
+        self.meta: Optional[meta.Meta] = None
 
-    def __call__(self):
-        # type: (...) -> Any
+    def __call__(self) -> Any:
         """
         Return `self.data` unmarshalled
         """
-        unmarshalled_data = self.data
+        unmarshalled_data: Optional[
+            Union[
+                abc.model.Model,
+                Number,
+                str, bytes,
+                date, datetime,
+                tuple
+            ]
+        ] = self.data
         if (
             (self.data is not None) and
-            (self.data is not properties.NULL)
+            (self.data is not NULL)
         ):
             # If the data is a sob `Model`, get it's metadata
             if isinstance(self.data, abc.model.Model):
                 self.meta = meta.read(self.data)
-
-            if self.meta is None:  # Only un-marshall models if they have no metadata yet (are generic)
-
-                # If `types` is a function, it should be one which expects to receive marshalled data and returns a list
-                # of types which are applicable
-                if callable(self.types):
-                    self.types = self.types(self.data)
-
-                # If the data provided is a `Generator`, make it static by casting the data into a tuple
+            # Only un-marshall models if they have no metadata yet (are
+            # generic)
+            if self.meta is None:
+                # If the data provided is a `Generator`, make it static by
+                # casting the data into a tuple
                 if isinstance(self.data, Generator):
                     self.data = tuple(self.data)
-
                 if self.types is None:
-
-                    # If no types are provided, we unmarshal the data into one of sob's generic container types
+                    # If no types are provided, we unmarshal the data into one
+                    # of sob's generic container types
                     unmarshalled_data = self.as_container_or_simple_type
-
                 else:
-                    self.types = include_native_str(self.types)
-                    unmarshalled_data = (  # type: Optional[Union[abc.model.Model, Number, str, bytes, date, datetime]]
-                        None
-                    )
-                    successfully_unmarshalled = False  # type: bool
-                    first_error = None  # type: Optional[Exception]
-                    first_error_message = None  # type: Optional[str]
-                    # Attempt to un-marshal the data as each type, in the order
-                    # provided
-                    for type_ in self.types:
-                        error = None  # type: Optional[Union[AttributeError, KeyError, TypeError, ValueError]]
-                        error_message = None  # type: Optional[str]
-                        try:
-                            unmarshalled_data = self.as_type(type_)
-                            # If the data is un-marshalled successfully, we do
-                            # not need to try any further types
-                            successfully_unmarshalled = True
-                            break
-                        except (
-                            AttributeError, KeyError, TypeError, ValueError
-                        ) as e:
-                            error = e
-                            error_message = errors.get_exception_text()
-                        if (error is not None) and (first_error is None):
-                            first_error = error
-                            first_error_message = error_message
-                    if not successfully_unmarshalled:
-                        if (
-                            first_error is None
-                        ) or isinstance(
-                            first_error, TypeError
-                        ):
-                            raise errors.UnmarshalTypeError(
-                                first_error_message,
-                                data=self.data,
-                                types=self.types,
-                                value_types=self.value_types,
-                                item_types=self.item_types
-                            )
-                        elif isinstance(first_error, ValueError):
-                            raise errors.UnmarshalValueError(
-                                first_error_message,
-                                data=self.data,
-                                types=self.types,
-                                value_types=self.value_types,
-                                item_types=self.item_types
-                            )
-                        else:
-                            # pylint erroneously identifies this as raising
-                            # `None`
-                            raise first_error  # noqa
+                    unmarshalled_data = self.as_typed
         return unmarshalled_data
 
     @property
-    def as_container_or_simple_type(self):
-        # type: (...) -> Any
+    def as_container_or_simple_type(self) -> Any:
         """
-        This function unmarshalls and returns the data into one of sob's container types, or if the data is of a
-        simple data type--it returns that data unmodified
+        This function unmarshalls and returns the data into one of sob's
+        container types, or if the data is of a simple data type--it returns
+        that data unmodified
         """
         unmarshalled_data = self.data
         if isinstance(self.data, abc.model.Dictionary):
             type_ = type(self.data)
             if self.value_types is not None:
-                unmarshalled_data = type_(self.data, value_types=self.value_types)
+                unmarshalled_data = type_(
+                    self.data, value_types=self.value_types
+                )
         elif isinstance(self.data, abc.model.Array):
             type_ = type(self.data)
             if self.item_types is not None:
-                unmarshalled_data = type_(self.data, item_types=self.item_types)
+                unmarshalled_data = type_(
+                    self.data, item_types=self.item_types
+                )
         elif isinstance(self.data, (dict, collections.OrderedDict)):
-            unmarshalled_data = Dictionary(self.data, value_types=self.value_types)
-        elif (
-            isinstance(self.data, (collections_abc.Set, collections_abc.Sequence))
-        ) and (
-            not isinstance(self.data, (str, bytes, native_str))
-        ):
-            unmarshalled_data = Array(self.data, item_types=self.item_types)
+            unmarshalled_data = Dictionary(
+                self.data,
+                value_types=self.value_types
+            )
+        elif _is_non_string_sequence_or_set_instance(self.data):
+            unmarshalled_data = Array(
+                self.data,
+                item_types=self.item_types
+            )
         elif not isinstance(
             self.data,
-            (str, bytes, native_str, Number, Decimal, date, datetime, bool, abc.model.Model)
+            (
+                str, bytes,
+                Number, Decimal,
+                date, datetime,
+                bool,
+                abc.model.Model
+            )
         ):
             raise errors.UnmarshalValueError(
                 '%s cannot be un-marshalled' % repr(self.data)
             )
         return unmarshalled_data
 
-    def get_dictionary_type(self, dictionary_type):
-        # type: (type) -> type
+    @property
+    def as_typed(self) -> abc.model.Model:
+        unmarshalled_data: Union[
+            abc.model.Model,
+            Number,
+            str, bytes,
+            date, datetime,
+            Undefined
+        ] = UNDEFINED
+        first_error: Optional[Exception] = None
+        first_error_message: Optional[str] = None
+        # Attempt to un-marshal the data as each type, in the order
+        # provided
+        for type_ in self.types:
+            try:
+                unmarshalled_data = self.as_type(type_)
+                # If the data is un-marshalled successfully, we do
+                # not need to try any further types
+                break
+            except (
+                AttributeError, KeyError, TypeError, ValueError
+            ) as error:
+                if first_error is None:
+                    first_error = error
+                    first_error_message = errors.get_exception_text()
+        if unmarshalled_data is UNDEFINED:
+            if (
+                first_error is None
+            ) or isinstance(
+                first_error, TypeError
+            ):
+                raise errors.UnmarshalTypeError(
+                    first_error_message,
+                    data=self.data,
+                    types=self.types,
+                    value_types=self.value_types,
+                    item_types=self.item_types
+                )
+            elif isinstance(
+                first_error,
+                ValueError
+            ):
+                raise errors.UnmarshalValueError(
+                    first_error_message,
+                    data=self.data,
+                    types=self.types,
+                    value_types=self.value_types,
+                    item_types=self.item_types
+                )
+            else:
+                raise first_error
+        return unmarshalled_data
+
+    def get_dictionary_type(self, dictionary_type: type) -> type:
         """
         Get the dictionary type to use
         """
-
         if dictionary_type is abc.model.Dictionary:
             dictionary_type = Dictionary
         elif issubclass(dictionary_type, abc.model.Object):
@@ -1562,11 +1759,9 @@ class _Unmarshal:
             dictionary_type = Dictionary
         else:
             raise TypeError(self.data)
-
         return dictionary_type
 
-    def before_hook(self, type_):
-        # type: (Any) -> Any
+    def before_hook(self, type_: Any) -> Any:
         data = self.data
         hooks_ = hooks.read(type_)
         if hooks_ is not None:
@@ -1575,8 +1770,7 @@ class _Unmarshal:
                 data = before_unmarshal_hook(deepcopy(data))
         return data
 
-    def after_hook(self, type_, data):
-        # type: (Any, Any) -> Any
+    def after_hook(self, type_: Any, data: Any) -> Any:
         hooks_ = hooks.read(type_)
         if hooks_ is not None:
             after_unmarshal_hook = hooks_.after_unmarshal
@@ -1586,9 +1780,8 @@ class _Unmarshal:
 
     def as_dictionary_type(
         self,
-        type_  # type: type
-    ):
-        # type: (...) -> Union[dict, collections.OrderedDict, abc.model.Model]
+        type_: type
+    ) -> Union[dict, Dict, abc.model.Model]:
         dictionary_type = self.get_dictionary_type(type_)
         # Determine whether the `type_` is an `Object` or a `Dictionary`
         if dictionary_type is None:
@@ -1602,46 +1795,42 @@ class _Unmarshal:
             unmarshalled_data = self.after_hook(type_, unmarshalled_data)
         return unmarshalled_data
 
-    def get_array_type(self, type_):
-        # type: (type) -> type
+    def get_array_type(self, type_: type) -> type:
         if type_ is abc.model.Array:
             type_ = Array
         elif issubclass(type_, abc.model.Array):
             pass
-        elif issubclass(
-            type_,
-            (collections_abc.Set, collections_abc.Sequence)
-        ) and not issubclass(
-            type_,
-            (str, bytes, native_str)
-        ):
+        elif _is_non_string_sequence_or_set_subclass(type_):
             type_ = Array
         else:
-            raise TypeError('%s is not of type `%s`' % (repr(self.data), repr(type_)))
+            raise TypeError(
+                '%s is not of type `%s`' % (
+                    repr(self.data),
+                    repr(type_)
+                )
+            )
         return type_
 
     def as_array_type(
         self,
-        type_  # type: type
-    ):
-        # type: (...) -> Array
+        type_: type
+    ) -> 'Array':
         type_ = self.get_array_type(type_)
         unmarshalled_data = type_(self.data, item_types=self.item_types)
         return unmarshalled_data
 
     def as_type(
         self,
-        type_,  # type: Union[type, properties.Property]
-    ):
-        # type: (...) -> Any
-
-        unmarshalled_data = None  # type: Union[abc.model.Model, Number, str, bytes, date, datetime]
-
+        type_: Union[type, properties.Property],
+    ) -> Any:
+        unmarshalled_data: Optional[Union[
+            abc.model.Model, Number, str, bytes, date, datetime
+        ]] = None
         if isinstance(
             type_,
             properties.Property
         ):
-            unmarshalled_data = unmarshal_property_value(type_, self.data)
+            unmarshalled_data = _unmarshal_property_value(type_, self.data)
         elif isinstance(type_, type):
             if isinstance(
                 self.data,
@@ -1649,8 +1838,7 @@ class _Unmarshal:
             ):
                 unmarshalled_data = self.as_dictionary_type(type_)
             elif (
-                isinstance(self.data, (collections_abc.Set, collections_abc.Sequence, abc.model.Array)) and
-                (not isinstance(self.data, (str, bytes, native_str)))
+                _is_non_string_sequence_or_set_instance(self.data)
             ):
                 unmarshalled_data = self.as_array_type(type_)
             elif isinstance(self.data, type_):
@@ -1664,87 +1852,100 @@ class _Unmarshal:
 
 
 def unmarshal(
-    data,  # type: Any
-    types=None,  # type: Optional[Union[Sequence[Union[type, properties.Property]], type, properties.Property]]
-    value_types=None,  # type: Optional[Union[Sequence[Union[type, properties.Property]], type, properties.Property]]
-    item_types=None,  # type: Optional[Union[Sequence[Union[type, properties.Property]], type, properties.Property]]
-):
-    # type: (...) -> Optional[Union[abc.model.Model, str, Number, date, datetime]]
+    data: Any,
+    types: Optional[
+        Union[
+            Sequence[
+                Union[type, properties.Property]
+            ],
+            type,
+            properties.Property
+        ]
+    ] = None,
+    value_types: Optional[
+        Union[
+            Sequence[
+                Union[type, properties.Property]
+            ],
+            type,
+            properties.Property
+        ]
+    ] = None,
+    item_types: Optional[
+        Union[
+            Sequence[
+                Union[type, properties.Property]
+            ],
+            type,
+            properties.Property
+        ]
+    ] = None
+) -> Optional[Union[abc.model.Model, str, Number, date, datetime]]:
     """
-    Converts `data` into an instance of a sob model, and recursively does the same for all member data.
+    Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
+    and recursively does the same for all member data.
 
     Parameters:
 
      - data ([type|sob.properties.Property]): One or more data types. Each type
 
-    This is done by attempting to cast that data into a series of `types`.
-
-    to "un-marshal" data which has been deserialized from bytes or text, but is still represented
-    by generic containers
+    This is done by attempting to cast that data into a series of `types`, to
+    "un-marshal" data which has been deserialized from bytes or text, but is
+    still represented by generic `Model` sub-class instances.
     """
-
-    unmarshalled_data = _Unmarshal(
+    return _Unmarshal(
         data,
         types=types,
         value_types=value_types,
         item_types=item_types
     )()
 
-    return unmarshalled_data
 
-
-def serialize(data, format_='json'):
-    # type: (Union[abc.model.Model, str, Number], Optional[str]) -> str
+def serialize(
+    data: Union[abc.model.Model, str, Number],
+    format_: str = 'json'
+) -> str:
     """
     Serializes instances of `Object` as JSON or YAML.
     """
     instance_hooks = None
-
     if isinstance(data, abc.model.Model):
         instance_hooks = hooks.read(data)
         if (instance_hooks is not None) and (
             instance_hooks.before_serialize is not None
         ):
             data = instance_hooks.before_serialize(data)
-
     if format_ not in ('json', 'yaml'):
-
         format_ = format_.lower()
-
         if format_ not in ('json', 'yaml'):
-
             raise ValueError(
-                'Supported `sob.model.serialize()` `format_` values include "json" and "yaml" (not "%s").' %
-                format_
+                'Supported `sob.model.serialize()` `format_` argument values '
+                f'include "json" and "yaml" (not "{format_}").'
             )
-
     if format_ == 'json':
         data = json.dumps(marshal(data))
     elif format_ == 'yaml':
         data = yaml.dump(marshal(data))
-
-    if (instance_hooks is not None) and (instance_hooks.after_serialize is not None):
+    if (
+        instance_hooks is not None
+    ) and (
+        instance_hooks.after_serialize is not None
+    ):
         data = instance_hooks.after_serialize(data)
-
-    if not isinstance(data, str):
-        if isinstance(data, native_str):
-            data = str(data)
-
     return data
 
 
-def deserialize(data, format_):
-    # type: (Optional[Union[str, IOBase, addbase]], str) -> Any
+def deserialize(
+    data: Optional[Union[str, IOBase, addbase]],
+    format_: str
+) -> Any:
     """
     Parameters:
 
-        - data (str|io.IOBase|io.addbase):
+        - data (str|io.IOBase|io.addbase): This can be a string or file-like
+          object containing JSON or YAML serialized information.
 
-          This can be a string or file-like object containing JSON or YAML serialized information.
-
-        - format_ (str):
-
-          This can be "json" or "yaml".
+        - format_ (str): "json" or "yaml"
 
     Returns:
 
@@ -1771,54 +1972,114 @@ def deserialize(data, format_):
     return data
 
 
-def detect_format(data):
-    # type: (Optional[Union[str, IOBase, addbase]]) -> Tuple[Any, str]
+def detect_format(
+    data: Optional[Union[str, IOBase, addbase]]
+) -> Tuple[Any, Optional[str]]:
     """
+    This function accepts a string or file-like object and returns a tuple
+    containing the deserialized information and a string indicating the format
+    of that information.
+
     Parameters:
 
-        - data (str|io.IOBase|io.addbase):
+    - data (str|io.IOBase|io.addbase): A string or file-like object containing
+      JSON or YAML serialized data.
 
-          This can be a string or file-like object containing JSON or YAML serialized information.
+    Returns (tuple):
 
-    Returns:
-
-        A tuple containing the deserialized information and a string indicating the format of that information.
+    - The deserialized (but not unmarshalled) `data`
+    - "json" or "yaml"
     """
-    if not isinstance(data, str):
+    string_data: str
+    if isinstance(data, str):
+        string_data = data
+    else:
         try:
-            data = read(data)
+            string_data = read(data)
         except TypeError:
             return data, None
     formats = ('json', 'yaml')
     format_ = None
+    deserialized_data: Any = string_data
     for potential_format in formats:
         try:
-            data = deserialize(data, potential_format)
+            deserialized_data = deserialize(string_data, potential_format)
             format_ = potential_format
             break
         except (ValueError, yaml.YAMLError):
             pass
-    if format is None:
+    if format_ is None:
         raise ValueError(
             'The data provided could not be parsed:\n' + repr(data)
         )
-    return data, format_
+    return deserialized_data, format_
 
 
-if Optional is None:
-    _ValidateTypes = None
-else:
-    _ValidateTypes = Optional[
+def _call_validate_method(
+    data: Optional[abc.model.Model]
+) -> Iterable[str]:
+    error_messages: Set[str] = set()
+    if '_validate' in dir(data):
+        validate_method = getattr(data, '_validate')
+        if callable(validate_method):
+            error_message: str
+            for error_message in validate_method(raise_errors=False):
+                if error_message not in error_messages:
+                    yield error_message
+                    error_messages.add(error_message)
+
+
+def _validate_typed(
+    data: Optional[abc.model.Model],
+    types: Optional[
         Union[type, properties.Property, Object, Callable]
-    ]
-
+    ] = None,
+    raise_errors: bool = True
+) -> Sequence[str]:
+    valid = False
+    for type_ in types:
+        if isinstance(type_, type) and isinstance(data, type_):
+            valid = True
+            break
+        elif isinstance(type_, properties.Property):
+            if type_.types is None:
+                valid = True
+                break
+            try:
+                validate(data, type_.types, raise_errors=True)
+                valid = True
+                break
+            except errors.ValidationError:
+                pass
+    if not valid:
+        error_message = (
+            'Invalid data:\n\n%s\n\n'
+            'The data must be one of the following types:\n\n%s' % (
+                '\n'.join(
+                    '  ' + line
+                    for line in repr(data).split('\n')
+                ),
+                '\n'.join(chain(
+                    ('  (',),
+                    (
+                        '    %s,' % '\n'.join(
+                            '    ' + line
+                            for line in repr(type_).split('\n')
+                        ).strip()
+                        for type_ in types
+                    ),
+                    ('  )',)
+                ))
+            )
+        )
 
 def validate(
-    data,  # type: Optional[abc.model.Model]
-    types=None,  # type: _ValidateTypes
-    raise_errors=True  # type: bool
-):
-    # type: (...) -> Sequence[str]
+    data: Optional[abc.model.Model],
+    types: Optional[
+        Union[type, properties.Property, Object, Callable]
+    ] = None,
+    raise_errors: bool = True
+) -> Sequence[str]:
     """
     This function verifies that all properties/items/values in an instance of
     `sob.abc.model.Model` are of the correct data type(s), and that all
@@ -1830,65 +2091,21 @@ def validate(
     if isinstance(data, Generator):
         data = tuple(data)
     error_messages = []
-    error_message = None
+    error_message: Optional[str] = None
     if types is not None:
-        if callable(types):
-            types = types(data)
-        types = include_native_str(types)
-        valid = False
-        for type_ in types:
-            if isinstance(type_, type) and isinstance(data, type_):
-                valid = True
-                break
-            elif isinstance(type_, properties.Property):
-                if type_.types is None:
-                    valid = True
-                    break
-                try:
-                    validate(data, type_.types, raise_errors=True)
-                    valid = True
-                    break
-                except errors.ValidationError:
-                    pass
-        if not valid:
-            error_message = (
-                'Invalid data:\n\n%s\n\n'
-                'The data must be one of the following types:\n\n%s' % (
-                    '\n'.join(
-                        '  ' + line
-                        for line in repr(data).split('\n')
-                    ),
-                    '\n'.join(chain(
-                        ('  (',),
-                        (
-                            '    %s,' % '\n'.join(
-                                '    ' + line
-                                for line in repr(type_).split('\n')
-                            ).strip()
-                            for type_ in types
-                        ),
-                        ('  )',)
-                    ))
-                )
-            )
+        pass
     if error_message is not None:
         if (not error_messages) or (error_message not in error_messages):
             error_messages.append(error_message)
-    if '_validate' in dir(data):
-        validate_method = getattr(data, '_validate')
-        if callable(validate_method):
-            error_messages.extend(
-                error_message for error_message in
-                validate_method(raise_errors=False)
-                if error_message not in error_messages
-            )
+    for error_message in _call_validate_method(data):
+        error_messages.append(error_message)
     if raise_errors and error_messages:
         # If there is no top-level error message, include a representation of
         # the top-level data element
         if error_message not in error_messages:
             error_messages.insert(
                 0,
-                '\n'+ repr(data)
+                f'\n{repr(data)}'
             )
         raise errors.ValidationError('\n' + '\n\n'.join(error_messages))
     return error_messages
@@ -1896,36 +2113,41 @@ def validate(
 
 class _UnmarshalProperty:
     """
-    This is exclusively for use by wrapper function `unmarshal_property_value`.
+    This is exclusively for use by wrapper function
+    `_unmarshal_property_value`.
     """
 
     def __init__(
         self,
-        property  # type: properties.Property
-    ):
-        # type: (...) -> None
+        property: properties.Property
+    ) -> None:
         self.property = property
 
-    def validate_enumerated(self, value):
-        # type: (Any) -> Any
+    def validate_enumerated(self, value: Any) -> Any:
         """
         Verify that a value is one of the enumerated options
         """
-
         if (
             (value is not None) and
+            isinstance(self.property, properties.Enumerated) and
             (self.property.values is not None) and
             (value not in self.property.values)
         ):
             raise ValueError(
-                'The value provided is not a valid option:\n%s\n\n' % repr(value) +
-                'Valid options include:\n%s' % (
-                    ', '.join(repr(t) for t in self.property.values)
+                'The value provided is not a valid option:\n{}\n\n'
+                'Valid options include:\n{}'.format(
+                    repr(value),
+                    ', '.join(
+                        repr(enumerated_value)
+                        for enumerated_value in self.property.values
+                    )
                 )
             )
 
-    def parse_date(self, value):
-        # type: (Optional[str]) -> Union[date, NoneType]
+    def parse_date(self, value: Optional[str]) -> Union[
+        date,
+        properties.types.NoneType
+    ]:
         if value is None:
             return value
         else:
@@ -1944,8 +2166,10 @@ class _UnmarshalProperty:
                     '"%s" is not a properly formatted date string.' % value
                 )
 
-    def parse_datetime(self, value):
-        # type: (Optional[str]) -> Union[datetime, NoneType]
+    def parse_datetime(
+        self,
+        value: Optional[str]
+    ) -> Union[datetime, properties.types.NoneType]:
         if value is None:
             return value
         else:
@@ -1961,77 +2185,89 @@ class _UnmarshalProperty:
                 return datetime_
             else:
                 raise TypeError(
-                    '"%s" is not a properly formatted date-time string.' % value
+                    f'"{value}" is not a properly formatted date-time string.'
                 )
 
-    def parse_bytes(self, data):
-        # type: (str) -> Optional[bytes]
+    @staticmethod
+    def parse_bytes(
+        data: Union[str, bytes]
+    ) -> Optional[bytes]:
         """
         Un-marshal a base-64 encoded string into bytes
         """
+        unmarshalled_data: Optional[bytes]
         if data is None:
-            return data
+            unmarshalled_data = data
         elif isinstance(data, str):
-            return b64decode(data)
+            unmarshalled_data = b64decode(data)
         elif isinstance(data, bytes):
-            return data
+            unmarshalled_data = data
         else:
             raise TypeError(
-                '`data` must be a base64 encoded `str` or `bytes`--not `%s`' % qualified_name(type(data))
+                '`data` must be a base64 encoded `str` or `bytes`--not '
+                f'`{qualified_name(type(data))}`'
             )
+        return unmarshalled_data
 
-    def __call__(self, value):
-        # type: (Any) -> Any
-
+    def __call__(self, value: Any) -> Any:
+        unmarshalled_value: Any = value
         if isinstance(self.property, properties.Date):
-
-            value = self.parse_date(value)
-
+            unmarshalled_value = self.parse_date(value)
         elif isinstance(self.property, properties.DateTime):
-
-            value = self.parse_datetime(value)
-
+            unmarshalled_value = self.parse_datetime(value)
         elif isinstance(self.property, properties.Bytes):
-
-            value = self.parse_bytes(value)
-
+            unmarshalled_value = self.parse_bytes(value)
         elif isinstance(self.property, properties.Array):
-
-            value = unmarshal(value, types=self.property.types, item_types=self.property.item_types)
-
+            unmarshalled_value = unmarshal(
+                value,
+                types=self.property.types,
+                item_types=self.property.item_types
+            )
         elif isinstance(self.property, properties.Dictionary):
-
-            value = unmarshal(value, types=self.property.types, value_types=self.property.value_types)
-
+            unmarshalled_value = unmarshal(
+                value,
+                types=self.property.types,
+                value_types=self.property.value_types
+            )
         else:
-
             if isinstance(self.property, properties.Enumerated):
                 self.validate_enumerated(value)
             elif isinstance(
                 value,
-                collections_abc.Iterable
+                collections.abc.Iterable
             ) and not isinstance(
                 value,
-                (str, bytes, bytearray, native_str)
+                (str, bytes, bytearray)
             ) and not isinstance(
                 value,
                 abc.model.Model
             ):
                 if isinstance(value, (dict, collections.OrderedDict)):
-                    for k, v in value.items():
-                        if v is None:
-                            value[k] = properties.NULL
+                    unmarshalled_value = copy(value)
+                    for key, item_value in value.items():
+                        if item_value is None:
+                            unmarshalled_value[key] = NULL
                 else:
-                    value = tuple((properties.NULL if i is None else i) for i in value)
-
+                    unmarshalled_value = tuple(
+                        (
+                            properties.types.NULL
+                            if item_value is None else
+                            item_value
+                        )
+                        for item_value in value
+                    )
             if self.property.types is not None:
-                value = unmarshal(value, types=self.property.types)
+                unmarshalled_value = unmarshal(
+                    unmarshalled_value,
+                    types=self.property.types
+                )
+        return unmarshalled_value
 
-        return value
 
-
-def unmarshal_property_value(property, value):
-    # type: (properties.Property, Any) -> Any
+def _unmarshal_property_value(
+    property: properties.Property,
+    value: Any
+) -> Any:
     """
     Unmarshal a property value
     """
@@ -2040,54 +2276,44 @@ def unmarshal_property_value(property, value):
 
 class _MarshalProperty:
     """
-    This is exclusively for use by wrapper function `marshal_property_value`.
+    This is exclusively for use by wrapper function `_marshal_property_value`.
     """
 
     def __init__(
         self,
-        property  # type: properties.Property
-    ):
-        # type: (...) -> None
-        self.property = property
+        property_: properties.Property
+    ) -> None:
+        self.property = property_
 
-    def parse_date(self, value):
-        # type: (Optional[date]) -> Optional[str]
+    def parse_date(self, value: Optional[date]) -> Optional[str]:
         if value is not None:
             value = self.property.date2str(value)
             if not isinstance(value, str):
-                if isinstance(value, native_str):
-                    value = str(value)
-                else:
-                    raise TypeError(
-                        'The date2str function should return a `str`, not a '
-                        '`%s`: %s' % (
-                            type(value).__name__,
-                            repr(value)
-                        )
+                raise TypeError(
+                    'The date2str function should return a `str`, not a '
+                    '`%s`: %s' % (
+                        type(value).__name__,
+                        repr(value)
                     )
+                )
         return value
 
-    def parse_datetime(self, value):
-        # type: (Optional[datetime]) -> Optional[str]
+    def parse_datetime(self, value: Optional[datetime]) -> Optional[str]:
         if value is not None:
             datetime_string = self.property.datetime2str(value)
             if not isinstance(datetime_string, str):
-                if isinstance(datetime_string, native_str):
-                    datetime_string = str(datetime_string)
-                else:
-                    repr_datetime_string = repr(datetime_string).strip()
-                    raise TypeError(
-                        'The datetime2str function should return a `str`, not:' + (
-                            '\n'
-                            if '\n' in repr_datetime_string else
-                            ' '
-                        ) + repr_datetime_string
-                    )
+                repr_datetime_string = repr(datetime_string).strip()
+                raise TypeError(
+                    'The datetime2str function should return a `str`, not:' + (
+                        '\n'
+                        if '\n' in repr_datetime_string else
+                        ' '
+                    ) + repr_datetime_string
+                )
             value = datetime_string
         return value
 
-    def parse_bytes(self, value):
-        # type: (bytes) -> str
+    def parse_bytes(self, value: bytes) -> str:
         """
         Marshal bytes into a base-64 encoded string
         """
@@ -2097,11 +2323,11 @@ class _MarshalProperty:
             return str(b64encode(value), 'ascii')
         else:
             raise TypeError(
-                '`data` must be a base64 encoded `str` or `bytes`--not `%s`' % qualified_name(type(value))
+                '`data` must be a base64 encoded `str` or `bytes`--not `%s`' %
+                qualified_name(type(value))
             )
 
-    def __call__(self, value):
-        # type: (Any) -> Any
+    def __call__(self, value: Any) -> Any:
         if isinstance(self.property, properties.Date):
             value = self.parse_date(value)
         elif isinstance(self.property, properties.DateTime):
@@ -2109,66 +2335,72 @@ class _MarshalProperty:
         elif isinstance(self.property, properties.Bytes):
             value = self.parse_bytes(value)
         elif isinstance(self.property, properties.Array):
-            value = marshal(value, types=self.property.types, item_types=self.property.item_types)
+            value = marshal(
+                value,
+                types=self.property.types,
+                item_types=self.property.item_types
+            )
         elif isinstance(self.property, properties.Dictionary):
-            value = marshal(value, types=self.property.types, value_types=self.property.value_types)
+            value = marshal(
+                value,
+                types=self.property.types,
+                value_types=self.property.value_types
+            )
         else:
             value = marshal(value, types=self.property.types)
         return value
 
 
-def marshal_property_value(property, value):
-    # type: (properties.Property, Any) -> Any
+def _marshal_property_value(property_: properties.Property, value: Any) -> Any:
     """
     Marshal a property value
     """
-    return _MarshalProperty(property)(value)
+    return _MarshalProperty(property_)(value)
 
 
 def _replace_object_nulls(
-    object_instance,  # type: sob.abc.model.Object,
-    replacement_value=None  # type: Any
+    object_instance: abc.model.Object,
+    replacement_value: Any = None
 ):
+    property_name: str
+    value: Any
     for property_name, value in utilities.inspect.properties_values(
         object_instance
-    ):  # type: Tuple[str, Any]
-        if value is properties.NULL:
+    ):
+        if value is NULL:
             setattr(object_instance, property_name, replacement_value)
         elif isinstance(value, Model):
             replace_nulls(value, replacement_value)
 
 
 def _replace_array_nulls(
-    array_instance,  # type: sob.abc.model.Array
-    replacement_value=None  # type: Any
-):
-    # type: (...) -> None
+    array_instance: abc.model.Array,
+    replacement_value: Any = None
+) -> None:
     for index, value in enumerate(array_instance):
-        if value is properties.NULL:
+        if value is NULL:
             array_instance[index] = replacement_value
         elif isinstance(value, Model):
             replace_nulls(value, replacement_value)
 
 
 def _replace_dictionary_nulls(
-    dictionary_instance,  # type: abc.model.Dictionary
-    replacement_value=None  # type: Any
-):
-    # type: (...) -> None
+    dictionary_instance: abc.model.Dictionary,
+    replacement_value: Any = None
+) -> None:
     for key, value in dictionary_instance.items():
-        if value is properties.NULL:
+        if value is NULL:
             dictionary_instance[key] = replacement_value
         elif isinstance(replacement_value, Model):
             replace_nulls(value, replacement_value)
 
 
 def replace_nulls(
-    model_instance,  # type: abc.model.Model
-    replacement_value=None  # type: Any
-):
-    # type: (...) -> None
+    model_instance: abc.model.Model,
+    replacement_value: Any = None
+) -> None:
     """
-    This function replaces all instances of `sob.properties.NULL`.
+    This function replaces all instances of `sob.properties.types.NULL`.
 
     Parameters:
 

@@ -1,59 +1,17 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from . import compatibility
 import importlib
 import sys
-import re
 from collections import OrderedDict
-from .types import UNDEFINED, Module
+from inspect import (
+    FrameInfo, Parameter, getargvalues, getmodulename, getsource, signature,
+    stack
+)
+from typing import (
+    Any, AnyStr, Callable, Dict, Iterator, List, Optional, Tuple, Union
+)
 
-compatibility.backport()
+from .types import Module, UNDEFINED
 
-Union = compatibility.typing.Union
-Optional = compatibility.typing.Optional
-Iterable = compatibility.typing.Iterable
-Tuple = compatibility.typing.Tuple
-Any = compatibility.typing.Any
-Callable = compatibility.typing.Callable
-AnyStr = compatibility.typing.AnyStr
-Iterator = compatibility.typing.Iterator
-Sequence = compatibility.typing.Sequence
-IO = compatibility.typing.IO
-
-
-if Any is None:
-    Iterator = Sequence = KeyValueIterator = IO = None
-else:
-    KeyValueIterator = Iterator[Tuple[AnyStr, Any]]
-
-
-try:
-    from inspect import (
-        signature, getargs, stack, getmodulename, getsource,
-        Parameter, getargvalues
-    )
-    getargspec = None
-except ImportError:
-    signature = Parameter = None
-    try:
-        from inspect import (
-            getfullargspec, getargs, stack, getmodulename,
-            getsource, getargvalues
-        )
-    except ImportError:
-        from inspect import (
-            getargspec as getfullargspec, getargs, stack, getsource,
-            getmodulename, getargvalues
-        )
-try:
-    from inspect import FrameInfo
-except ImportError:
-    FrameInfo = tuple
-
-
-# The `BUILTINS_DICT` is used to check for namespace conflicts
+# `BUILTINS_DICT` is used to check for namespace conflicts
 BUILTINS_DICT = {}
 
 
@@ -67,8 +25,10 @@ def _index_builtins():
 _index_builtins()
 
 
-def properties_values(object_, include_private=False):
-    # type: (object, bool) -> KeyValueIterator
+def properties_values(
+    object_: object,
+    include_private: bool = False
+) -> Iterator[Tuple[AnyStr, Any]]:
     """
     This function iterates over an object's public (non-callable)
     properties, yielding a tuple comprised of each attribute/property name and
@@ -81,8 +41,7 @@ def properties_values(object_, include_private=False):
                 yield attribute, value
 
 
-def qualified_name(type_):
-    # type: (Union[type, Module]) -> str
+def qualified_name(type_: Union[type, Module]) -> str:
     """
     >>> print(qualified_name(qualified_name))
     sob.utilities.inspect.qualified_name
@@ -112,44 +71,43 @@ def qualified_name(type_):
     return type_name
 
 
-def calling_functions_qualified_names(depth=1):
-    # type: (int) -> Iterator[str]
+def calling_functions_qualified_names(depth: int = 1) -> Iterator[str]:
     """
+    This function returns the qualified names of all calling functions in the
+    stack, starting with the function at the indicated `depth` (defaults to 1).
+
     >>> def my_function_a():
     ...     return calling_functions_qualified_names()
     >>> def my_function_b():
     ...     return my_function_a()
-    >>> print(my_function_b())
-    ['my_function_b', 'my_function_a']
+    >>> print('\\n'.join(my_function_b()[-2:]))
+    sob.utilities.inspect.calling_functions_qualified_names.my_function_b
+    sob.utilities.inspect.calling_functions_qualified_names.my_function_a
     """
-
     depth += 1
     name = calling_function_qualified_name(depth=depth)
     names = []
-
     while name:
         if name and not (names and names[0] == name):
             names.insert(0, name)
         depth += 1
         name = calling_function_qualified_name(depth=depth)
-
     return names
 
 
-def _get_module_name(file_name):
-    # type: (str) -> str
+def _get_module_name(file_name: str) -> str:
     """
     Given a frame info's file name, find the module name
     """
     module_name = getmodulename(file_name)
     if module_name is None:
         # Check to see if this is a doctest
-        doc_test_prefix = '<doctest '
+        doc_test_prefix: str = '<doctest '
         if file_name.startswith(doc_test_prefix):
-            module_name = re.sub('^' + doc_test_prefix, '', file_name)
+            module_name = file_name[len(doc_test_prefix):]
             module_name = module_name.rstrip('>')
             if '[' in module_name:
-                module_name = '['.join(file_name.split('[')[:-1])
+                module_name = '['.join(module_name.split('[')[:-1])
         else:
             raise ValueError(
                 'The path "%s" is not a python module' % file_name
@@ -157,40 +115,13 @@ def _get_module_name(file_name):
     return module_name
 
 
-def calling_function_qualified_name(depth=1):
-    # type: (int) -> Optional[str]
-    """
-    Return the fully qualified name of the function from within which this is
-    being called
-
-    >>> def my_function():
-    ...     return calling_function_qualified_name()
-    >>> print(my_function())
-    my_function
-    """
-    if not isinstance(depth, int):
-        depth_representation = repr(depth)
-        raise TypeError(
-            'The parameter `depth` for `sob.utilities.calling_function_'
-            'qualified_name` must be an `int`, not' +
-            (
-                (':\n%s' if '\n' in depth_representation else ' %s.') %
-                depth_representation
-            )
+def _get_frame_info_names(frame_info: FrameInfo) -> List[str]:
+    names: List[str] = []
+    if frame_info.function != '<module>':
+        names.append(frame_info.function)
+        arguments, _, _, frame_locals = getargvalues(
+            frame_info.frame
         )
-    try:
-        stack_ = stack()
-    except IndexError:
-        return None
-    if len(stack_) < (depth + 1):
-        return None
-    name_list = []
-    frame_info = stack_[depth]  # type: FrameInfo
-    frame_function = frame_info[3]
-    if frame_function != '<module>':
-        frame = frame_info[0]
-        name_list.append(frame_function)
-        arguments, _, _, frame_locals = getargvalues(frame)
         if arguments:
             argument = arguments[0]
             argument_value = frame_locals[argument]
@@ -210,19 +141,51 @@ def calling_function_qualified_name(depth=1):
                     )
                 )
             ):
-                name_list.append(qualified_name(argument_value_type))
-    if len(name_list) < 2:
-        module_name = _get_module_name(frame_info[1])
+                names.append(qualified_name(argument_value_type))
+    if len(names) < 2:
+        module_name = _get_module_name(frame_info.filename)
         if module_name in sys.modules:
             qualified_module_name = qualified_name(
                 sys.modules[module_name]
             )
-            name_list.append(qualified_module_name)
-    return '.'.join(reversed(name_list))
+            names.append(qualified_module_name)
+        elif module_name:
+            names.append(module_name)
+    return names
 
 
-def get_source(object_):
-    # type: (object) -> str
+def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
+    """
+    Return the fully qualified name of the function from within which this is
+    being called
+
+    >>> def my_function():
+    ...     return calling_function_qualified_name()
+    >>> print(my_function())
+    sob.utilities.inspect.calling_function_qualified_name.my_function
+
+    >>> class MyClass:
+    ...
+    ...     def __call__(self) -> None:
+    ...          return self.my_method()
+    ...
+    ...     def my_method(self) -> str:
+    ...          return calling_function_qualified_name()
+    >>> print(MyClass()())
+    sob.utilities.inspect.MyClass.my_method
+    """
+    assert isinstance(depth, int)
+    try:
+        stack_ = stack()
+    except IndexError:
+        return None
+    if len(stack_) < (depth + 1):
+        return None
+    names: List[str] = _get_frame_info_names(stack_[depth])
+    return '.'.join(reversed(names))
+
+
+def get_source(object_: object) -> str:
     """
     Get the source code which defined an object.
     """
@@ -235,8 +198,7 @@ def get_source(object_):
     return object_source
 
 
-def parameters_defaults(function):
-    # type: (Callable) -> OrderedDict
+def parameters_defaults(function: Callable) -> OrderedDict:
     """
     Returns an ordered dictionary mapping a function's argument names to
     default values, or `UNDEFINED` in the case of
@@ -257,22 +219,12 @@ def parameters_defaults(function):
     ('e', 2)
     ('f', 3)
     """
-    pd = OrderedDict()
-    if signature is None:
-        spec = getfullargspec(function)
-        i = - 1
-        for a in spec.args:
-            pd[a] = UNDEFINED
-        for a in reversed(spec.args):
-            try:
-                pd[a] = spec.defaults[i]
-            except IndexError:
-                break
-            i -= 1
-    else:
-        for pn, p in signature(function).parameters.items():
-            if p.default is Parameter.empty:
-                pd[pn] = UNDEFINED
-            else:
-                pd[pn] = p.default
-    return pd
+    defaults: Dict[str, Any] = OrderedDict()
+    parameter_name: str
+    parameter: Parameter
+    for parameter_name, parameter in signature(function).parameters.items():
+        if parameter.default is Parameter.empty:
+            defaults[parameter_name] = UNDEFINED
+        else:
+            defaults[parameter_name] = parameter.default
+    return defaults

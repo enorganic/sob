@@ -1,5 +1,6 @@
 # !/usr/bin/python3
 import os
+import sys
 from subprocess import getstatusoutput
 
 from setuptools_setup_versions import install_requires
@@ -31,9 +32,7 @@ if __name__ == '__main__':
     try:
         # Build
         run(
-            'py -3.7 setup.py sdist bdist_wheel upload clean --all'
-            if os.name == 'nt' else
-            'python3.7 setup.py sdist bdist_wheel upload clean --all'
+            f'{sys.executable} setup.py sdist bdist_wheel upload clean --all'
         )
     finally:
         exec(

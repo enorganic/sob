@@ -1,38 +1,34 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from sob.utilities import compatibility
-import re  # noqa
-import os  # noqa
-from iso8601 import iso8601
-from decimal import Decimal
+import os
+import re
 from base64 import b64encode
 from collections import OrderedDict
 from copy import deepcopy
-from sob import model, properties, meta, test, utilities
-from sob.request import MultipartRequest, Part
+from datetime import date, datetime
+from decimal import Decimal
+from numbers import Number
+from typing import Dict, IO, Optional, Sequence, Union
+from urllib.parse import urljoin
 
-compatibility.backport()
-urljoin = compatibility.urljoin
-compatibility.backport()
-typing = compatibility.typing
+from iso8601 import iso8601
+
+from sob import meta, model, properties, test, utilities
+from sob.request import MultipartRequest, Part
 
 
 class A(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[str]
-        is_a_class=None,  # type: Optional[bool]
-        boolean=None,  # type: Optional[bool]
-        string=None,  # type: Optional[str]
-        alpha=None,  # type: Optional[int]
-        beta=None,  # type: Optional[int]
-        gamma=None,  # type: Optional[int]
-        delta=None,  # type: Optional[int]
-        iso8601_datetime=None,  # type: Optional[datetime]
-        iso8601_date=None,  # type: Optional[date]
+        _: Optional[str] = None,
+        is_a_class: Optional[bool] = None,
+        boolean: Optional[bool] = None,
+        string: Optional[str] = None,
+        alpha: Optional[int] = None,
+        beta: Optional[int] = None,
+        gamma: Optional[int] = None,
+        delta: Optional[int] = None,
+        iso8601_datetime: Optional[datetime] = None,
+        iso8601_date: Optional[date] = None
     ):
         self.is_a_class = is_a_class
         self.boolean = boolean
@@ -63,17 +59,17 @@ class B(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[str]
-        is_b_class=None,  # type: Optional[bool]
-        boolean=None,  # type: Optional[bool]
-        string=None,  # type: Optional[str]
-        integer=None,  # type: Optional[int]
-        alpha=None,  # type: Optional[str]
-        beta=None,  # type: Optional[str]
-        gamma=None,  # type: Optional[str]
-        delta=None,  # type: Optional[str]
-        iso8601_datetime=None,  # type: Optional[datetime]
-        iso8601_date=None,  # type: Optional[date]
+        _: Optional[str] = None,
+        is_b_class: Optional[bool] = None,
+        boolean: Optional[bool] = None,
+        string: Optional[str] = None,
+        integer: Optional[int] = None,
+        alpha: Optional[str] = None,
+        beta: Optional[str] = None,
+        gamma: Optional[str] = None,
+        delta: Optional[str] = None,
+        iso8601_datetime: Optional[datetime] = None,
+        iso8601_date: Optional[date] = None,
     ):
         self.is_b_class = is_b_class
         self.boolean = boolean
@@ -105,16 +101,16 @@ meta.writable(B).properties = [
 class C(model.Object):
     def __init__(
         self,
-        _=None,  # type: Optional[str]
-        is_c_class=None,  # type: Optional[bool]
-        string=None,  # type: Optional[str]
-        integer=None,  # type: Optional[int]
-        alpha=None,  # type: Optional[bool]
-        beta=None,  # type: Optional[bool]
-        gamma=None,  # type: Optional[bool]
-        delta=None,  # type: Optional[bool]
-        iso8601_datetime=None,  # type: Optional[datetime]
-        iso8601_date=None,  # type: Optional[date]
+        _: Optional[str] = None,
+        is_c_class: Optional[bool] = None,
+        string: Optional[str] = None,
+        integer: Optional[int] = None,
+        alpha: Optional[bool] = None,
+        beta: Optional[bool] = None,
+        gamma: Optional[bool] = None,
+        delta: Optional[bool] = None,
+        iso8601_datetime: Optional[datetime] = None,
+        iso8601_date: Optional[date] = None,
     ):
         self.is_c_class = is_c_class
         self.string = string
@@ -145,35 +141,39 @@ class Tesstee(model.Object):
 
     def __init__(
         self,
-        _=None,  # type: Optional[str, dict, typing.IO]
-        boolean=None,  # type: Optional[bool]
-        string=None,  # type: Optional[str]
-        number=None,  # type: Optional[typing.Number]
-        decimal=None,  # type: Optional[typing.Number]
-        integer=None,  # type: Optional[int]
-        rainbow=None,  # type: Optional[bytes]
-        a=None,  # type: Optional[A]
-        b=None,  # type: Optional[B]
-        c=None,  # type: Optional[C]
-        testy=None,  # type: Optional[Tesstee]
-        boolean_array=None,  # type: Optional[Sequence[bool]]
-        string_array=None,  # type: Optional[Sequence[str]]
-        number_array=None,  # type: Optional[Sequence[typing.Number]]
-        integer_array=None,  # type: Optional[Sequence[int]]
-        rainbow_array=None,  # type: Optional[Sequence[bytes]]
-        testy_array=None,  # type: Optional[Sequence[Tesstee]]
-        string_number_boolean=None,  # type: Optional[Union[str, typing.Number, bool]]
-        a_b_c=None,  # type: Optional[Union[A, B, C]]
-        c_b_a=None,  # type: Optional[Union[C, B, A]]
-        string2testy=None,  # type: Optional[typing.Dict[str, Tesstee]]
-        string2string2testy=None,  # type: Optional[typing.Dict[str, typing.Dict[str, Tesstee]]]
-        string2a_b_c=None,  # type: Optional[typing.Dict[str, Union[A, B, C]]]
-        string2c_b_a=None,  # type: Optional[typing.Dict[str, Union[C, B, A]]]
-        string2string2a_b_c=None,  # type: Optional[typing.Dict[str, typing.Dict[str, Union[A, B, C]]]]
-        string2string2c_b_a=None,  # type: Optional[typing.Dict[str, typing.Dict[str, Union[C, B, A]]]]
-        version_switch=None,  # type: Optional[Union[int|str|typing.Sequence[int]]]
-        version_1=None,  # type: Optional[Union[int]]
-        version_2=None,  # type: Optional[Union[int]]
+        _: Optional[Union[str, dict, IO]] = None,
+        boolean: Optional[bool] = None,
+        string: Optional[str] = None,
+        number: Optional[Number] = None,
+        decimal: Optional[Number] = None,
+        integer: Optional[int] = None,
+        rainbow: Optional[bytes] = None,
+        a: Optional[A] = None,
+        b: Optional[B] = None,
+        c: Optional[C] = None,
+        testy: Optional['Tesstee'] = None,
+        boolean_array: Optional[Sequence[bool]] = None,
+        string_array: Optional[Sequence[str]] = None,
+        number_array: Optional[Sequence[Number]] = None,
+        integer_array: Optional[Sequence[int]] = None,
+        rainbow_array: Optional[Sequence[bytes]] = None,
+        testy_array: Optional[Sequence['Tesstee']] = None,
+        string_number_boolean: Optional[Union[str, Number, bool]] = None,
+        a_b_c: Optional[Union[A, B, C]] = None,
+        c_b_a: Optional[Union[C, B, A]] = None,
+        string2testy: Optional[Dict[str, 'Tesstee']] = None,
+        string2string2testy: Optional[Dict[str, Dict[str, 'Tesstee']]] = None,
+        string2a_b_c: Optional[Dict[str, Union[A, B, C]]] = None,
+        string2c_b_a: Optional[Dict[str, Union[C, B, A]]] = None,
+        string2string2a_b_c: Optional[
+            Dict[str, Dict[str, Union[A, B, C]]]
+        ] = None,
+        string2string2c_b_a: Optional[
+            Dict[str, Dict[str, Union[C, B, A]]]
+        ] = None,
+        version_switch: Optional[Union[int, str, Sequence[int]]] = None,
+        version_1: Optional[int] = None,
+        version_2: Optional[int] = None
     ):
         self.boolean = boolean
         self.string = string
@@ -312,13 +312,15 @@ meta.writable(Tesstee).properties = {
         versions=('testy==1.0',),
         name='version1'
     ),
-    'version_2':properties.Integer(
+    'version_2': properties.Integer(
         versions=('testy==2.0',),
         name='version2'
     ),
 }
 
-with open(os.path.join(os.path.dirname(__file__), 'data', 'rainbow.png'), mode='rb') as f:
+with open(
+    os.path.join(os.path.dirname(__file__), 'data', 'rainbow.png'), mode='rb'
+) as f:
     _rainbow = f.read()
 
 a = A(
@@ -495,7 +497,10 @@ def test_json_serialization():
         rainbow_bytes = file.read()
 
         assert testy.rainbow == rainbow_bytes
-        assert model.marshal(testy)['rainbow'] == str(b64encode(rainbow_bytes), 'ascii')
+        assert model.marshal(testy)['rainbow'] == str(
+            b64encode(rainbow_bytes),
+            'ascii'
+        )
 
     test.json(testy)
 
@@ -536,7 +541,7 @@ def test_version():
         'testy',
         1
     )
-    
+
     testy1.version_1 = 99
     error = None
     try:
@@ -602,12 +607,10 @@ def test_version():
     assert isinstance(error, TypeError)
 
 
-def test_request():
-    # type: (...) -> None
+def test_request() -> None:
     """
-    This will test `sob.requests`, 
+    This will test `sob.requests`,
     """
-
     with open(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -616,9 +619,7 @@ def test_request():
         ),
         mode='rb'
     ) as rainbow_file:
-
         rainbow_bytes = rainbow_file.read()
-
         multi_part_json_request = MultipartRequest(
             url='http://localhost',
             headers={
@@ -663,8 +664,6 @@ def test_request():
 
 def test_utilities():
     assert utilities.calling_function_qualified_name() == (
-        'test_utilities'
-        if __name__ == '__main__' else
         'test_sob.test_utilities'
     )
 
@@ -730,7 +729,6 @@ def test_utilities():
                     )
 
     TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
-
     if hasattr(
         getattr(
             TestCallingFunctionQualifiedNameC,
@@ -738,7 +736,6 @@ def test_utilities():
         ),
         '__qualname__'
     ):
-
         assert utilities.qualified_name(
             getattr(
                 TestCallingFunctionQualifiedNameC(),

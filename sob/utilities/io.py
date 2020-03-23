@@ -1,33 +1,34 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-import os  # noqa
-from io import UnsupportedOperation
-from . import compatibility
-
-compatibility.backport()
-
-urljoin = compatibility.urljoin
-
-IO = compatibility.typing.IO
-Any = compatibility.typing.Any
-Optional = compatibility.typing.Optional
-Union = compatibility.typing.Union
+import os
+from io import UnsupportedOperation, RawIOBase
+from typing import IO, Any, Optional, Union
+from urllib.parse import urljoin
+from urllib.response import addinfourl
 
 
-def read(data):
-    # type: (Union[str, IO]) -> Any
+def _has_callable_attribute(
+    object_instance: object,
+    attribute_name: str
+) -> bool:
+    try:
+        attribute_value: Any = getattr(object_instance, attribute_name)
+    except AttributeError:
+        return False
+    return callable(attribute_value)
+
+
+def read(data: Union[str, IO, RawIOBase]) -> Any:
+    readall_is_callable: bool = _has_callable_attribute(data, 'readall')
+    read_is_callable: bool = _has_callable_attribute(data, 'read')
     if (
-        (hasattr(data, 'readall') and callable(data.readall)) or
-        (hasattr(data, 'read') and callable(data.read))
+        readall_is_callable or
+        read_is_callable
     ):
-        if hasattr(data, 'seek') and callable(data.seek):
+        if _has_callable_attribute(data, 'seek'):
             try:
                 data.seek(0)
             except UnsupportedOperation:
                 pass
-        if hasattr(data, 'readall') and callable(data.readall):
+        if readall_is_callable:
             try:
                 data = data.readall()
             except UnsupportedOperation:
@@ -41,18 +42,13 @@ def read(data):
         )
 
 
-def get_url(file_like_object):
-    # type: (IO) -> Optional[str]
+def get_url(file_like_object: Union[IO, addinfourl]) -> Optional[str]:
     """
     Get the URL from which an input-output (file-like) object was sourced
     """
-    url = None
+    url: Optional[str] = None
     if hasattr(file_like_object, 'url'):
         url = file_like_object.url
     elif hasattr(file_like_object, 'name'):
         url = urljoin('file:', os.path.abspath(file_like_object.name))
     return url
-
-
-# For backwards compatibility...
-get_io_url = get_url

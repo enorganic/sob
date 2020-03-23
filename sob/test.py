@@ -1,36 +1,36 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from .utilities import (
-    compatibility, qualified_name, calling_function_qualified_name
-)
-from future.utils import native_str
-from warnings import warn
 import collections
 import json as _json
-from itertools import chain
-import yaml as _yaml
-from . import meta, abc, model as model_
+from typing import Any, Dict, List, Sequence, Tuple
+from warnings import warn
 
-compatibility.backport()
+import yaml as yaml_
+
+from . import meta
+from .abc.model import Array, Dictionary, Model, Object
+from .errors import (
+    ObjectDiscrepancyError
+)
+from .model import serialize, validate
+from .utilities import qualified_name
+from .utilities.assertion import (
+    assert_argument_in, assert_argument_is_instance
+)
 
 
-Dict = compatibility.typing.Dict
-
-
-def _object_discrepancies(a, b):
-    # type: (model_.Object, model_.Object) -> Dict
+def _object_discrepancies(
+    object_a: Object,
+    object_b: Object
+) -> Dict:
     discrepancies = {}
-    a_properties = set(meta.read(a).properties.keys())
-    b_properties = set(meta.read(b).properties.keys())
+    a_properties = set(meta.read(object_a).properties.keys())
+    b_properties = set(meta.read(object_b).properties.keys())
     for property_ in a_properties | b_properties:
         try:
-            a_value = getattr(a, property_)
+            a_value = getattr(object_a, property_)
         except AttributeError:
             a_value = None
         try:
-            b_value = getattr(b, property_)
+            b_value = getattr(object_b, property_)
         except AttributeError:
             b_value = None
         if a_value != b_value:
@@ -38,36 +38,203 @@ def _object_discrepancies(a, b):
     return discrepancies
 
 
-def json(
-    model_instance,  # type: abc.model.Model
-    raise_validation_errors=True,  # type: bool
-):
-    # type: (...) -> None
-    model(
-        model_instance=model_instance,
-        format_='json',
-        raise_validation_errors=raise_validation_errors
+def _get_value_discrepancies_error_message(
+    class_name: str,
+    property_name: str,
+    property_value_a: Any,
+    property_value_b: Any
+) -> str:
+    a_serialized = serialize(property_value_a)
+    b_serialized = serialize(property_value_b)
+    a_representation = repr(property_value_a)
+    b_representation = repr(property_value_b)
+    a_representation = ''.join(
+        line.strip()
+        for line in a_representation.split('\n')
+    )
+    b_representation = ''.join(
+        line.strip()
+        for line in b_representation.split('\n')
+    )
+    message: List[str] = []
+    if a_serialized != b_serialized or (
+        a_representation != b_representation
+    ):
+        message.append(
+            '\n    %s().%s:\n        %s        \n        %s\n     '
+            '   %s' % (
+                class_name,
+                property_name,
+                a_serialized,
+                '==' if a_serialized == b_serialized else '!=',
+                b_serialized
+            )
+        )
+    if a_representation != b_representation:
+        message.append(
+            '\n        %s\n        !=\n        %s' % (
+                a_representation,
+                b_representation
+            )
+        )
+    return '\n'.join(message)
+
+
+def _get_object_discrepancies_error_message(
+    object_a: Object,
+    object_b: Object
+) -> str:
+    a_serialized: str = serialize(object_a)
+    b_serialized: str = serialize(object_b)
+    a_representation: str = (
+        ''.join(
+            line.strip()
+            for line in repr(object_a).split('\n')
+        )
+    )
+    b_representation = ''.join(
+        line.strip()
+        for line in repr(object_b).split('\n')
+    )
+    class_name: str = qualified_name(type(object_a))
+    message = [
+        'Discrepancies were found between the instance of '
+        f'`{class_name}` provided and '
+        'a serialized/deserialized clone:'
+    ]
+    if a_serialized != b_serialized or (
+        a_representation != b_representation
+    ):
+        message.append(
+            '        %s\n        %s\n        %s' % (
+                a_serialized,
+                '==' if a_serialized == b_serialized else '!=',
+                b_serialized
+            )
+        )
+    if a_representation != b_representation:
+        message.append(
+            '\n        %s\n        !=\n        %s' % (
+                a_representation,
+                b_representation
+            )
+        )
+    property_name: str
+    property_values: Tuple[Any, Any]
+    for property_name, property_values in _object_discrepancies(
+        object_a,
+        object_b
+    ).items():
+        property_value_a, property_value_b = property_values
+        message.append(
+            _get_value_discrepancies_error_message(
+                class_name,
+                property_name,
+                property_value_a,
+                property_value_b
+            )
+        )
+    return '\n'.join(message)
+
+
+def _get_object_discrepancies_error(
+    object_instance: Object,
+    reloaded_object_instance: Object
+) -> ObjectDiscrepancyError:
+    message: str = _get_object_discrepancies_error_message(
+        object_instance,
+        reloaded_object_instance
+    )
+    return ObjectDiscrepancyError(message)
+
+
+def _remarshal_object(
+    string_object: str,
+    object_instance: Object,
+    format_: str = 'json'
+) -> None:
+    if format_ == 'yaml':
+        reloaded_marshalled_data = yaml_.load(string_object)
+    else:
+        reloaded_marshalled_data = _json.loads(
+            string_object,
+            object_hook=collections.OrderedDict,
+            object_pairs_hook=collections.OrderedDict
+        )
+    keys = set()
+    for property_name, property_ in meta.read(
+        object_instance
+    ).properties.items():
+        keys.add(property_.name or property_name)
+    for key in reloaded_marshalled_data.keys():
+        if key not in keys:
+            raise KeyError(
+                '"%s" not found in serialized/re-deserialized data: %s' % (
+                    key,
+                    string_object
+                )
+            )
+
+
+def _reload_object(
+    object_instance: Object,
+    format_: str
+) -> None:
+    object_type: type = type(object_instance)
+    string_object: str = str(object_instance)
+    assert string_object != ''
+    reloaded_object_instance = object_type(string_object)
+    meta.copy_to(object_instance, reloaded_object_instance)
+    if object_instance != reloaded_object_instance:
+        raise _get_object_discrepancies_error(
+            object_instance,
+            reloaded_object_instance
+        )
+    reloaded_string = str(reloaded_object_instance)
+    if string_object != reloaded_string:
+        raise ObjectDiscrepancyError(
+            '\n%s\n!=\n%s' % (string_object, reloaded_string)
+        )
+    _remarshal_object(
+        string_object,
+        object_instance,
+        format_
     )
 
 
-def yaml(
-    model_instance,  # type: abc.model.Model
-    raise_validation_errors=True,  # type: bool
-):
-    # type: (...) -> None
-    model(
-        model_instance=model_instance,
-        format_='yaml',
-        raise_validation_errors=raise_validation_errors
+def _object(
+    object_instance: Object,
+    format_: str,
+    raise_validation_errors: bool = True,
+) -> None:
+    errors: Sequence[str] = validate(
+        object_instance,
+        raise_errors=raise_validation_errors
     )
+    if errors:
+        warn('\n' + '\n'.join(errors))
+    _reload_object(
+        object_instance,
+        format_
+    )
+    # Recursively test property values
+    for property_name, property_ in meta.read(
+        object_instance
+    ).properties.items():
+        property_value = getattr(object_instance, property_name)
+        if isinstance(property_value, Model):
+            model(
+                property_value,
+                format_=format_,
+                raise_validation_errors=raise_validation_errors
+            )
 
 
 def model(
-    model_instance,  # type: abc.model.Model
-    format_,  # type: str
-    raise_validation_errors=True,  # type: bool
-):
-    # type: (...) -> None
+    model_instance: Model,
+    format_: str = 'json',
+    raise_validation_errors: bool = True
+) -> None:
     """
     Tests an instance of a `sob.model.Model` sub-class.
 
@@ -94,182 +261,23 @@ def model(
                 - If `False`, errors resulting from `sob.model.validate` are
                   expressed only as warnings.
     """
-    if not isinstance(model_instance, abc.model.Model):
-        value_representation = repr(model_instance)
-        raise TypeError(
-            '`%s` requires an instance of `%s` for the parameter `model_instan'
-            'ce`, not%s' % (
-                calling_function_qualified_name(),
-                qualified_name(model_.Model),
-                (
-                    (':\n%s' if '\n' in value_representation else ' `%s`') %
-                    value_representation
-                )
-            )
-        )
+    assert_argument_is_instance(
+        'model_instance',
+        model_instance,
+        Model
+    )
+    assert_argument_in('format_', format_, ('json', 'yaml'))
     meta.format_(model_instance, format_)
-    if isinstance(model_instance, abc.model.Object):
-        errors = model_.validate(
-            model_instance, raise_errors=raise_validation_errors
-        )
-        if errors:
-            warn('\n' + '\n'.join(errors))
-        model_type = type(model_instance)
-        string = str(model_instance)
-        assert string != ''
-        reloaded_model_instance = model_type(string)
-        meta.copy_to(
+    if isinstance(model_instance, Object):
+        _object(
             model_instance,
-            reloaded_model_instance
+            format_,
+            raise_validation_errors
         )
-        qualified_model_name = qualified_name(type(model_instance))
-        try:
-            assert model_instance == reloaded_model_instance
-        except AssertionError as e:
-            a_serialized = model_.serialize(model_instance)
-            b_serialized = model_.serialize(reloaded_model_instance)
-            a_representation = repr(model_instance)
-            b_representation = repr(reloaded_model_instance)
-            a_representation_flattened = (
-                ''.join(l.strip() for l in a_representation.split('\n'))
-            )
-            b_representation_flattened = ''.join(
-                l.strip() for l in b_representation.split('\n')
-            )
-            message = [
-                'Discrepancies were found between the instance of `%s` '
-                'provided and ' % qualified_model_name +
-                'a serialized/deserialized clone:'
-            ]
-            if a_serialized != b_serialized or (
-                a_representation_flattened != b_representation_flattened
-            ):
-                message.append(
-                    '        %s\n        %s\n        %s' % (
-                        a_serialized,
-                        '==' if a_serialized == b_serialized else '!=',
-                        b_serialized
-                    )
-                )
-            if a_representation_flattened != b_representation_flattened:
-                message.append(
-                    '\n        %s\n        !=\n        %s' % (
-                        a_representation_flattened,
-                        b_representation_flattened
-                    )
-                )
-            for k, a_b in _object_discrepancies(
-                model_instance,
-                reloaded_model_instance
-            ).items():
-                a, b = a_b
-                assert a != b
-                a_serialized = model_.serialize(a)
-                b_serialized = model_.serialize(b)
-                a_representation = repr(a)
-                b_representation = repr(b)
-                a_representation_flattened = ''.join(
-                    l.strip()
-                    for l in a_representation.split('\n')
-                )
-                b_representation_flattened = ''.join(
-                    l.strip()
-                    for l in b_representation.split('\n')
-                )
-                if a_serialized != b_serialized or (
-                    a_representation_flattened != b_representation_flattened
-                ):
-                    message.append(
-                        '\n    %s().%s:\n        %s        \n        %s\n     '
-                        '   %s' % (
-                            qualified_model_name,
-                            k,
-                            a_serialized,
-                            '==' if a_serialized == b_serialized else '!=',
-                            b_serialized
-                        )
-                    )
-                if a_representation_flattened != b_representation_flattened:
-                    message.append(
-                        '\n        %s\n        !=\n        %s' % (
-                            a_representation_flattened,
-                            b_representation_flattened
-                        )
-                    )
-
-            e.args = tuple(
-                chain(
-                    (
-                        (
-                            e.args[0] + '\n' + '\n'.join(message)
-                            if e.args else
-                            '\n'.join(message)
-                        ),
-                    ),
-                    e.args[1:] if e.args else tuple()
-                )
-            )
-
-            raise e
-
-        reloaded_string = str(reloaded_model_instance)
-
-        try:
-            assert string == reloaded_string
-        except AssertionError as e:
-            m = '\n%s\n!=\n%s' % (string, reloaded_string)
-            if e.args:
-                e.args = tuple(chain(
-                    (e.args[0] + '\n' + m,),
-                    e.args[1:]
-                ))
-            else:
-                e.args = (m,)
-            raise e
-
-        if format_ == 'json':
-            reloaded_marshalled_data = _json.loads(
-                string,
-                object_hook=collections.OrderedDict,
-                object_pairs_hook=collections.OrderedDict
-            )
-        elif format_ == 'yaml':
-            reloaded_marshalled_data = _yaml.load(string)
-        else:
-            format_representation = repr(format_)
-            raise ValueError(
-                'Valid serialization types for parameter `format_` are "json" '
-                'or "yaml", not' + (
-                    (
-                        ':\n%s' if '\n' in format_representation else ' %s.'
-                    ) % format_representation
-                )
-            )
-        keys = set()
-        for property_name, property in meta.read(
-            model_instance
-        ).properties.items():
-            keys.add(property.name or property_name)
-            property_value = getattr(model_instance, property_name)
-            if isinstance(property_value, abc.model.Model):
-                model(
-                    property_value,
-                    format_=format_,
-                    raise_validation_errors=raise_validation_errors
-                )
-        for k in reloaded_marshalled_data.keys():
-
-            if k not in keys:
-                raise KeyError(
-                    '"%s" not found in serialized/re-deserialized data: %s' % (
-                        k,
-                        string
-                    )
-                )
-    elif isinstance(model_instance, abc.model.Array):
-        model_.validate(model_instance)
+    elif isinstance(model_instance, Array):
+        validate(model_instance)
         for item in model_instance:
-            if isinstance(item, abc.model.Model) or (
+            if isinstance(item, Model) or (
                 hasattr(item, '__iter__') and
                 (not isinstance(item, (str, native_str, bytes)))
             ):
@@ -278,10 +286,10 @@ def model(
                     format_=format_,
                     raise_validation_errors=raise_validation_errors
                 )
-    elif isinstance(model_instance, abc.model.Dictionary):
-        model_.validate(model_instance)
+    elif isinstance(model_instance, Dictionary):
+        validate(model_instance)
         for key, value in model_instance.items():
-            if isinstance(value, abc.model.Model) or (
+            if isinstance(value, Model) or (
                 hasattr(value, '__iter__') and
                 (not isinstance(value, (str, native_str, bytes)))
             ):
@@ -290,3 +298,25 @@ def model(
                     format_=format_,
                     raise_validation_errors=raise_validation_errors
                 )
+
+
+def json(
+    model_instance: Model,
+    raise_validation_errors: bool = True,
+) -> None:
+    model(
+        model_instance=model_instance,
+        format_='json',
+        raise_validation_errors=raise_validation_errors
+    )
+
+
+def yaml(
+    model_instance: Model,
+    raise_validation_errors: bool = True,
+) -> None:
+    model(
+        model_instance=model_instance,
+        format_='yaml',
+        raise_validation_errors=raise_validation_errors
+    )

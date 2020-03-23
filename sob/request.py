@@ -5,22 +5,14 @@ parameter/property for `urllib.request.Request`, and to support casting
 requests as `str` or `bytes` (typically for debugging purposes and/or to aid in
 producing non-language-specific API documentation).
 """
-from .utilities import compatibility
-from future.utils import native_str
+import collections.abc
 import random
 import re
 import string
 import urllib.request
-from .model import serialize
-from .abc.model import Model
+from typing import Dict, Iterable, Optional, Sequence, Set, Tuple, Union
 
-compatibility.backport()
-
-Dict = compatibility.typing.Dict
-Sequence = compatibility.typing.Sequence
-Set = compatibility.typing.Set
-Iterable = compatibility.typing.Iterable
-collections_abc = compatibility.collections_abc
+from .model import Dictionary, Model, serialize
 
 
 class Headers:
@@ -29,14 +21,17 @@ class Headers:
     instance.
     """
 
-    def __init__(self, items, request):
-        # type: (Dict[str, str], Union[Part, Request]) -> None
+    def __init__(
+        self,
+        items: Dict[str, str],
+        request: 'Data'
+    ) -> None:
+        assert isinstance(request, Data)
         self._dict = {}
-        self.request = request  # type: Data
+        self.request: Data = request
         self.update(items)
 
-    def pop(self, key, default=None):
-        # type: (str, Optional[str]) -> str
+    def pop(self, key: str, default: Optional[str] = None) -> str:
         key = key.capitalize()
         if hasattr(self.request, '_boundary'):
             self.request._boundary = None
@@ -44,16 +39,14 @@ class Headers:
             self.request._bytes = None
         return self._dict.pop(key, default=default)
 
-    def popitem(self):
-        # type: (str, Optional[str]) -> str
+    def popitem(self) -> Tuple[str, str]:
         if hasattr(self.request, '_boundary'):
             self.request._boundary = None
         if hasattr(self.request, '_bytes'):
             self.request._bytes = None
         return self._dict.popitem()
 
-    def setdefault(self, key, default=None):
-        # type: (str, Optional[str]) -> str
+    def setdefault(self, key: str, default: Optional[str] = None) -> str:
         key = key.capitalize()
         if hasattr(self.request, '_boundary'):
             self.request._boundary = None
@@ -61,13 +54,16 @@ class Headers:
             self.request._bytes = None
         return self._dict.setdefault(key, default=default)
 
-    def update(self, iterable=None, **kwargs):
-        # type: (Union[Dict[str, str], Sequence[Tuple[str, str]]], Union[Dict[str, str]]) -> None
+    def update(
+        self,
+        _iterable: Union[Dict[str, str], Sequence[Tuple[str, str]]] = None,
+        **kwargs: Dict[str, str]
+    ) -> None:
         cd = {}
-        if iterable is None:
+        if _iterable is None:
             d = kwargs
         else:
-            d = dict(iterable, **kwargs)
+            d = dict(_iterable, **kwargs)
         for k, v in d.items():
             cd[k.capitalize()] = v
         if hasattr(self.request, '_boundary'):
@@ -76,8 +72,7 @@ class Headers:
             self.request._bytes = None
         return self._dict.update(cd)
 
-    def __delitem__(self, key):
-        # type: (str) -> None
+    def __delitem__(self, key: str) -> None:
         key = key.capitalize()
         if hasattr(self.request, '_boundary'):
             self.request._boundary = None
@@ -85,8 +80,7 @@ class Headers:
             self.request._bytes = None
         del self._dict[key]
 
-    def __setitem__(self, key, value):
-        # type: (str, str) -> None
+    def __setitem__(self, key: str, value: str) -> None:
         key = key.capitalize()
         if key != 'Content-length':
             if hasattr(self.request, '_boundary'):
@@ -95,33 +89,57 @@ class Headers:
                 self.request._bytes = None
             return self._dict.__setitem__(key, value)
 
-    def __getitem__(self, key):
-        # type: (str) -> None
-        key = key.capitalize()
-        if key == 'Content-length':
-            data = self.request.data
-            if data is None:
-                content_length = 0
-            else:
-                content_length = len(data)
-            value = str(content_length)
+    def _get_content_length(self) -> int:
+        data = self.request.data
+        if data is None:
+            content_length = 0
         else:
+            content_length = len(data)
+        return content_length
+
+    def _get_boundary(self) -> str:
+        boundary: str = ''
+        try:
+            boundary = str(
+                getattr(self.request, 'boundary'),
+                encoding='utf-8'
+            )
+        except AttributeError:
+            pass
+        return boundary
+
+    def _get_content_type(self) -> Optional[str]:
+        content_type: Optional[str] = None
+        try:
+            content_type = self._dict.__getitem__('Content-type')
+        except KeyError:
+            # Check to see if we can *infer* the content type
             try:
-                value = self._dict.__getitem__(key)
-            except KeyError as e:
-                if key == 'Content-type':
-                    if hasattr(self.request, 'parts') and self.request.parts:
-                        value = 'multipart/form-data'
-            if (
-                (value is not None) and
-                value.strip().lower()[:9] == 'multipart' and
-                hasattr(self.request, 'boundary')
-            ):
-                value += '; boundary=' + str(self.request.boundary, encoding='utf-8')
+                if getattr(self.request, 'parts'):
+                    content_type = 'multipart/form-data'
+            except AttributeError:
+                pass
+        if (
+            (content_type is not None) and
+            content_type.strip().lower().startswith('multipart')
+        ):
+            boundary: str = self._get_boundary()
+            if boundary:
+                content_type += f'; boundary={boundary}'
+        return content_type
+
+    def __getitem__(self, key: str) -> None:
+        key = key.capitalize()
+        value: Optional[str]
+        if key == 'Content-length':
+            value = str(self._get_content_length())
+        elif key == 'Content-type':
+            value = self._get_content_type()
+        else:
+            value = self._dict.__getitem__(key)
         return value
 
-    def keys(self):
-        # type: (...) -> Iterable[str]
+    def keys(self) -> Iterable[str]:
         return (k for k in self)
 
     def values(self):
@@ -130,41 +148,39 @@ class Headers:
     def __len__(self):
         return len(tuple(self))
 
-    def __iter__(self):
-        # type: (...) -> Iterable[str]
-        keys = set()
-        for k in self._dict.keys():
-            keys.add(k)
-            yield k
+    def __iter__(self) -> Iterable[str]:
+        keys: Set[str] = set()
+        key: str
+        for key in self._dict.keys():
+            keys.add(key)
+            yield key
         if type(self.request) is not Part:
             # *Always* include "Content-length"
             if 'Content-length' not in keys:
                 yield 'Content-length'
-        if (
-            hasattr(self.request, 'parts') and
-            self.request.parts and
-            ('Content-type' not in keys)
-        ):
-            yield 'Content-type'
+        # Always include "Content-type" for multi-part requests
+        try:
+            parts: Parts = getattr(self.request, 'parts')
+            if parts and ('Content-type' not in keys):
+                yield 'Content-type'
+        except AttributeError:
+            pass
 
-    def __contains__(self, key):
-        # type: (str) -> bool
+    def __contains__(self, key: str) -> bool:
         return True if key in self.keys() else False
 
-    def items(self):
-        # type: (...) -> Iterable[Tuple[str, str]]
-        for k in self:
-            yield k, self[k]
+    def items(self) -> Iterable[Tuple[str, str]]:
+        key: str
+        for key in self:
+            yield key, self[key]
 
-    def copy(self):
-        # type: (...) -> Headers
+    def copy(self) -> 'Headers':
         return self.__class__(
             self._dict,
             request=self.request
         )
 
-    def __copy__(self):
-        # type: (...) -> Headers
+    def __copy__(self) -> 'Headers':
         return self.copy()
 
 
@@ -175,22 +191,26 @@ class Data:
 
     def __init__(
         self,
-        data=None,  # type: Optional[Union[bytes, str, Sequence, Set, dict, Model]]
-        headers=None  # type: Optional[Dict[str, str]]
-    ):
+        data: Optional[Union[bytes, str, Sequence, Set, dict, Model]] = None,
+        headers: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Parameters:
 
-            - data (bytes|str|collections.Sequence|collections.Set|dict|sob.abc.Model): The payload.
-
-            - headers ({str: str}): A dictionary of headers (for this part of the request body, not the main request).
-              This should (almost) always include values for "Content-Disposition" and "Content-Type".
+            - data (
+                  bytes|str|collections.Sequence|collections.Set|dict|
+                  sob.abc.Model
+              ): The payload.
+            - headers ({str: str}): A dictionary of headers (for this part of
+              the request body, not the main request). This should (almost)
+              always include values for "Content-Disposition" and
+              "Content-Type".
         """
-        self._bytes = None  # type: Optional[bytes]
+        self._bytes: Optional[bytes] = None
         self._headers = None
         self._data = None
-        self.headers = headers  # type: Dict[str, str]
-        self.data = data  # type: Optional[bytes]
+        self.headers: Dict[str, str] = headers
+        self.data: Optional[bytes] = data
 
     @property
     def headers(self):
@@ -212,8 +232,16 @@ class Data:
         return self._data
 
     @data.setter
-    def data(self, data):
-        # type: (Optional[Union[bytes, str, Sequence, Set, dict, Model]]) -> None
+    def data(
+        self,
+        data: Optional[
+            Union[
+                bytes, str,
+                Sequence, Set, dict,
+                Model
+            ]
+        ]
+    ) -> None:
         self._bytes = None
         if data is not None:
             serialize_type = None
@@ -224,10 +252,26 @@ class Data:
                 if re.search(r'/yaml\b', ct) is not None:
                     serialize_type = 'yaml'
             if isinstance(data, (Model, dict)) or (
-                isinstance(data, (collections_abc.Sequence, collections_abc.Set)) and not
-                isinstance(data, (str, bytes))
+                isinstance(
+                    data,
+                    (
+                        collections.abc.Sequence,
+                        collections.abc.Set
+                    )
+                ) and not isinstance(
+                    data,
+                    (str, bytes)
+                )
             ):
-                data = serialize(data, serialize_type or 'json')
+                data = serialize(
+                    data,
+                    serialize_type or 'json'
+                )
+            elif isinstance(data, dict):
+                data = serialize(
+                    Dictionary(data),
+                    serialize_type or 'json'
+                )
             if isinstance(data, str):
                 data = bytes(data, encoding='utf-8')
         self._data = data
@@ -249,7 +293,7 @@ class Data:
 
     def __str__(self):
         b = self.__bytes__()
-        if not isinstance(b, native_str):
+        if not isinstance(b, str):
             b = repr(b)[2:-1].replace('\\r\\n', '\r\n').replace('\\n', '\n')
         return b
 
@@ -258,27 +302,32 @@ class Part(Data):
 
     def __init__(
         self,
-        data=None,  # type: Optional[Union[bytes, str, Sequence, Set, dict, Model]]
-        headers=None,  # type: Optional[Dict[str, str]]
-        parts=None  # type: Optional[Sequence[Part]]
+        data: Optional[Union[bytes, str, Sequence, Set, dict, Model]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        parts: Optional[Sequence['Part']] = None
     ):
         """
         Parameters:
 
-            - data (bytes|str|collections.Sequence|collections.Set|dict|sob.abc.Model): The payload.
-
-            - headers ({str: str}): A dictionary of headers (for this part of the request body, not the main request).
-              This should (almost) always include values for "Content-Disposition" and "Content-Type".
+        - data (
+              bytes|str|collections.Sequence|collections.Set|dict|
+              sob.abc.Model
+          ): The payload.
+        - headers ({str: str}): A dictionary of headers (for this part of
+          the request body, not the main request). This should (almost)
+          always include values for "Content-Disposition" and
+          "Content-Type".
         """
-        self._boundary = None  # type: Optional[bytes]
-        self._parts = None  # type: Optional[Parts]
+        self._boundary: Optional[bytes] = None
+        self._parts: Optional[Parts] = None
         self.parts = parts
         Data.__init__(self, data=data, headers=headers)
 
     @property
     def boundary(self):
         """
-        Calculates a boundary which is not contained in any of the request parts.
+        Calculates a boundary which is not contained in any of the request
+        parts.
         """
         if self._boundary is None:
             data = b'\r\n'.join(
@@ -290,7 +339,7 @@ class Part(Data):
                     random.choice(string.digits + string.ascii_letters),
                     encoding='utf-8'
                 )
-                for i in range(16)
+                for _index in range(16)
             )
             while boundary in data:
                 boundary += bytes(
@@ -301,8 +350,7 @@ class Part(Data):
         return self._boundary
 
     @property
-    def data(self):
-        # type: (bytes) -> None
+    def data(self) -> None:
         if self.parts:
             data = (b'\r\n--' + self.boundary + b'\r\n').join(
                 [self._data or b''] +
@@ -314,16 +362,14 @@ class Part(Data):
 
     @data.setter
     def data(self, data):
-        return Data.data.__set__(self, data)
+        Data.data.__set__(self, data)
 
     @property
-    def parts(self):
-        # type: (...) -> Parts
+    def parts(self) -> 'Parts':
         return self._parts
 
     @parts.setter
-    def parts(self, parts):
-        # type: (Optional[Sequence[Part]]) -> None
+    def parts(self, parts: Optional[Sequence['Part']]) -> None:
         if parts is None:
             parts = Parts([], request=self)
         elif isinstance(parts, Parts):
@@ -336,43 +382,40 @@ class Part(Data):
 
 class Parts(list):
 
-    def __init__(self, items, request):
-        # type: (typing.Sequence[Part], MultipartRequest) -> None
+    def __init__(
+        self,
+        items: Sequence[Part],
+        request: 'Part'
+    ) -> None:
         self.request = request
         super().__init__(items)
 
-    def append(self, item):
-        # type: (Part) -> None
+    def append(self, item: Part) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().append(item)
 
-    def clear(self):
-        # type: (...) -> None
+    def clear(self) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().clear()
 
-    def extend(self, items):
-        # type: (Iterable[Part]) -> None
+    def extend(self, items: Iterable[Part]) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().extend(items)
 
-    def reverse(self):
-        # type: (...) -> None
+    def reverse(self) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().reverse()
 
-    def __delitem__(self, key):
-        # type: (str) -> None
+    def __delitem__(self, key: int) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().__delitem__(key)
 
-    def __setitem__(self, key, value):
-        # type: (str) -> None
+    def __setitem__(self, key: int, value: Part) -> None:
         self.request._boundary = None
         self.request._bytes = None
         super().__setitem__(key, value)
@@ -380,21 +423,21 @@ class Parts(list):
 
 class Request(Data, urllib.request.Request):
     """
-    A sub-class of `urllib.request.Request` which accommodates additional data types, and serializes `data` in
-    accordance with what is indicated by the request's "Content-Type" header.
+    A sub-class of `urllib.request.Request` which accommodates additional data
+    types, and serializes `data` in accordance with what is indicated by the
+    request's "Content-Type" header.
     """
 
     def __init__(
         self,
         url,
-        data=None,  # type: Optional[Union[bytes, str, Sequence, Set, dict, Model]]
-        headers=None,  # type: Optional[Dict[str, str]]
-        origin_req_host=None,  # type: Optional[str]
-        unverifiable=False,  # type: bool
-        method=None  # type: Optional[str]
-    ):
-        # type: (...) -> None
-        self._bytes = None  # type: Optional[bytes]
+        data: Optional[Union[bytes, str, Sequence, Set, dict, Model]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        origin_req_host: Optional[str] = None,
+        unverifiable: bool = False,
+        method: Optional[str] = None
+    ) -> None:
+        self._bytes: Optional[bytes] = None
         self._headers = None
         self._data = None
         self.headers = headers
@@ -411,8 +454,8 @@ class Request(Data, urllib.request.Request):
 
 class MultipartRequest(Part, Request):
     """
-    A sub-class of `Request` which adds a property (and initialization parameter) to hold the `parts` of a
-    multipart request.
+    A sub-class of `Request` which adds a property (and initialization
+    parameter) to hold the `parts` of a multipart request.
 
     https://www.w3.org/Protocols/rfc1341/7_2_Multipart.html
     """
@@ -420,14 +463,13 @@ class MultipartRequest(Part, Request):
     def __init__(
         self,
         url,
-        data=None,  # type: Optional[Union[bytes, str, Sequence, Set, dict, Model]]
-        headers=None,  # type: Optional[Dict[str, str]]
-        origin_req_host=None,  # type: Optional[str]
-        unverifiable=False,  # type: bool
-        method=None,  # type: Optional[str]
-        parts=None  # type: Optional[Sequence[Part]]
-    ):
-        # type: (...) -> None
+        data: Optional[Union[bytes, str, Sequence, Set, dict, Model]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        origin_req_host: Optional[str] = None,
+        unverifiable: bool = False,
+        method: Optional[str] = None,
+        parts: Optional[Sequence[Part]] = None
+    ) -> None:
         Part.__init__(
             self,
             data=data,

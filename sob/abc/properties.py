@@ -1,7 +1,8 @@
-from typing import Optional, Union, Sequence, Callable
-from abc import ABCMeta, abstractmethod, ABC
+from abc import ABC, ABCMeta, abstractmethod
+from typing import Callable, Optional, Sequence, Union
+
 from .model import Model
-from ..meta import Version
+from .meta import Version
 
 
 class Types(ABC):
@@ -14,8 +15,7 @@ class Types(ABC):
         items: Optional[
             Union[
                 Sequence[
-                    Union[type, "Property"],
-                    "Types"
+                    Union[type, "Property", "Types"]
                 ],
                 type,
                 "Property"
@@ -57,8 +57,7 @@ class Property(ABC):
 
     @property
     @abstractmethod
-    def versions(self):
-        # type: (...) -> Optional[Sequence[meta.Version]]
+    def versions(self) -> Optional[Sequence[Version]]:
         pass
 
     @versions.setter

@@ -1,21 +1,11 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from .utilities import compatibility
 import sys
 from traceback import format_exception
-# from .abc.model import Model
-# from .abc.properties import Property
+from typing import Any, Optional, Sequence, Union
+
+from .abc.model import Model
+from .abc.properties import Property
 from .properties.types import TYPES
-from .utilities import qualified_name
-
-compatibility.backport()
-
-Optional = compatibility.typing.Optional
-Any = compatibility.typing.Any
-Sequence = compatibility.typing.Sequence
-Union = compatibility.typing.Union
+from .utilities.inspect import qualified_name
 
 
 class ValidationError(Exception):
@@ -29,24 +19,47 @@ class VersionError(AttributeError):
 
 
 class UnmarshalError(Exception):
+    """
+    This is an error message raised when data cannot be un-marshalled due to
+    not matching metadata specs.
+    """
 
     def __init__(
         self,
-        message=None,  # type: Optional[str]
-        data=None,  # type: Optional[Any]
-        types=None,  # type: Optional[Sequence[Model, Property, type]]
-        item_types=None,  # type: Optional[Sequence[Model, Property, type]]
-        value_types=None  # type: Optional[Sequence[Model, Property, type]]
-    ):
-        # type: (...) -> None
-        """
-        Generate a comprehensible error message for data which could not be
-        un-marshalled according to spec, and raise the appropriate exception
-        """
-        self._message = None  # type: Optional[str]
-        self._parameter = None  # type: Optional[str]
-        self._index = None  # type: Optional[int]
-        self._key = None  # type: Optional[str]
+        message: Optional[str] = None,
+        data: Optional[Any] = None,
+        types: Optional[
+            Sequence[
+                Union[
+                    Model,
+                    Property,
+                    type
+                ]
+            ]
+        ] = None,
+        item_types: Optional[
+            Sequence[
+                 Union[
+                     Model,
+                     Property,
+                     type
+                 ]
+            ]
+        ] = None,
+        value_types: Optional[
+            Sequence[
+                Union[
+                    Model,
+                    Property,
+                    type
+                ]
+            ]
+        ] = None
+    ) -> None:
+        self._message: Optional[str] = None
+        self._parameter: Optional[str] = None
+        self._index: Optional[int] = None
+        self._key: Optional[str] = None
         error_message_lines = ['']
         # Identify which parameter is being used for type validation
         types_label = None
@@ -122,60 +135,52 @@ class UnmarshalError(Exception):
         self.message = '\n'.join(error_message_lines)
 
     @property
-    def parameter(self):
-        # type: (...) -> Optional[str]
+    def parameter(self) -> Optional[str]:
         return self._parameter
 
     @parameter.setter
-    def parameter(self, parameter_name):
-        # type: (str) -> None
+    def parameter(self, parameter_name: str) -> None:
         if parameter_name != self.parameter:
             self._parameter = parameter_name
             self.assemble_message()
 
     @property
-    def message(self):
-        # type: (...) -> Optional[str]
+    def message(self) -> Optional[str]:
         return self._message
 
     @message.setter
-    def message(self, message_text):
-        # type: (str) -> None
+    def message(self, message_text: str) -> None:
         if message_text != self.message:
             self._message = message_text
             self.assemble_message()
 
     @property
-    def index(self):
-        # type: (...) -> Optional[int]
+    def index(self) -> Optional[int]:
         return self._index
 
     @index.setter
-    def index(self, index_or_key):
-        # type: (Union[str, int]) -> None
+    def index(self, index_or_key: Union[str, int]) -> None:
         if index_or_key != self.index:
             self._index = index_or_key
             self.assemble_message()
 
-    def assemble_message(self):
-
+    def assemble_message(self) -> None:
+        """
+        Assemble the text of the error message.
+        """
         messages = []
-
         if self.parameter:
             messages.append(
                 'Errors encountered in attempting to un-marshal %s:' %
                 self.parameter
             )
-
         if self.index is not None:
             messages.append(
                 'Errors encountered in attempting to un-marshal the value at '
                 'index %s:' % repr(self.index)
             )
-
         if self.message:
             messages.append(self.message)
-
         super().__init__('\n'.join(messages))
 
 
@@ -191,16 +196,19 @@ class UnmarshalValueError(UnmarshalError, ValueError):
 
 class UnmarshalKeyError(KeyError):
 
-    def __init__(self, message):
-        # type (str) -> None
+    def __init__(self, message: str) -> None:
         self.message = message
 
     def __str__(self):
         return self.message
 
 
-def get_exception_text():
-    # type: (...) -> str
+class ObjectDiscrepancyError(AssertionError):
+
+    pass
+
+
+def get_exception_text() -> str:
     """
     When called within an exception, this function returns a text
     representation of the error matching what is found in

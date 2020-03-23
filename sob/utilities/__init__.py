@@ -1,10 +1,10 @@
 from typing import List
 
-from . import compatibility
 from . import inspect
 from . import io
 from . import string
 from . import types
+
 from .inspect import (
     calling_function_qualified_name,
     calling_functions_qualified_names,
@@ -22,11 +22,8 @@ from .string import (
     url_directory_and_file_name,
     url_relative_to
 )
-from .io import get_url as get_io_url, read
-from .types import Undefined, UNDEFINED, Module
 
 __all__: List[str] = [
-    'compatibility',
     'inspect',
     'io',
     'string',
@@ -43,6 +40,5 @@ __all__: List[str] = [
     'indent',
     'property_name',
     'url_directory_and_file_name',
-    'url_relative_to'
+    'url_relative_to',
 ]
-

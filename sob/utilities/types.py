@@ -1,12 +1,6 @@
-from __future__ import (
-    nested_scopes, generators, division, absolute_import, with_statement,
-    print_function, unicode_literals
-)
-from . import compatibility
-
-compatibility.backport()
-
-Any = compatibility.typing.Any
+from enum import Enum
+from typing import Any
+from . import inspect
 
 UNDEFINED = None
 
@@ -18,8 +12,7 @@ class Undefined:
     meaningful value
     """
 
-    def __init__(self):
-        # type: (...) -> None
+    def __init__(self) -> None:
         """
         Only one instance of `Undefined` is permitted, so initialization
         checks to make sure this is the first use
@@ -29,8 +22,7 @@ class Undefined:
                 '%s may only be instantiated once.' % repr(self)
             )
 
-    def __repr__(self):
-        # type: (...) -> str
+    def __repr__(self) -> str:
         """
         Represent instances of this class using the qualified name for the
         constant `UNDEFINED`
@@ -46,19 +38,16 @@ class Undefined:
             ])
         return representation
 
-    def __bool__(self):
-        # type: (...) -> bool
+    def __bool__(self) -> bool:
         """
         `UNDEFINED` cast as a boolean is `False` (as with `None`)
         """
         return False
 
-    def __hash__(self):
-        # type: (...) -> int
+    def __hash__(self) -> int:
         return 0
 
-    def __eq__(self, other):
-        # type: (Any) -> bool
+    def __eq__(self, other: Any) -> bool:
         """
         Another object is only equal to this if it shares the same id, since
         there should only be one instance of this class defined
@@ -68,5 +57,6 @@ class Undefined:
 
 locals()['UNDEFINED'] = Undefined()
 
+Module: type = type(inspect)
 
-Module = type(compatibility)
+
