@@ -279,7 +279,7 @@ def model(
         for item in model_instance:
             if isinstance(item, Model) or (
                 hasattr(item, '__iter__') and
-                (not isinstance(item, (str, native_str, bytes)))
+                (not isinstance(item, (str, bytes)))
             ):
                 model(
                     item,
@@ -291,7 +291,7 @@ def model(
         for key, value in model_instance.items():
             if isinstance(value, Model) or (
                 hasattr(value, '__iter__') and
-                (not isinstance(value, (str, native_str, bytes)))
+                (not isinstance(value, (str, bytes)))
             ):
                 model(
                     value,

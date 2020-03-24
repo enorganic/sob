@@ -27,6 +27,7 @@ from . import (
     __name__ as _parent_module_name, abc, errors, hooks, meta, properties,
     utilities
 )
+from .errors import get_exception_text
 from .properties.types import NULL, Null
 from .utilities import indent, qualified_name
 from .utilities.assertion import assert_argument_is_instance
@@ -1492,24 +1493,27 @@ def marshal(
     Recursively converts data which is not serializable using the `json` module
     into formats which *can* be represented as JSON.
     """
-    marshalled_data: Any = data
-    if data is None:
+    marshalled_data: Any
+    if isinstance(data, Decimal):
+        # Instances of `decimal.Decimal` can'ts be serialized as JSON, so we
+        # convert them to `float`
+        marshalled_data = float(data)
+    elif (data is None) or isinstance(
+        data,
+        (str, Number)
+    ):
         # Don't do anything with `None`--this just means an attributes is not
         # used for this instance (an explicit `null` would be passed as
         # `sob.properties.types.NULL`).
-        pass
+        marshalled_data = data
+    elif data is NULL:
+        marshalled_data = None
     elif isinstance(data, abc.model.Model):
         marshalled_data = getattr(data, '_marshal')()
     elif types is not None:
         marshalled_data = _marshal_typed(data, types)
-    elif isinstance(data, Decimal):
-        # Instances of `decimal.Decimal` can'ts be serialized as JSON, so we
-        # convert them to `float`
-        marshalled_data = float(data)
     elif isinstance(data, (date, datetime)):
         marshalled_data = data.isoformat()
-    elif isinstance(data, str):
-        marshalled_data = data
     elif isinstance(data, (bytes, bytearray)):
         # Convert `bytes` to base-64 encoded strings
         marshalled_data = str(b64encode(data), 'ascii')
@@ -1529,6 +1533,10 @@ def marshal(
         # Convert objects which can be *cast* as `bytes` to
         # base-64 encoded strings
         marshalled_data = str(b64encode(bytes(data)), 'ascii')
+    else:
+        raise ValueError(
+            f'Cannot unmarshal: {repr(data)}'
+        )
     return marshalled_data
 
 
@@ -1951,25 +1959,32 @@ def deserialize(
 
         A deserialized representation of the information you provided.
     """
+    deserialized_data: Optional[str] = None
     if format_ not in ('json', 'yaml'):
         raise NotImplementedError(
             'Deserialization of data in the format %s is not currently '
             'supported.' % repr(format_)
         )
-    if not isinstance(data, (str, bytes)):
-        data = read(data)
-    if isinstance(data, bytes):
-        data = str(data, encoding='utf-8')
     if isinstance(data, str):
         if format_ == 'json':
-            data = json.loads(
+            deserialized_data = json.loads(
                 data,
                 object_hook=collections.OrderedDict,
                 object_pairs_hook=collections.OrderedDict
             )
         elif format_ == 'yaml':
-            data = yaml.load(data, yaml.FullLoader)
-    return data
+            deserialized_data = yaml.load(data, yaml.FullLoader)
+    elif isinstance(data, bytes):
+        deserialized_data = deserialize(
+            str(data, encoding='utf-8'),
+            format_
+        )
+    else:
+        deserialized_data = deserialized_data = deserialize(
+            read(data),
+            format_
+        )
+    return deserialized_data
 
 
 def detect_format(
@@ -1993,6 +2008,8 @@ def detect_format(
     string_data: str
     if isinstance(data, str):
         string_data = data
+    elif isinstance(data, bytes):
+        string_data = str(data, encoding='utf-8')
     else:
         try:
             string_data = read(data)
@@ -2001,16 +2018,31 @@ def detect_format(
     formats = ('json', 'yaml')
     format_ = None
     deserialized_data: Any = string_data
+    formats_error_messages: List[Tuple[str, str]] = []
     for potential_format in formats:
         try:
             deserialized_data = deserialize(string_data, potential_format)
             format_ = potential_format
             break
         except (ValueError, yaml.YAMLError):
-            pass
+            formats_error_messages.append((
+                potential_format,
+                get_exception_text()
+            ))
     if format_ is None:
         raise ValueError(
-            'The data provided could not be parsed:\n' + repr(data)
+            'The data provided could not be parsed:\n\n'
+            '{}\n\n'
+            '{}'.format(
+                indent(repr(data), start=0),
+                '\n\n'.join(
+                    '{}:\n\n{}'.format(
+                        format_,
+                        error_message
+                    )
+                    for format_, error_message in formats_error_messages
+                )
+            )
         )
     return deserialized_data, format_
 
