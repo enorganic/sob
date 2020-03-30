@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 from . import errors
 from .properties.types import Types
 from .utilities import (
-    calling_function_qualified_name, properties_values, qualified_name
+    calling_function_qualified_name, properties_values, qualified_name, indent
 )
 from .utilities.assertion import assert_argument_is_instance
 from . import abc
@@ -50,7 +50,12 @@ class Meta:
                 value_representation = qualified_name(value)
             else:
                 value_representation = repr(value)
-            lines.append('    %s=%s,' % (property_name, value_representation))
+            lines.append(
+                '    %s=%s,' % (
+                    property_name,
+                    indent(value_representation)
+                )
+            )
         # Strip the trailing comma
         lines[-1] = lines[-1][:-1]
         lines.append(')')
@@ -107,7 +112,7 @@ class Version(Meta):
                         )
                 elif s:
                     specification = s
-            self.specification = specification
+        self.specification = specification
         self.equals = equals
         self.not_equals = not_equals
         self.less_than = less_than
@@ -209,7 +214,17 @@ class Object(Meta):
 
     def __init__(
         self,
-        properties: Optional['Properties'] = None
+        properties: Optional[
+            Union[
+                Dict[
+                    str,
+                    abc.properties.Property
+                ],
+                Sequence[
+                    Tuple[str, abc.properties.Property]
+                ]
+            ]
+        ] = None
     ) -> None:
         self._properties: Optional[Properties] = None
         self.properties = properties
@@ -251,7 +266,7 @@ class Dictionary(Meta):
             ]
         ] = None
     ) -> None:
-        self._value_types: Optional[Tuple] = None
+        self._value_types: Optional[Types] = None
         self.value_types = value_types
 
     @property
@@ -419,7 +434,7 @@ abc.meta.Properties.register(Properties)
 
 def read(
     model: Union[type, abc.model.Model]
-) -> Optional[Meta]:
+) -> Union[abc.meta.Dictionary, abc.meta.Array, abc.meta.Object]:
     if isinstance(
         model,
         abc.model.Model
@@ -455,7 +470,7 @@ def read(
 
 def writable(
     model: Union[type, abc.model.Model]
-) -> Optional[Meta]:
+) -> Union[abc.meta.Object, abc.meta.Array, abc.meta.Dictionary]:
     """
     This function returns an instance of [sob.meta.Meta](#Meta) which can
     be safely modified. If the class or model instance inherits its metadata

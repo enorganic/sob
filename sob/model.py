@@ -5,6 +5,7 @@ import builtins
 import collections
 import collections.abc
 import json
+import re
 import sys
 from base64 import b64decode, b64encode
 from copy import deepcopy, copy
@@ -28,16 +29,15 @@ from . import (
     utilities
 )
 from .errors import get_exception_text
-from .properties.types import NULL, Null
 from .utilities import indent, qualified_name
 from .utilities.assertion import assert_argument_is_instance
+from .utilities.inspect import calling_module_name
 from .utilities.io import get_url, read
 from .utilities.string import split_long_docstring_lines
-from .utilities.types import Module, UNDEFINED, Undefined
-
-_UNMARSHALLABLE_TYPES = tuple(
-    set(properties.types.TYPES) | {properties.types.NoneType}
+from .utilities.types import (
+    UNDEFINED, Undefined, NULL, Null, NoneType, JSON_TYPES
 )
+
 _LINE_LENGTH: int = 79
 
 
@@ -651,7 +651,7 @@ class Array(list, Model):
             instance_hooks.after_setitem(self, index, value)
 
     def append(self, value: Any) -> None:
-        if not isinstance(value, _UNMARSHALLABLE_TYPES):
+        if not isinstance(value, properties.types.TYPES):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: hooks.Array = hooks.read(self)
         if instance_hooks and instance_hooks.before_append:
@@ -905,7 +905,7 @@ class Dictionary(collections.OrderedDict, Model):
     def __setitem__(
         self,
         key: int,
-        value: Any
+        value: Union[JSON_TYPES]
     ) -> None:
         instance_hooks: hooks.Dictionary = hooks.read(self)
         if instance_hooks and instance_hooks.before_setitem:
@@ -935,15 +935,14 @@ class Dictionary(collections.OrderedDict, Model):
             else:
                 error.args = (message + repr(value),)
             raise error
-
-        if value is None:
-            raise RuntimeError(key)
-
+        if unmarshalled_value is None:
+            raise RuntimeError(
+                f'{key} = {repr(unmarshalled_value)}'
+            )
         super().__setitem__(
             key,
             unmarshalled_value
         )
-
         if instance_hooks and instance_hooks.after_setitem:
             instance_hooks.after_setitem(self, key, unmarshalled_value)
 
@@ -1132,270 +1131,7 @@ class Dictionary(collections.OrderedDict, Model):
 abc.model.Dictionary.register(Dictionary)
 
 
-def _type_hint_from_property_types(
-    property_types: Optional[properties.types.Types]
-) -> str:
-    type_hint: str = ''
-    if property_types is not None:
-        if len(property_types) > 1:
-            type_hint = 'Union[\n{}\n]'.format(
-                ',\n'.join(
-                    indent(
-                        _type_hint_from_property(item_type),
-                        start=0
-                    )
-                    for item_type in property_types
-                )
-            )
-        else:
-            type_hint = _type_hint_from_property(property_types[0])
-    return type_hint
-
-
-def _type_hint_from_type(type_: type) -> str:
-    if type_ in (Union, Dict, Any, Sequence, IO):
-        type_hint = type_.__name__
-    else:
-        type_hint = qualified_name(type_)
-        # If this class was declared in the same module, we put it in
-        # quotes since it won't necessarily have been declared already
-        if (
-            ('.' not in type_hint)
-            and not
-            hasattr(builtins, type_hint)
-        ):
-            if len(type_hint) > 60:
-                type_hint_lines: List[str] = ['(']
-                for chunk in chunked(type_hint, 57):
-                    type_hint_lines.append(
-                        f"    '{''.join(chunk)}'"
-                    )
-                type_hint_lines.append(')')
-                type_hint = '\n'.join(type_hint_lines)
-            else:
-                type_hint = f"'{type_hint}'"
-    return type_hint
-
-
-def _type_hint_from_property(
-    property_or_type: Union[properties.Property, type]
-) -> str:
-    type_hint: str
-    if isinstance(property_or_type, type):
-        type_hint = _type_hint_from_type(property_or_type)
-    elif isinstance(property_or_type, properties.Array):
-        item_type_hint: str = _type_hint_from_property_types(
-            property_or_type.item_types
-        )
-        if item_type_hint:
-            type_hint = (
-                'Sequence[\n'
-                f'    {indent(item_type_hint)}\n'
-                ']'
-            )
-        else:
-            type_hint = 'Sequence'
-    elif isinstance(property_or_type, properties.Dictionary):
-        value_type_hint: str = _type_hint_from_property_types(
-            property_or_type.item_types
-        )
-        if value_type_hint:
-            type_hint = (
-                'Dict[\n'
-                '    str,\n'
-                f'    {indent(value_type_hint)}\n'
-                ']'
-            )
-        else:
-            type_hint = 'dict'
-    elif property_or_type and property_or_type.types:
-        type_hint = _type_hint_from_property_types(property_or_type.types)
-    else:
-        type_hint = 'Any'
-    return type_hint
-
-
-def _get_class_declaration(
-    name: str,
-    superclass: type
-) -> str:
-    """
-    Construct a class declaration
-    """
-    qualified_superclass_name: str = qualified_name(superclass)
-    # If the class declaration line is longer than 79 characters--break it
-    # up (attempt to conform to PEP8)
-    if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
-        class_declaration: str = 'class %s(%s):' % (
-            name,
-            qualified_superclass_name
-        )
-    else:
-        class_declaration: str = 'class %s(%s\n    %s\n):' % (
-            name,
-            # If the first line is still too long for PEP8--add a comment to
-            # prevent linters from getting hung up
-            (
-                '  # noqa'
-                if len(name) + 7 > _LINE_LENGTH else
-                ''
-            ),
-            qualified_superclass_name
-        )
-    return class_declaration
-
-
-def _repr_class_docstring(docstring: str = '') -> str:
-    """
-    Return a representation of a docstring for use in a class constructor.
-    """
-    repr_docstring: str = ''
-    if docstring:
-        repr_docstring = (
-            '    """\n'
-            '%s\n'
-            '    """'
-        ) % split_long_docstring_lines(docstring)
-    return repr_docstring
-
-
-def _class_definition_from_meta(
-    name: str,
-    metadata: meta.Meta,
-    docstring: Optional[str] = None
-) -> str:
-    """
-    This returns a `str` defining a model class, as determined by an
-    instance of `sob.meta.Meta`.
-    """
-    repr_docstring: str = _repr_class_docstring(docstring)
-    if isinstance(metadata, meta.Dictionary):
-        out = [
-            _get_class_declaration(
-                name,
-                Dictionary
-            )
-        ]
-        if repr_docstring is not None:
-            out.append(repr_docstring)
-        out.append('\n    pass\n\n')
-    elif isinstance(metadata, meta.Array):
-        out = [
-            _get_class_declaration(name, Array)
-        ]
-        if repr_docstring:
-            out.append(repr_docstring)
-        out.append('\n    pass\n\n')
-    elif isinstance(metadata, meta.Object):
-        out = [
-            _get_class_declaration(name, Object)
-        ]
-        if repr_docstring:
-            out.append(repr_docstring)
-        out += [
-            '',
-            '    def __init__(',
-            '        self,',
-            '        _data: Optional[',
-            '            Union[str, bytes, dict, Sequence, IO]',
-            '        ] = None,'
-        ]
-        metadata_properties_items: Tuple[
-            Tuple[str, abc.properties.Property],
-            ...
-        ] = tuple(
-            metadata.properties.items()
-        )
-        metadata_properties_items_length: int = len(
-            metadata_properties_items
-        )
-        property_index: int
-        name_and_property: Tuple[str, abc.properties.Property]
-        for property_index, name_and_property in enumerate(
-            metadata_properties_items
-        ):
-            property_name_: str
-            property_: abc.properties.Property
-            property_name_, property_ = name_and_property
-            repr_comma: str = (
-                ''
-                if (
-                    property_index + 1 ==
-                    metadata_properties_items_length
-                ) else
-                ','
-            )
-            repr_property_typing: str = indent(
-                _type_hint_from_property(property_),
-                12
-            )
-            parameter_declaration: str = (
-                f'        {property_name_}: Optional[\n'
-                f'            {repr_property_typing}\n'
-                f'        ] = None{repr_comma}'
-            )
-            out.append(parameter_declaration)
-        out.append(
-            '    ) -> None:'
-        )
-        for property_name_ in metadata.properties.keys():
-            out.append(
-                '        self.%s = %s' % (property_name_, property_name_)
-            )
-        out.append('        super().__init__(_data)\n\n')
-    else:
-        raise ValueError(metadata)
-    return '\n'.join(out)
-
-
-def from_meta(
-    name: str,
-    metadata: meta.Meta,
-    module: Optional[str] = None,
-    docstring: Optional[str] = None
-) -> type:
-    """
-    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
-    instance of `sob.meta.Meta`.
-
-    Parameters:
-
-        - name (str): The name of the class.
-        - class_meta ([sob.meta.Meta](#Meta))
-        - module (str): Specify the value for the class definition's
-          `__module__` property. The invoking module will be
-          used if this is not specified (if possible).
-        - docstring (str): A docstring to associate with the class definition.
-    """
-    class_definition: str = _class_definition_from_meta(
-        name, metadata, docstring
-    )
-    namespace: Dict[str, Any] = dict(__name__='from_meta_%s' % name)
-    imports = '\n'.join([
-        f'import {_parent_module_name}',
-        'import numbers',
-        'from typing import Union, Dict, Any, Sequence, IO, Optional'
-    ])
-    source = '%s\n\n\n%s' % (imports, class_definition)
-    exec(source, namespace)
-    model_class: type = namespace[name]
-    model_class._source = source
-    # For pickling to work, the __module__ variable needs to be set to the
-    # frame where the model class is created. We bypass this step in
-    # environments where sys._getframe is not defined or where the user has
-    # specified a particular module.
-    if module is None:
-        try:
-            module: Module = getattr(sys, '_getframe')(1).f_globals.get(
-                '__name__',
-                '__main__'
-            )
-        except (AttributeError, ValueError):
-            pass
-    if module is not None:
-        model_class.__module__ = module or '__main__'
-    model_class._meta = metadata
-    return model_class
+# region marshal
 
 
 def _marshal_collection(
@@ -1540,6 +1276,10 @@ def marshal(
     return marshalled_data
 
 
+# endregion
+# region unmarshal
+
+
 def _is_non_string_sequence_or_set_instance(value: Any) -> bool:
     return (
         isinstance(
@@ -1576,19 +1316,13 @@ class _Unmarshal:
         ] = None,
         item_types: Optional[Sequence[Union[type, properties.Property]]] = None
     ) -> None:
-        # Verify that the data can be parsed before attempting to un-marshalls
+        # Verify that the data can be parsed before attempting to un-marshal
         if not isinstance(
             data,
-            _UNMARSHALLABLE_TYPES
+            properties.types.TYPES + (NoneType,)
         ):
             raise errors.UnmarshalTypeError(
-                '%s, an instance of `%s`, cannot be un-marshalled. ' % (
-                    repr(data), type(data).__name__
-                ) +
-                'Acceptable types are: ' + ', '.join((
-                    qualified_name(data_type)
-                    for data_type in _UNMARSHALLABLE_TYPES
-                ))
+                data=data
             )
         # If only one type was passed for any of the following parameters--we
         # convert it to a tuple
@@ -1614,7 +1348,7 @@ class _Unmarshal:
         ] = item_types
         self.meta: Optional[meta.Meta] = None
 
-    def __call__(self) -> Any:
+    def __call__(self) -> Union[properties.types.TYPES]:
         """
         Return `self.data` unmarshalled
         """
@@ -1628,7 +1362,7 @@ class _Unmarshal:
             ]
         ] = self.data
         if (
-            (self.data is not None) and
+            # (self.data is not None) and
             (self.data is not NULL)
         ):
             # If the data is a sob `Model`, get it's metadata
@@ -1657,7 +1391,9 @@ class _Unmarshal:
         that data unmodified
         """
         unmarshalled_data = self.data
-        if isinstance(self.data, abc.model.Dictionary):
+        if unmarshalled_data is None:
+            unmarshalled_data = NULL
+        elif isinstance(self.data, abc.model.Dictionary):
             type_ = type(self.data)
             if self.value_types is not None:
                 unmarshalled_data = type_(
@@ -1681,13 +1417,7 @@ class _Unmarshal:
             )
         elif not isinstance(
             self.data,
-            (
-                str, bytes,
-                Number, Decimal,
-                date, datetime,
-                bool,
-                abc.model.Model
-            )
+            properties.types.TYPES
         ):
             raise errors.UnmarshalValueError(
                 '%s cannot be un-marshalled' % repr(self.data)
@@ -1860,7 +1590,7 @@ class _Unmarshal:
 
 
 def unmarshal(
-    data: Any,
+    data: Union[JSON_TYPES],
     types: Optional[
         Union[
             Sequence[
@@ -1888,7 +1618,7 @@ def unmarshal(
             properties.Property
         ]
     ] = None
-) -> Optional[Union[abc.model.Model, str, Number, date, datetime]]:
+) -> Union[properties.types.TYPES]:
     """
     Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
     and recursively does the same for all member data.
@@ -1907,6 +1637,9 @@ def unmarshal(
         value_types=value_types,
         item_types=item_types
     )()
+
+
+# endregion
 
 
 def serialize(
@@ -1946,7 +1679,7 @@ def serialize(
 def deserialize(
     data: Optional[Union[str, IOBase, addbase]],
     format_: str
-) -> Any:
+) -> Union[JSON_TYPES]:
     """
     Parameters:
 
@@ -1980,7 +1713,7 @@ def deserialize(
             format_
         )
     else:
-        deserialized_data = deserialized_data = deserialize(
+        deserialized_data = deserialize(
             read(data),
             format_
         )
@@ -2045,6 +1778,9 @@ def detect_format(
             )
         )
     return deserialized_data, format_
+
+
+# region validate
 
 
 def _call_validate_method(
@@ -2143,6 +1879,10 @@ def validate(
     return error_messages
 
 
+# endregion
+# region _unmarshal_property_value
+
+
 class _UnmarshalProperty:
     """
     This is exclusively for use by wrapper function
@@ -2177,8 +1917,7 @@ class _UnmarshalProperty:
             )
 
     def parse_date(self, value: Optional[str]) -> Union[
-        date,
-        properties.types.NoneType
+        date, NoneType
     ]:
         if value is None:
             return value
@@ -2201,7 +1940,7 @@ class _UnmarshalProperty:
     def parse_datetime(
         self,
         value: Optional[str]
-    ) -> Union[datetime, properties.types.NoneType]:
+    ) -> Union[datetime, NoneType]:
         if value is None:
             return value
         else:
@@ -2282,7 +2021,7 @@ class _UnmarshalProperty:
                 else:
                     unmarshalled_value = tuple(
                         (
-                            properties.types.NULL
+                            NULL
                             if item_value is None else
                             item_value
                         )
@@ -2304,6 +2043,10 @@ def _unmarshal_property_value(
     Unmarshal a property value
     """
     return _UnmarshalProperty(property)(value)
+
+
+# endregion
+# region _marshal_property_value
 
 
 class _MarshalProperty:
@@ -2390,6 +2133,10 @@ def _marshal_property_value(property_: properties.Property, value: Any) -> Any:
     return _MarshalProperty(property_)(value)
 
 
+# endregion
+# region replace_object_nulls
+
+
 def _replace_object_nulls(
     object_instance: abc.model.Object,
     replacement_value: Any = None
@@ -2446,3 +2193,294 @@ def replace_nulls(
         _replace_array_nulls(model_instance, replacement_value)
     elif isinstance(model_instance, Dictionary):
         _replace_dictionary_nulls(model_instance, replacement_value)
+
+
+# endregion
+# region from_meta
+
+
+def _type_hint_from_property_types(
+    property_types: Optional[properties.types.Types],
+    module: str
+) -> str:
+    type_hint: str = ''
+    if property_types is not None:
+        if len(property_types) > 1:
+            type_hint = 'typing.Union[\n{}\n]'.format(
+                ',\n'.join(
+                    indent(
+                        _type_hint_from_property(item_type, module),
+                        start=0
+                    )
+                    for item_type in property_types
+                )
+            )
+        else:
+            type_hint = _type_hint_from_property(property_types[0], module)
+    return type_hint
+
+
+def _type_hint_from_type(type_: type, module: str) -> str:
+    if type_ in (Union, Dict, Any, Sequence, IO):
+        type_hint = type_.__name__
+    else:
+        type_hint = qualified_name(type_)
+        # If this class was declared in the same module, we put it in
+        # quotes since it won't necessarily have been declared already
+        if (
+            ('.' not in type_hint)
+            and not
+            hasattr(builtins, type_hint)
+        ) or (
+            type_.__module__ == module
+        ):
+            if len(type_hint) > 60:
+                type_hint_lines: List[str] = ['(']
+                for chunk in chunked(type_hint, 57):
+                    type_hint_lines.append(
+                        f"    '{''.join(chunk)}'"
+                    )
+                type_hint_lines.append(')')
+                type_hint = '\n'.join(type_hint_lines)
+            else:
+                type_hint = f"'{type_hint}'"
+    return type_hint
+
+
+def _type_hint_from_property(
+    property_or_type: Union[properties.Property, type],
+    module: str
+) -> str:
+    type_hint: str
+    if isinstance(property_or_type, type):
+        type_hint = _type_hint_from_type(property_or_type, module)
+    elif isinstance(property_or_type, properties.Array):
+        item_type_hint: str = _type_hint_from_property_types(
+            property_or_type.item_types,
+            module
+        )
+        if item_type_hint:
+            type_hint = (
+                'typing.Sequence[\n'
+                f'    {indent(item_type_hint)}\n'
+                ']'
+            )
+        else:
+            type_hint = 'typing.Sequence'
+    elif isinstance(property_or_type, properties.Dictionary):
+        value_type_hint: str = _type_hint_from_property_types(
+            property_or_type.item_types,
+            module
+        )
+        if value_type_hint:
+            type_hint = (
+                'typing.Dict[\n'
+                '    str,\n'
+                f'    {indent(value_type_hint)}\n'
+                ']'
+            )
+        else:
+            type_hint = 'dict'
+    elif property_or_type and property_or_type.types:
+        type_hint = _type_hint_from_property_types(
+            property_or_type.types,
+            module
+        )
+    else:
+        type_hint = 'typing.Any'
+    return type_hint
+
+
+def _get_class_declaration(
+    name: str,
+    superclass: type
+) -> str:
+    """
+    Construct a class declaration
+    """
+    qualified_superclass_name: str = qualified_name(superclass)
+    # If the class declaration line is longer than 79 characters--break it
+    # up (attempt to conform to PEP8)
+    if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
+        class_declaration: str = 'class %s(%s):' % (
+            name,
+            qualified_superclass_name
+        )
+    else:
+        class_declaration: str = 'class %s(%s\n    %s\n):' % (
+            name,
+            # If the first line is still too long for PEP8--add a comment to
+            # prevent linters from getting hung up
+            (
+                '  # noqa'
+                if len(name) + 7 > _LINE_LENGTH else
+                ''
+            ),
+            qualified_superclass_name
+        )
+    return class_declaration
+
+
+def _repr_class_docstring(docstring: str = '') -> str:
+    """
+    Return a representation of a docstring for use in a class constructor.
+    """
+    repr_docstring: str = ''
+    if docstring:
+        repr_docstring = (
+            '    """\n'
+            '%s\n'
+            '    """'
+        ) % split_long_docstring_lines(docstring)
+    return repr_docstring
+
+
+def _class_definition_from_meta(
+    name: str,
+    metadata: meta.Meta,
+    docstring: Optional[str] = None,
+    module: Optional[str] = None
+) -> str:
+    """
+    This returns a `str` defining a model class, as determined by an
+    instance of `sob.meta.Meta`.
+    """
+    assert module is not None
+    repr_docstring: str = _repr_class_docstring(docstring)
+    if isinstance(metadata, meta.Dictionary):
+        out = [
+            _get_class_declaration(
+                name,
+                Dictionary
+            )
+        ]
+        if repr_docstring is not None:
+            out.append(repr_docstring)
+        out.append('\n    pass\n\n')
+    elif isinstance(metadata, meta.Array):
+        out = [
+            _get_class_declaration(name, Array)
+        ]
+        if repr_docstring:
+            out.append(repr_docstring)
+        out.append('\n    pass\n\n')
+    elif isinstance(metadata, meta.Object):
+        out = [
+            _get_class_declaration(name, Object)
+        ]
+        if repr_docstring:
+            out.append(repr_docstring)
+        out += [
+            '\n'
+            '    def __init__(\n'
+            '        self,\n'
+            '        _data: typing.Optional[\n'
+            '            typing.Union[\n'
+            '                str,\n'
+            '                bytes,\n'
+            '                dict,\n'
+            '                typing.Sequence,\n'
+            '                io.IOBase\n'
+            '            ]\n'
+            '        ] = None,'
+        ]
+        metadata_properties_items: Tuple[
+            Tuple[str, abc.properties.Property],
+            ...
+        ] = tuple(
+            metadata.properties.items()
+        )
+        metadata_properties_items_length: int = len(
+            metadata_properties_items
+        )
+        property_index: int
+        name_and_property: Tuple[str, abc.properties.Property]
+        for property_index, name_and_property in enumerate(
+            metadata_properties_items
+        ):
+            property_name_: str
+            property_: abc.properties.Property
+            property_name_, property_ = name_and_property
+            repr_comma: str = (
+                ''
+                if (
+                    property_index + 1 ==
+                    metadata_properties_items_length
+                ) else
+                ','
+            )
+            repr_property_typing: str = indent(
+                _type_hint_from_property(property_, module),
+                12
+            )
+            parameter_declaration: str = (
+                f'        {property_name_}: typing.Optional[\n'
+                f'            {repr_property_typing}\n'
+                f'        ] = None{repr_comma}'
+            )
+            out.append(parameter_declaration)
+        out.append(
+            '    ) -> None:'
+        )
+        for property_name_ in metadata.properties.keys():
+            out.append(
+                '        self.%s = %s' % (property_name_, property_name_)
+            )
+        out.append('        super().__init__(_data)\n\n')
+    else:
+        raise ValueError(metadata)
+    return '\n'.join(out)
+
+
+def from_meta(
+    name: str,
+    metadata: abc.meta.Meta,
+    module: Optional[str] = None,
+    docstring: Optional[str] = None
+) -> type:
+    """
+    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
+    instance of `sob.meta.Meta`.
+
+    Parameters:
+
+        - name (str): The name of the class.
+        - class_meta ([sob.meta.Meta](#Meta))
+        - module (str): Specify the value for the class definition's
+          `__module__` property. The invoking module will be
+          used if this is not specified. Note: If using the result of this
+          function with `sob.utilities.inspect.get_source` to generate static
+          code--this should be set to "__main__". The default behavior is only
+          appropriate when using this function as a factory.
+        - docstring (str): A docstring to associate with the class definition.
+    """
+    # For pickling to work, the __module__ variable needs to be set...
+    if module is None:
+        module = calling_module_name(2)
+    class_definition: str = _class_definition_from_meta(
+        name, metadata, docstring, module
+    )
+    namespace: Dict[str, Any] = dict(__name__='from_meta_%s' % name)
+    imports = [
+        'import typing',
+        'import io'
+    ]
+    # `numbers.Number` may or may not be referenced in a given model--so check
+    # first
+    if re.search(r'\bnumbers\.Number\b', class_definition):
+        imports.append('import numbers')
+    imports.append(f'import {_parent_module_name}')
+    source: str = '%s\n\n\n%s' % (
+        '\n'.join(imports),
+        class_definition
+    )
+    exec(source, namespace)
+    model_class: type = namespace[name]
+    model_class._source = source
+    if module is not None:
+        model_class.__module__ = module or '__main__'
+    model_class._meta = metadata
+    return model_class
+
+
+# endregion

@@ -154,6 +154,34 @@ def _get_frame_info_names(frame_info: FrameInfo) -> List[str]:
     return names
 
 
+def calling_module_name(depth: int = 1) -> Optional[str]:
+    """
+    This function returns the name of the module from which the function
+    which invokes this function was called.
+
+    Parameters:
+
+    - depth (int): This defaults to `1`, indicating we want to return the name
+      of the module wherein `calling_module_name` is being called. If set to
+      `2`, it would instead indicate the module
+
+    >>> print(calling_module_name())
+    sob.utilities.inspect
+
+    >>> print(calling_module_name(2))
+    doctest
+    """
+    name: Optional[str]
+    try:
+        name = getattr(sys, '_getframe')(depth).f_globals.get(
+            '__name__',
+            '__main__'
+        )
+    except (AttributeError, ValueError):
+        name = None
+    return name
+
+
 def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     """
     Return the fully qualified name of the function from within which this is

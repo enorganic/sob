@@ -106,23 +106,21 @@ class UnmarshalError(Exception):
         if types is None:
             types = TYPES
             types_label = 'un-marshallable types'
-
         types_lines = ['(']
-
-        for type_ in types:
-
+        for negative_index, type_ in enumerate(
+            types,
+            -(len(types)-1)
+        ):
             if isinstance(type_, type):
                 lines = (qualified_name(type_),)
             else:
                 lines = repr(type_).split('\n')
-
             for line in lines:
                 types_lines.append(
                     '     ' + line
                 )
-
-            types_lines[-1] += ','
-
+            if negative_index:
+                types_lines[-1] += ','
         types_lines.append('   )')
 
         error_message_lines.append(

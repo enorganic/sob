@@ -1,21 +1,25 @@
-from enum import Enum
-from typing import Any
+import decimal
+import numbers
+from abc import ABC
+from collections import abc, OrderedDict
+from datetime import date, datetime
+from typing import Any, Optional, Dict, Hashable, Tuple
 from . import inspect
 
-UNDEFINED = None
+UNDEFINED: Optional['Undefined'] = None
 
 
 class Undefined:
     """
     This class is intended to indicate that a parameter has not been passed
     to a keyword argument in situations where `None` is to be used as a
-    meaningful value
+    meaningful value.
     """
 
     def __init__(self) -> None:
         """
         Only one instance of `Undefined` is permitted, so initialization
-        checks to make sure this is the first use
+        checks to make sure this is the first use.
         """
         if UNDEFINED is not None:
             raise RuntimeError(
@@ -25,7 +29,7 @@ class Undefined:
     def __repr__(self) -> str:
         """
         Represent instances of this class using the qualified name for the
-        constant `UNDEFINED`
+        constant `UNDEFINED`.
         """
         representation = 'UNDEFINED'
         if self.__module__ not in (
@@ -60,3 +64,77 @@ locals()['UNDEFINED'] = Undefined()
 Module: type = type(inspect)
 
 
+class NoneType(ABC):
+
+    pass
+
+
+NoneType.register(type(None))
+NULL: Optional['Null'] = None
+
+
+class DefinitionExistsError(Exception):
+
+    pass
+
+
+class Null:
+    """
+    Instances of this class represent an *explicit* null value, rather than the
+    absence of a property/attribute/element, as would be inferred from a value
+    of `None`.
+
+    Note: Like the built-in value `None`, only one instance of this class is
+    permitted, so this class should never be instantiated, it should always be
+    referenced through the constant `NULL` from this same module.
+    """
+
+    def __init__(self) -> None:
+        if NULL is not None:
+            raise DefinitionExistsError(
+                '%s may only be defined once.' % repr(self)
+            )
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __eq__(self, other: Any) -> bool:
+        return id(other) == id(self)
+
+    def __hash__(self) -> int:
+        return 0
+
+    def __str__(self) -> str:
+        return 'null'
+
+    def _marshal(self) -> None:
+        return None
+
+    def __repr__(self) -> str:
+        return (
+            'NULL'
+            if self.__module__ in ('__main__', 'builtins', '__builtin__') else
+            '%s.NULL' % self.__module__
+        )
+
+    def __copy__(self) -> 'Null':
+        return self
+
+    def __deepcopy__(self, memo: Dict[Hashable, Any]) -> 'Null':
+        return self
+
+
+locals()['NULL'] = Null()
+
+
+TYPES: Tuple[type, ...] = (
+    str, bytes, bool,
+    dict, OrderedDict,
+    abc.Set, abc.Sequence, abc.Generator,
+    numbers.Number, decimal.Decimal,
+    date, datetime,
+    Null
+)
+JSON_TYPES: Tuple[type, ...] = (
+    str, dict, list, int, float, bool, NoneType
+)

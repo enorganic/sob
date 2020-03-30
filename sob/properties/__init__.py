@@ -7,6 +7,7 @@ import collections.abc
 import numbers
 from copy import deepcopy
 from datetime import date, datetime
+from itertools import chain
 from typing import (
     Any, Collection, Dict, List, Optional, Sequence, Set, Union
 )
@@ -14,14 +15,14 @@ from collections.abc import Callable
 
 import iso8601
 
-from .types import Types, NULL
+from .types import Types
 from .. import abc
 from ..meta import Version
 from ..utilities import (
     calling_function_qualified_name, indent, parameters_defaults,
     properties_values, qualified_name
 )
-from ..utilities.types import Undefined, UNDEFINED
+from ..utilities.types import Undefined, UNDEFINED, NULL
 
 __all__: List[str] = [
     'types',
@@ -34,7 +35,8 @@ __all__: List[str] = [
     'Integer',
     'Number',
     'Property',
-    'String'
+    'String',
+    'TYPES_PROPERTIES'
 ]
 
 
@@ -643,3 +645,25 @@ class Dictionary(Property):
 
 
 abc.properties.Dictionary.register(Dictionary)
+
+
+# This constant maps data types to their corresponding properties
+TYPES_PROPERTIES: Dict[type, type] = {
+    type_: property_class
+    for type_, property_class in chain(
+        *map(
+            lambda property_class: (
+                (type_, property_class)
+                for type_ in getattr(property_class, '_types')
+            ),
+            (
+                property_class for property_class in locals().values()
+                if (
+                    isinstance(property_class, type) and
+                    issubclass(property_class, Property) and
+                    getattr(property_class, '_types')
+                )
+            )
+        )
+    )
+}

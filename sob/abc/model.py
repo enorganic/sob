@@ -1,5 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
-from typing import Any, Iterable, List, Tuple, Dict
+from collections import OrderedDict
+from typing import Any, Iterable, List, Tuple, Dict, Union
+from ..utilities.types import TYPES
 
 __all__: List[str] = [
     'Model',
@@ -22,7 +24,7 @@ class Model(ABC):
         pass
 
 
-class Object(Model, ABC):
+class Object(Model, ABC, OrderedDict):
 
     @abstractmethod
     def __setattr__(self, property_name: str, value: Any) -> None:
@@ -53,7 +55,7 @@ class Object(Model, ABC):
         pass
 
 
-class Dictionary(Model, ABC):
+class Dictionary(Model, ABC, OrderedDict):
 
     @abstractmethod
     def keys(self) -> Iterable[str]:
@@ -63,11 +65,11 @@ class Dictionary(Model, ABC):
     def values(self) -> Iterable[Any]:
         pass
 
-    def items(self) -> Iterable[Tuple[str, Any]]:
+    def items(self) -> Iterable[Tuple[str, Union[TYPES]]]:
         pass
 
 
-class Array(Model, ABC):
+class Array(Model, ABC, list):
 
     @abstractmethod
     def append(self, value: Any) -> None:

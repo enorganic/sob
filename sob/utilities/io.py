@@ -16,7 +16,7 @@ def _has_callable_attribute(
     return callable(attribute_value)
 
 
-def read(data: Union[str, IO, RawIOBase]) -> Any:
+def read(data: Union[str, IO, RawIOBase]) -> Union[str, bytes]:
     readall_is_callable: bool = _has_callable_attribute(data, 'readall')
     read_is_callable: bool = _has_callable_attribute(data, 'read')
     if (

@@ -6,10 +6,11 @@ code and data validation and testing.
 from typing import List
 
 from . import (
-   utilities, errors, abc, model, properties, meta, hooks, test, request
+   utilities, errors, abc, model, properties, meta, hooks, test, request,
+   thesaurus
 )
 
 __all__: List[str] = [
    'utilities', 'abc', 'model', 'errors', 'properties', 'meta', 'hooks',
-   'test', 'request'
+   'test', 'request', 'thesaurus'
 ]

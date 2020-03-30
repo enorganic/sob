@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.2.7",
+    version="0.2.9",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -13,7 +13,13 @@ setup(
     license='MIT',
     python_requires='>=3.6, <4',
     keywords='rest api serialization serialize',
-    packages=find_packages(),
+    packages=[
+        'sob',
+        'sob.abc',
+        'sob.abc.properties',
+        'sob.properties',
+        'sob.utilities'
+    ],
     install_requires=[
         "pyyaml>=5.3",
         "iso8601>=0.1.12",

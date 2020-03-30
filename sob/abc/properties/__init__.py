@@ -1,28 +1,7 @@
 from abc import ABC, ABCMeta, abstractmethod
 from typing import Callable, Optional, Sequence, Union
 
-from .model import Model
-from .meta import Version
-
-
-class Types(ABC):
-
-    __metaclass__ = ABCMeta
-
-    @abstractmethod
-    def __init__(
-        self,
-        items: Optional[
-            Union[
-                Sequence[
-                    Union[type, "Property", "Types"]
-                ],
-                type,
-                "Property"
-            ]
-        ] = None
-    ) -> None:
-        pass
+from .types import Types
 
 
 class Property(ABC):
@@ -35,7 +14,7 @@ class Property(ABC):
         types: Sequence[Union[type, 'Property']] = None,
         name: Optional[str] = None,
         required: Union[bool, Callable] = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, object]]] = None
     ) -> None:
         self.types = types
         self.name = name
@@ -44,27 +23,29 @@ class Property(ABC):
 
     @property
     @abstractmethod
-    def types(self) -> Optional[Sequence[Union[type, 'Property', Model]]]:
+    def types(self) -> Optional[Types]:
         pass
 
     @types.setter
     @abstractmethod
     def types(
         self,
-        types_or_properties: Optional[Sequence[Union[type, 'Property', Model]]]
+        types_or_properties: Optional[
+            Sequence[Union[type, 'Property', dict, list]]
+        ]
     ) -> None:
         pass
 
     @property
     @abstractmethod
-    def versions(self) -> Optional[Sequence[Version]]:
+    def versions(self) -> Optional[Sequence[object]]:
         pass
 
     @versions.setter
     @abstractmethod
     def versions(
         self,
-        versions: Optional[Sequence[Union[str, Version]]]
+        versions: Optional[Sequence[Union[str, object]]]
     ) -> None:
         pass
 

@@ -29,6 +29,9 @@ def property_name(string: str) -> str:
 
     >>> print(property_name('One2One'))
     one_2_one
+
+    >>> print(property_name('@One2One'))
+    one_2_one
     """
     name: str = string
     # Replace accented and otherwise modified latin characters with their
@@ -84,7 +87,7 @@ def property_name(string: str) -> str:
     # python keywords or built-ins
     while iskeyword(name) or (name in BUILTINS_DICT):
         name += '_'
-    return name
+    return name.lstrip('_')
 
 
 def class_name(string):

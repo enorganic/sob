@@ -3,104 +3,44 @@ This module defines a class for describing data types associated with a
 property.
 """
 
-import collections.abc
-import decimal
-import numbers
 from copy import deepcopy
-from datetime import date, datetime
-from typing import Any, Dict, Generator, Hashable, Optional, Sequence, Union
+from typing import Optional, Sequence, Union, List, Tuple
 
 from .. import abc
 from ..abc.properties import Property
 from ..utilities import qualified_name
+from ..utilities.types import Null, NULL, TYPES as _TYPES, NoneType
 
-NoneType = type(None)
-NULL: Optional['Null'] = None
-
-
-class DefinitionExistsError(Exception):
-
-    pass
-
-
-class Null:
-    """
-    Instances of this class represent an *explicit* null value, rather than the
-    absence of a property/attribute/element, as would be inferred from a value
-    of `None`.
-
-    Note: Like the built-in value `None`, only one instance of this class is
-    permitted, so this class should never be instantiated, it should always be
-    referenced through the constant `NULL` from this same module.
-    """
-
-    def __init__(self) -> None:
-        if NULL is not None:
-            raise DefinitionExistsError(
-                '%s may only be defined once.' % repr(self)
-            )
-
-    def __bool__(self) -> bool:
-        return False
-
-    def __eq__(self, other: Any) -> bool:
-        return id(other) == id(self)
-
-    def __hash__(self) -> int:
-        return 0
-
-    def __str__(self) -> str:
-        return 'null'
-
-    def _marshal(self) -> None:
-        return None
-
-    def __repr__(self) -> str:
-        return (
-            'NULL'
-            if self.__module__ in ('__main__', 'builtins', '__builtin__') else
-            '%s.NULL' % self.__module__
-        )
-
-    def __copy__(self) -> 'Null':
-        return self
-
-    def __deepcopy__(self, memo: Dict[Hashable, Any]) -> 'Null':
-        return self
+__all__: List[str] = [
+    'NULL',
+    'Null',
+    'TYPES',
+    'Types'
+]
 
 
-locals()['NULL'] = Null()
-
-
-TYPES = (
-    str, bytes, bool,
-    dict, collections.OrderedDict,
-    collections.abc.Set, collections.abc.Sequence, Generator,
-    numbers.Number, decimal.Decimal,
-    date, datetime,
+TYPES: Tuple[type, ...] = _TYPES + (
     abc.model.Model,
-    Null
 )
 
 
 def _validate_type_or_property(
     type_or_property: Union[type, abc.properties.Property]
-) -> Union[type, abc.properties.Property]:
-    if not isinstance(type_or_property, (type, Property)):
-        raise TypeError(type_or_property)
+) -> None:
     if not (
-        (type_or_property is Null) or
+        isinstance(type_or_property, (type, Property)) and
         (
-            isinstance(type_or_property, type) and
-            issubclass(
-                type_or_property,
-                TYPES
-            )
-        ) or
-        isinstance(type_or_property, Property)
+            (type_or_property is Null) or
+            (
+                isinstance(type_or_property, type) and
+                issubclass(
+                    type_or_property, TYPES
+                )
+            ) or
+            isinstance(type_or_property, Property)
+        )
     ):
         raise TypeError(type_or_property)
-    return type_or_property
 
 
 class Types(list):
@@ -190,4 +130,4 @@ class Types(list):
         )
 
 
-abc.properties.Types.register(Types)
+abc.properties.types.Types.register(Types)
