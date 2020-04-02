@@ -208,6 +208,7 @@ class Version(Meta):
 
 
 abc.meta.Version.register(Version)
+abc.meta.Meta.register(Version)
 
 
 class Object(Meta):
@@ -252,6 +253,7 @@ class Object(Meta):
 
 
 abc.meta.Object.register(Object)
+abc.meta.Meta.register(Object)
 
 
 class Dictionary(Meta):
@@ -294,6 +296,7 @@ class Dictionary(Meta):
 
 
 abc.meta.Dictionary.register(Dictionary)
+abc.meta.Meta.register(Dictionary)
 
 
 class Array(Meta):
@@ -336,6 +339,7 @@ class Array(Meta):
 
 
 abc.meta.Array.register(Array)
+abc.meta.Meta.register(Array)
 
 
 class Properties(OrderedDict):
@@ -430,6 +434,7 @@ class Properties(OrderedDict):
 
 
 abc.meta.Properties.register(Properties)
+abc.meta.Meta.register(Properties)
 
 
 def read(

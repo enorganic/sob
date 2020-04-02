@@ -15,7 +15,8 @@ __all__: List[str] = [
     'NULL',
     'Null',
     'TYPES',
-    'Types'
+    'Types',
+    'ImmutableTypes'
 ]
 
 
@@ -47,7 +48,13 @@ class Types(list):
     """
     Instances of this class are lists which will only take values which are
     valid types for describing a property definition.
+
+    Parameters:
+
+    - items ([type|sob.properties.Property])
+    - mutable (bool)
     """
+    _mutable: bool = True
 
     def __init__(
         self,
@@ -68,7 +75,15 @@ class Types(list):
         else:
             super().__init__(items)
 
+    def _mutability_check(self) -> None:
+        if not self._mutable:
+            raise TypeError(
+                f'Instances of `{qualified_name(type(self))}` cannot be '
+                'modified.'
+            )
+
     def __setitem__(self, index: int, value: Union[type, Property]) -> None:
+        self._mutability_check()
         _validate_type_or_property(value)
         super().__setitem__(index, value)
 
@@ -76,13 +91,16 @@ class Types(list):
         self,
         value: Union[type, Property]
     ) -> None:
+        self._mutability_check()
         _validate_type_or_property(value)
         super().append(value)
 
     def __delitem__(self, index: int) -> None:
+        self._mutability_check()
         super().__delitem__(index)
 
     def pop(self, index: int = -1) -> Union[type, Property]:
+        self._mutability_check()
         return super().pop(index)
 
     def __copy__(self) -> 'Types':
@@ -131,3 +149,14 @@ class Types(list):
 
 
 abc.properties.types.Types.register(Types)
+
+
+class ImmutableTypes(Types):
+
+    _mutable: bool = False
+
+
+abc.properties.types.Types.register(ImmutableTypes)
+abc.properties.types.ImmutableTypes.register(ImmutableTypes)
+
+

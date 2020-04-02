@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.2.9",
+    version="0.2.12",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'

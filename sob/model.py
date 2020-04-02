@@ -528,6 +528,7 @@ class Object(Model):
 
 
 abc.model.Object.register(Object)
+abc.model.Model.register(Object)
 
 
 class Array(list, Model):
@@ -795,6 +796,7 @@ class Array(list, Model):
 
 
 abc.model.Array.register(Array)
+abc.model.Model.register(Array)
 
 
 class Dictionary(collections.OrderedDict, Model):
@@ -1129,6 +1131,7 @@ class Dictionary(collections.OrderedDict, Model):
 
 
 abc.model.Dictionary.register(Dictionary)
+abc.model.Model.register(Dictionary)
 
 
 # region marshal

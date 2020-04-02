@@ -28,7 +28,7 @@ from .utilities.assertion import (
 )
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
-from .utilities.types import TYPES, NULL, Module
+from .utilities.types import TYPES, NULL, Module, Null
 from .utilities.string import class_name, property_name
 
 
@@ -484,10 +484,25 @@ class Synonyms(set):
                 # values).
                 if item_type is float:
                     item_type = numbers.Number
+                types: List[Union[type, Property]] = []
                 if is_model:
                     metadata.properties[property_name_] = Property(
                         name=key,
-                        types=[item_type]
+                        types=[item_type] + (
+                            [Null]
+                            if property_synonyms._nullable else
+                            []
+                        )
+                    )
+                elif property_synonyms._nullable:
+                    metadata.properties[property_name_] = Property(
+                        name=key,
+                        types=[
+                            TYPES_PROPERTIES[
+                                item_type
+                            ](),
+                            Null
+                        ]
                     )
                 else:
                     metadata.properties[property_name_] = TYPES_PROPERTIES[

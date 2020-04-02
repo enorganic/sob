@@ -55,3 +55,8 @@ class Types(ABC):
     @abstractmethod
     def __repr__(self):
         pass
+
+
+class ImmutableTypes(Types, ABC):
+
+    pass

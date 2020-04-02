@@ -5,7 +5,7 @@ This module defines classes for describing properties of a model.
 import collections
 import collections.abc
 import numbers
-from copy import deepcopy
+from copy import deepcopy, copy
 from datetime import date, datetime
 from itertools import chain
 from typing import (
@@ -15,7 +15,7 @@ from collections.abc import Callable
 
 import iso8601
 
-from .types import Types
+from .types import Types, ImmutableTypes
 from .. import abc
 from ..meta import Version
 from ..utilities import (
@@ -118,11 +118,10 @@ class Property:
         versions: Optional[Sequence[Union[str, abc.meta.Version]]] = None
     ) -> None:
         self._types: Optional[Sequence[Union[type, Property]]] = getattr(
-            type(self),
-            '_types'
+            type(self), '_types'
         )
         if types is not UNDEFINED:
-            self.types = types
+            self.types = copy(types)
         self.name = name
         self.required = required
         self._versions: Optional[Sequence[abc.meta.Version]] = None
@@ -153,12 +152,18 @@ class Property:
             ]
         ]
     ) -> None:
+        types_class: type = (
+            Types
+            if type(self) is Property else
+            ImmutableTypes
+        )
         if (
             types_or_properties is not None
         ) and not isinstance(
-            types_or_properties, Types
+            types_or_properties,
+            types_class
         ):
-            types_or_properties = Types(types_or_properties)
+            types_or_properties = types_class(types_or_properties)
         self._types = types_or_properties
 
     @property
@@ -237,7 +242,9 @@ class Property:
         defaults = parameters_defaults(self.__init__)
         for property_name, value in properties_values(self):
             argument_representation = self._repr_argument(
-                property_name, value, defaults
+                property_name,
+                value,
+                defaults
             )
             if argument_representation is not None:
                 lines.append(argument_representation)
@@ -271,7 +278,7 @@ class String(Property):
     """
     See `sob.properties.Property`
     """
-    _types: Types = Types((str,))
+    _types: ImmutableTypes = ImmutableTypes((str,))
 
     def __init__(
         self,
@@ -287,6 +294,7 @@ class String(Property):
 
 
 abc.properties.String.register(String)
+abc.properties.Property.register(String)
 
 
 class Date(Property):
@@ -304,7 +312,7 @@ class Date(Property):
           date string), and returning a python `date` object. By default,
           this is `iso8601.parse_date`.
     """
-    _types: Types = Types((date,))
+    _types: ImmutableTypes = ImmutableTypes((date,))
 
     def __init__(
         self,
@@ -324,6 +332,7 @@ class Date(Property):
 
 
 abc.properties.Date.register(Date)
+abc.properties.Property.register(Date)
 
 
 class DateTime(Property):
@@ -340,7 +349,7 @@ class DateTime(Property):
       (a datetime string), and returning a python `datetime` json_object.
       By default, this is `iso8601.parse_date`.
     """
-    _types: Types = Types((datetime,))
+    _types: ImmutableTypes = ImmutableTypes((datetime,))
 
     def __init__(
         self,
@@ -360,6 +369,7 @@ class DateTime(Property):
 
 
 abc.properties.DateTime.register(Date)
+abc.properties.Property.register(Date)
 
 
 class Bytes(Property):
@@ -368,7 +378,7 @@ class Bytes(Property):
 
     This class represents a property with binary values
     """
-    _types: Types = Types((bytes,))
+    _types: ImmutableTypes = ImmutableTypes((bytes,))
 
     def __init__(
         self,
@@ -384,6 +394,7 @@ class Bytes(Property):
 
 
 abc.properties.Bytes.register(Date)
+abc.properties.Property.register(Date)
 
 
 class Enumerated(Property):
@@ -444,13 +455,14 @@ class Enumerated(Property):
 
 
 abc.properties.Enumerated.register(Enumerated)
+abc.properties.Property.register(Enumerated)
 
 
 class Number(Property):
     """
     See `sob.properties.Property`
     """
-    _types: Types = Types((numbers.Number,))
+    _types: ImmutableTypes = ImmutableTypes((numbers.Number,))
 
     def __init__(
         self,
@@ -466,13 +478,14 @@ class Number(Property):
 
 
 abc.properties.Number.register(Number)
+abc.properties.Property.register(Number)
 
 
 class Integer(Property):
     """
     See `sob.properties.Property`
     """
-    _types: Types = Types((int,))
+    _types: ImmutableTypes = ImmutableTypes((int,))
 
     def __init__(
         self,
@@ -488,13 +501,14 @@ class Integer(Property):
 
 
 abc.properties.Integer.register(Integer)
+abc.properties.Property.register(Integer)
 
 
 class Boolean(Property):
     """
     See `sob.properties.Property`
     """
-    _types: Types = Types((bool,))
+    _types: ImmutableTypes = ImmutableTypes((bool,))
 
     def __init__(
         self,
@@ -510,6 +524,7 @@ class Boolean(Property):
 
 
 abc.properties.Boolean.register(Boolean)
+abc.properties.Property.register(Boolean)
 
 
 class Array(Property):
@@ -523,7 +538,7 @@ class Array(Property):
       `sob.properties.Property().types`, but applied to items in the
       array, not the array itself.
     """
-    _types: Types = Types((abc.model.Array,))
+    _types: ImmutableTypes = ImmutableTypes((abc.model.Array,))
     _item_types: Optional[Types] = None
 
     def __init__(
@@ -571,6 +586,7 @@ class Array(Property):
 
 
 abc.properties.Array.register(Array)
+abc.properties.Property.register(Array)
 
 
 class Dictionary(Property):
@@ -584,7 +600,7 @@ class Dictionary(Property):
       `sob.properties.Property.types`, but applies to *values* in the
       dictionary object, not the dictionary itself.
     """
-    _types: Types = Types((abc.model.Dictionary,))
+    _types: ImmutableTypes = ImmutableTypes((abc.model.Dictionary,))
     _value_types: Optional[Types] = None
 
     def __init__(
@@ -645,6 +661,7 @@ class Dictionary(Property):
 
 
 abc.properties.Dictionary.register(Dictionary)
+abc.properties.Property.register(Dictionary)
 
 
 # This constant maps data types to their corresponding properties
