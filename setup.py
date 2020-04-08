@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sob',
-    version="0.2.13",
+    version="0.2.15",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -27,7 +27,7 @@ setup(
     ],
     extras_require={
         "test": [
-            "tox>=3.14.5",
+            "tox>=3.14.6",
             "pytest>=5.4.1",
             "flake8>=3.7.9",
             "setuptools-setup-versions>=0.0.30",
@@ -35,7 +35,7 @@ setup(
         ],
         "dev": [
             "wheel>=0.34.2",
-            "tox>=3.14.5",
+            "tox>=3.14.6",
             "pytest>=5.4.1",
             "flake8>=3.7.9",
             "setuptools-setup-versions>=0.0.30",

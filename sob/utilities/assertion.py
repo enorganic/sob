@@ -1,4 +1,4 @@
-from typing import Any, Container, List, Union, Sequence
+from typing import Any, List, Union, Sequence, Iterable
 
 from .inspect import qualified_name
 
@@ -13,7 +13,7 @@ def assert_argument_is_instance(
             '`%s` must be an instance of %s (not `%s`).' % (
                 name,
                 (
-                    f'`{_repr(type_)}`'
+                    f'`{type_.__name__}`'
                     if isinstance(type_, type) else
                     _repr_or_list(type_, quotes='`')
                 ),
@@ -49,7 +49,7 @@ def _repr(value: Any) -> str:
 
 
 def _repr_or_list(
-    values: Container[Any],
+    values: Iterable[Any],
     quotes: str = ''
 ) -> str:
     open_quote: str = ''
@@ -73,7 +73,7 @@ def _repr_or_list(
 def assert_argument_in(
     name: str,
     value: Any,
-    valid_values: Container[Any]
+    valid_values: Iterable[Any]
 ) -> None:
     if value not in valid_values:
         raise TypeError(

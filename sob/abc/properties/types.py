@@ -1,11 +1,10 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from typing import Optional, Union, Sequence, Iterable
 
 
 class Types(ABC):
 
-    __metaclass__ = ABCMeta
-
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -15,7 +14,7 @@ class Types(ABC):
                     Union[type, object]
                 ],
                 type,
-                "Property"
+                object
             ]
         ] = None
     ) -> None:

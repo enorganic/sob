@@ -6,12 +6,12 @@ import collections
 import collections.abc
 import json
 import re
-import sys
 from base64 import b64decode, b64encode
 from copy import deepcopy, copy
 from datetime import date, datetime
 from decimal import Decimal
 from io import IOBase
+
 from itertools import chain
 from numbers import Number
 from typing import (
@@ -19,7 +19,6 @@ from typing import (
     Sequence, Set, Tuple, Union
 )
 from urllib.parse import urljoin
-from urllib.response import addbase
 
 import yaml
 from more_itertools import chunked
@@ -30,7 +29,9 @@ from . import (
 )
 from .errors import get_exception_text
 from .utilities import indent, qualified_name
-from .utilities.assertion import assert_argument_is_instance
+from .utilities.assertion import (
+    assert_argument_is_instance, assert_argument_in
+)
 from .utilities.inspect import calling_module_name
 from .utilities.io import get_url, read
 from .utilities.string import split_long_docstring_lines
@@ -567,7 +568,13 @@ class Array(list, Model):
 
     def __init__(
         self,
-        items: Optional[Union[Sequence, Set, IO, str, bytes]] = None,
+        items: Optional[
+            Union[
+                Sequence, Set,
+                str, bytes,
+                IOBase
+            ]
+        ] = None,
         item_types: Optional[
             Union[
                 Sequence[
@@ -1680,13 +1687,13 @@ def serialize(
 
 
 def deserialize(
-    data: Optional[Union[str, IOBase, addbase]],
-    format_: str
+    data: Optional[Union[str, IOBase]],
+    format_: str = 'json'
 ) -> Union[JSON_TYPES]:
     """
     Parameters:
 
-        - data (str|io.IOBase|io.addbase): This can be a string or file-like
+        - data (str|io.IOBase): This can be a string or file-like
           object containing JSON or YAML serialized information.
 
         - format_ (str): "json" or "yaml"
@@ -1695,12 +1702,8 @@ def deserialize(
 
         A deserialized representation of the information you provided.
     """
-    deserialized_data: Optional[str] = None
-    if format_ not in ('json', 'yaml'):
-        raise NotImplementedError(
-            'Deserialization of data in the format %s is not currently '
-            'supported.' % repr(format_)
-        )
+    deserialized_data: str
+    assert_argument_in('format_', format_, ('json', 'yaml'))
     if isinstance(data, str):
         if format_ == 'json':
             deserialized_data = json.loads(
@@ -1708,7 +1711,7 @@ def deserialize(
                 object_hook=collections.OrderedDict,
                 object_pairs_hook=collections.OrderedDict
             )
-        elif format_ == 'yaml':
+        else:
             deserialized_data = yaml.load(data, yaml.FullLoader)
     elif isinstance(data, bytes):
         deserialized_data = deserialize(
@@ -1724,7 +1727,7 @@ def deserialize(
 
 
 def detect_format(
-    data: Optional[Union[str, IOBase, addbase]]
+    data: Optional[Union[str, IOBase]]
 ) -> Tuple[Any, Optional[str]]:
     """
     This function accepts a string or file-like object and returns a tuple
@@ -1733,7 +1736,7 @@ def detect_format(
 
     Parameters:
 
-    - data (str|io.IOBase|io.addbase): A string or file-like object containing
+    - data (str|io.IOBase): A string or file-like object containing
       JSON or YAML serialized data.
 
     Returns (tuple):
@@ -2359,34 +2362,71 @@ def _class_definition_from_meta(
         ]
         if repr_docstring is not None:
             out.append(repr_docstring)
-        out.append('\n    pass\n\n')
+        repr_value_typing: str = indent(
+            _type_hint_from_property_types(
+                metadata.value_types,
+                module
+            ),
+            20
+        )
+        out.append(
+            '\n'
+            '    def __init__(\n'
+            '        self,\n'
+            '        items: typing.Optional[\n'
+            '            typing.Union[\n'
+            '                typing.Dict[\n'
+            '                     str,\n'
+            f'                    {repr_value_typing}\n'
+            '                ],\n'
+            '                io.IOBase, str, bytes\n'
+            '            ]\n'
+            '        ] = None\n'
+            '    ) -> None:\n'
+            '        super().__init__(items)\n\n'
+        )
     elif isinstance(metadata, meta.Array):
         out = [
             _get_class_declaration(name, Array)
         ]
         if repr_docstring:
             out.append(repr_docstring)
-        out.append('\n    pass\n\n')
+        repr_item_typing: str = indent(
+            _type_hint_from_property_types(
+                metadata.item_types,
+                module
+            ),
+            20
+        )
+        out.append(
+            '\n'
+            '    def __init__(\n'
+            '        self,\n'
+            '        items: typing.Optional[\n'
+            '            typing.Union[\n'
+            '                typing.Sequence[\n'
+            f'                    {repr_item_typing}\n'
+            '                ],\n'
+            '                io.IOBase, str, bytes\n'
+            '            ]\n'
+            '        ] = None\n'
+            '    ) -> None:\n'
+            '        super().__init__(items)\n\n'
+        )
     elif isinstance(metadata, meta.Object):
         out = [
             _get_class_declaration(name, Object)
         ]
         if repr_docstring:
             out.append(repr_docstring)
-        out += [
+        out.append(
             '\n'
             '    def __init__(\n'
             '        self,\n'
             '        _data: typing.Optional[\n'
-            '            typing.Union[\n'
-            '                str,\n'
-            '                bytes,\n'
-            '                dict,\n'
-            '                typing.Sequence,\n'
-            '                io.IOBase\n'
-            '            ]\n'
+            '            typing.Union[dict, str, bytes, io.IOBase]\n'
             '        ] = None,'
-        ]
+        )
         metadata_properties_items: Tuple[
             Tuple[str, abc.properties.Property],
             ...
@@ -2426,9 +2466,17 @@ def _class_definition_from_meta(
             '    ) -> None:'
         )
         for property_name_ in metadata.properties.keys():
-            out.append(
+            property_assignment: str = (
                 '        self.%s = %s' % (property_name_, property_name_)
             )
+            # Ensure line-length aligns with PEP-8
+            if len(property_assignment) > _LINE_LENGTH:
+                property_assignment = (
+                    f'        self.{property_name_} = (\n'
+                    f'            {property_name_}\n'
+                    f'        )'
+                )
+            out.append(property_assignment)
         out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
@@ -2472,7 +2520,9 @@ def from_meta(
     # first
     if re.search(r'\bnumbers\.Number\b', class_definition):
         imports.append('import numbers')
-    imports.append(f'import {_parent_module_name}')
+    imports.append(
+        f'import {_parent_module_name}'
+    )
     source: str = '%s\n\n\n%s' % (
         '\n'.join(imports),
         class_definition

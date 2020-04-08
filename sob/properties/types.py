@@ -44,6 +44,7 @@ def _validate_type_or_property(
         raise TypeError(type_or_property)
 
 
+@abc.properties.types.Types.register
 class Types(list):
     """
     Instances of this class are lists which will only take values which are
@@ -61,7 +62,10 @@ class Types(list):
         items: Optional[
             Union[
                 Sequence[
-                    Union[type, abc.properties.Property]
+                    Union[
+                        type,
+                        abc.properties.Property
+                    ]
                 ],
                 type,
                 abc.properties.Property
@@ -148,15 +152,8 @@ class Types(list):
         )
 
 
-abc.properties.types.Types.register(Types)
-
-
+@abc.properties.types.Types.register
+@abc.properties.types.ImmutableTypes.register
 class ImmutableTypes(Types):
 
     _mutable: bool = False
-
-
-abc.properties.types.Types.register(ImmutableTypes)
-abc.properties.types.ImmutableTypes.register(ImmutableTypes)
-
-

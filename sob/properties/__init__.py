@@ -5,27 +5,28 @@ This module defines classes for describing properties of a model.
 import collections
 import collections.abc
 import numbers
-from copy import deepcopy, copy
+from collections.abc import Callable
+from copy import copy, deepcopy
 from datetime import date, datetime
 from itertools import chain
 from typing import (
     Any, Collection, Dict, List, Optional, Sequence, Set, Union
 )
-from collections.abc import Callable
 
 import iso8601
 
-from .types import Types, ImmutableTypes
+from .types import ImmutableTypes, Types
 from .. import abc
 from ..meta import Version
 from ..utilities import (
-    calling_function_qualified_name, indent, parameters_defaults,
-    properties_values, qualified_name
+    indent, parameters_defaults, properties_values, qualified_name
 )
-from ..utilities.types import Undefined, UNDEFINED, NULL
+from ..utilities.assertion import assert_argument_is_instance
+from ..utilities.types import NULL, UNDEFINED, Undefined
 
 __all__: List[str] = [
     'types',
+    'Property',
     'Array',
     'Boolean',
     'Bytes',
@@ -34,32 +35,84 @@ __all__: List[str] = [
     'Enumerated',
     'Integer',
     'Number',
-    'Property',
     'String',
     'TYPES_PROPERTIES'
 ]
 
 
-def _repr_list_or_tuple(
-    list_or_tuple: Union[list, tuple]
+def _repr_items(
+    items: Union[Sequence, Set]
 ) -> str:
     """
-    Return a multi-line string representation of a `list` or `tuple`
+    Returns a string representation of the items in a `list`, `tuple`, or
+    `set`.
     """
     lines: List[str] = []
-    for item in list_or_tuple:
-        if isinstance(item, (list, tuple)):
-            repr_item: str = _repr_list_or_tuple(item)
-        else:
-            repr_item: str = repr(item)
-        for line in repr_item.split('\n'):
-            lines.append(
-                '    ' + line
-            )
-    if isinstance(list_or_tuple, list):
-        return '[\n%s\n]' % ',\n'.join(lines)
+    for item in items:
+        lines.append(indent(_repr(item), start=0))
+    return ',\n'.join(lines)
+
+
+def _repr_list(list_instance: list) -> str:
+    """
+    Returns a string representation of `list` argument values
+    """
+    return '[\n%s\n]' % ',\n'.join(_repr_items(list_instance))
+
+
+def _repr_tuple(tuple_instance: tuple) -> str:
+    """
+    Returns a string representation of `tuple` argument values
+    """
+    return '(\n%s\n)' % ',\n'.join(_repr_items(tuple_instance))
+
+
+def _repr_set(set_instance: set) -> str:
+    """
+    Returns a string representation of `set` argument values
+    """
+    return '{\n%s\n}' % ',\n'.join(_repr_items(sorted(set_instance)))
+
+
+def _repr(value: Any) -> str:
+    """
+    Returns a string representation of an argument value.
+    """
+    repr_value: str
+    if isinstance(value, type):
+        repr_value = qualified_name(value)
+    elif isinstance(value, abc.meta.Version):
+        repr_value = "'%s'" % str(value)
     else:
-        return '(\n%s\n)' % ',\n'.join(lines)
+        value_type: type = type(value)
+        if value_type is list:
+            repr_value = _repr_list(value)
+        elif value_type is tuple:
+            repr_value = _repr_tuple(value)
+        elif value_type is set:
+            repr_value = _repr_set(value)
+        else:
+            repr_value = repr(value)
+    return repr_value
+
+
+def _repr_argument(
+    argument: str,
+    value: Any,
+    defaults: Dict[str, Any]
+) -> Optional[str]:
+    """
+    Returns a string representation of an argument assignment, or `None`
+    if the argument value is equal to the default value for that argument
+    """
+    if (
+        (argument not in defaults) or
+        defaults[argument] == value or
+        value is None or
+        value is NULL
+    ):
+        return None
+    return '    %s=%s,' % (argument, indent(_repr(value)))
 
 
 class Property:
@@ -103,13 +156,14 @@ class Property:
     """
     _types: Optional[Types] = None
 
+    # noinspection PyShadowingNames
     def __init__(
         self,
         types: Optional[
             Union[
                 Sequence[Union[type, 'Property']],
                 type,
-                property,
+                'Property',
                 Undefined
             ]
         ] = UNDEFINED,
@@ -184,6 +238,11 @@ class Property:
         ]
     ) -> None:
         if versions is not None:
+            assert_argument_is_instance(
+                'versions',
+                versions,
+                (str, Number, abc.meta.Version, collections.abc.Iterable)
+            )
             if isinstance(versions, (str, Number, abc.meta.Version)):
                 versions = (versions,)
             if isinstance(versions, collections.abc.Iterable):
@@ -195,53 +254,13 @@ class Property:
                     )
                     for v in versions
                 )
-            else:
-                repr_versions = repr(versions)
-                raise TypeError(
-                    (
-                        '`%s` requires a sequence of version strings or ' %
-                        calling_function_qualified_name()
-                    ) + (
-                        '`%s` instances, not' % qualified_name(
-                            Version
-                        )
-                    ) + (
-                        ':\n' + repr_versions
-                        if '\n' in repr_versions else
-                        ' `%s`.' % repr_versions
-                    )
-                )
         self._versions = versions
-
-    @staticmethod
-    def _repr_argument(
-        argument: str,
-        value: Any,
-        defaults: Dict[str, Any]
-    ) -> Optional[str]:
-        if (
-            (argument not in defaults) or
-            defaults[argument] == value or
-            value is None or
-            value is NULL
-        ):
-            return None
-        value_representation = (
-            qualified_name(value)
-            if isinstance(value, type) else
-            "'%s'" % str(value)
-            if isinstance(value, abc.meta.Version) else
-            _repr_list_or_tuple(value)
-            if type(value) in (list, tuple) else
-            repr(value)
-        )
-        return '    %s=%s,' % (argument, indent(value_representation))
 
     def __repr__(self):
         lines = [qualified_name(type(self)) + '(']
         defaults = parameters_defaults(self.__init__)
         for property_name, value in properties_values(self):
-            argument_representation = self._repr_argument(
+            argument_representation = _repr_argument(
                 property_name,
                 value,
                 defaults
@@ -293,8 +312,8 @@ class String(Property):
         )
 
 
-abc.properties.String.register(String)
 abc.properties.Property.register(String)
+abc.properties.String.register(String)
 
 
 class Date(Property):

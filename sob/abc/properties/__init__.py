@@ -6,8 +6,7 @@ from .types import Types
 
 class Property(ABC):
 
-    __metaclass__ = ABCMeta
-
+    # noinspection PyShadowingNames
     @abstractmethod
     def __init__(
         self,
