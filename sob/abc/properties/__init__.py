@@ -1,10 +1,10 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Callable, Optional, Sequence, Union
 
 from .types import Types
 
 
-class Property(ABC):
+class Property(metaclass=ABCMeta):
 
     # noinspection PyShadowingNames
     @abstractmethod
@@ -49,47 +49,47 @@ class Property(ABC):
         pass
 
 
-class String(Property, ABC):
+class String(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Date(Property, ABC):
+class Date(Property, metaclass=ABCMeta):
 
     pass
 
 
-class DateTime(Property, ABC):
+class DateTime(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Bytes(Property, ABC):
+class Bytes(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Enumerated(Property, ABC):
+class Enumerated(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Number(Property, ABC):
+class Number(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Integer(Property, ABC):
+class Integer(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Boolean(Property, ABC):
+class Boolean(Property, metaclass=ABCMeta):
 
     pass
 
 
-class Array(Property, ABC):
+class Array(Property, metaclass=ABCMeta):
 
     @property
     @abstractmethod
@@ -102,7 +102,7 @@ class Array(Property, ABC):
         pass
 
 
-class Dictionary(Property, ABC):
+class Dictionary(Property, metaclass=ABCMeta):
 
     @property
     @abstractmethod
