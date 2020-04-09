@@ -42,6 +42,8 @@ from .utilities.types import (
 _LINE_LENGTH: int = 79
 
 
+# noinspection PyUnresolvedReferences
+@abc.model.Model.register
 class Model:
     """
     This serves as a base class for the [Object](#Object), [Array](#Array) and
@@ -89,9 +91,8 @@ class Model:
             meta.pointer(self, '#')
 
 
-abc.model.Model.register(Model)
-
-
+# noinspection PyUnresolvedReferences
+@abc.model.Object.register
 class Object(Model):
     """
     This serves as a base class for representing deserialized and un-marshalled
@@ -528,10 +529,8 @@ class Object(Model):
         return validation_error_messages
 
 
-abc.model.Object.register(Object)
-abc.model.Model.register(Object)
-
-
+# noinspection PyUnresolvedReferences
+@abc.model.Array.register
 class Array(list, Model):
     """
     This can serve as either a base-class for typed (or untyped) sequences, or
@@ -658,8 +657,13 @@ class Array(list, Model):
         if instance_hooks and instance_hooks.after_setitem:
             instance_hooks.after_setitem(self, index, value)
 
-    def append(self, value: Any) -> None:
-        if not isinstance(value, properties.types.TYPES):
+    def append(
+        self,
+        value: Union[
+            properties.types.TYPES + (NoneType,)
+        ]
+    ) -> None:
+        if not isinstance(value, properties.types.TYPES + (NoneType,)):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: hooks.Array = hooks.read(self)
         if instance_hooks and instance_hooks.before_append:
@@ -802,10 +806,8 @@ class Array(list, Model):
         return serialize(self)
 
 
-abc.model.Array.register(Array)
-abc.model.Model.register(Array)
-
-
+# noinspection PyUnresolvedReferences
+@abc.model.Dictionary.register
 class Dictionary(collections.OrderedDict, Model):
     """
     This can serve as either a base-class for typed (or untyped) dictionaries,
@@ -1137,10 +1139,6 @@ class Dictionary(collections.OrderedDict, Model):
         return serialize(self)
 
 
-abc.model.Dictionary.register(Dictionary)
-abc.model.Model.register(Dictionary)
-
-
 # region marshal
 
 
@@ -1421,8 +1419,17 @@ class _Unmarshal:
                 value_types=self.value_types
             )
         elif _is_non_string_sequence_or_set_instance(self.data):
-            unmarshalled_data = Array(
-                self.data,
+            # `None` is interpreted as `NULL` during un-marshalling
+            items: List[Union[properties.types.TYPES]] = [
+                (
+                    NULL
+                    if item is None else
+                    item
+                )
+                for item in self.data
+            ]
+            unmarshalled_data = Array(                
+                items,
                 item_types=self.item_types
             )
         elif not isinstance(
@@ -1444,7 +1451,7 @@ class _Unmarshal:
             Undefined
         ] = UNDEFINED
         first_error: Optional[Exception] = None
-        first_error_message: Optional[str] = None
+        error_messages: List[str] = []
         # Attempt to un-marshal the data as each type, in the order
         # provided
         for type_ in self.types:
@@ -1458,7 +1465,7 @@ class _Unmarshal:
             ) as error:
                 if first_error is None:
                     first_error = error
-                    first_error_message = errors.get_exception_text()
+                error_messages.append(errors.get_exception_text())
         if unmarshalled_data is UNDEFINED:
             if (
                 first_error is None
@@ -1466,7 +1473,7 @@ class _Unmarshal:
                 first_error, TypeError
             ):
                 raise errors.UnmarshalTypeError(
-                    first_error_message,
+                    '\n'.join(error_messages),
                     data=self.data,
                     types=self.types,
                     value_types=self.value_types,
@@ -1477,7 +1484,7 @@ class _Unmarshal:
                 ValueError
             ):
                 raise errors.UnmarshalValueError(
-                    first_error_message,
+                    '\n'.join(error_messages),
                     data=self.data,
                     types=self.types,
                     value_types=self.value_types,

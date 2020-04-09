@@ -10,12 +10,12 @@ from copy import copy, deepcopy
 from datetime import date, datetime
 from itertools import chain
 from typing import (
-    Any, Collection, Dict, List, Optional, Sequence, Set, Union
+    Collection, Dict, List, Optional, Sequence, Set, Union
 )
 
 import iso8601
 
-from .types import ImmutableTypes, Types
+from .types import ImmutableTypes, Types, TYPES
 from .. import abc
 from ..meta import Version
 from ..utilities import (
@@ -57,24 +57,30 @@ def _repr_list(list_instance: list) -> str:
     """
     Returns a string representation of `list` argument values
     """
-    return '[\n%s\n]' % ',\n'.join(_repr_items(list_instance))
+    return '[\n%s\n]' % _repr_items(list_instance)
 
 
 def _repr_tuple(tuple_instance: tuple) -> str:
     """
     Returns a string representation of `tuple` argument values
     """
-    return '(\n%s\n)' % ',\n'.join(_repr_items(tuple_instance))
+    return '(\n%s\n)' % _repr_items(tuple_instance)
 
 
 def _repr_set(set_instance: set) -> str:
     """
     Returns a string representation of `set` argument values
     """
-    return '{\n%s\n}' % ',\n'.join(_repr_items(sorted(set_instance)))
+    item: str
+    return '{\n%s\n}' % _repr_items(
+        sorted(
+            set_instance,
+            key=lambda item: repr(item)
+        )
+    )
 
 
-def _repr(value: Any) -> str:
+def _repr(value: Union[TYPES]) -> str:
     """
     Returns a string representation of an argument value.
     """
@@ -98,8 +104,8 @@ def _repr(value: Any) -> str:
 
 def _repr_argument(
     argument: str,
-    value: Any,
-    defaults: Dict[str, Any]
+    value: Union[TYPES],
+    defaults: Dict[str, Union[TYPES]]
 ) -> Optional[str]:
     """
     Returns a string representation of an argument assignment, or `None`
@@ -115,44 +121,54 @@ def _repr_argument(
     return '    %s=%s,' % (argument, indent(_repr(value)))
 
 
+# noinspection PyUnresolvedReferences
+@abc.properties.Property.register
 class Property:
     """
     This is the base class for defining a property.
 
     Properties
 
-        - value_types ([type|Property]): One or more expected value_types or
-          `Property` instances. Values are checked, sequentially, against each
-          type or `Property` instance, and the first appropriate match is used.
+        - types ([type|Property]): One or more expected `type` or
+          `Property` instances. A list of more than one types and/or properties
+          results in a polymorphic interpretation wherein a value is
+          un-marshalled in accordance with each type or property in the list
+          (sequentially), until the value is un-marshalled without throwing a
+          `TypeError` or `ValueError`. If the list of types and/or properties
+          is exhausted without successfully un-marshalling the value, a
+          `TypeError` or `ValueError` error is raised.
 
-        - required (bool): If `True`--dumping the
-          json_object will throw an error if this value is `None`.
+        - required (bool): If `True`—marshalling a value for this property
+          will throw an error if the value is `None`. Please note that `None`
+          indicates a value was *not provided*. To indicate an *explicit* null
+          value, use `sob.properties.types.NULL`.
 
         - versions ([str]|{str:Property}):
 
-          The property should be one of the following:
+          The parameter should be one of the following:
 
-            - A set/tuple/list of version numbers to which this property
-              applies.
-            - A mapping of version numbers to an instance of `Property`
-              applicable to that version.
+            - A `set`, `tuple`, or `list` of version numbers to which this
+              property applies.
+            - A mapping of version numbers to an instance of
+              [Property](#Property) instances applicable to that version.
 
-          Version numbers prefixed by "<" indicate any version less than the
+          Version numbers prefixed by "<" indicating any version less than the
           one specified, so "<3.0" indicates that this property is available in
           versions prior to 3.0. The inverse is true for version numbers
           prefixed by ">". ">=" and "<=" have similar meanings, but are
           inclusive.
 
-          Versioning can be applied to an json_object by calling
+          Versioning can be applied to a property by calling
           `sob.meta.set_version` in the `__init__` method of an
-          `sob.model.Object` sub-class. For an example, see
-          `oapi.model.OpenAPI.__init__`.
+          `sob.model.Object` sub-class.
 
         - name (str): The name of the property when loaded from or dumped into
-          a JSON/YAML object. Specifying a `name` facilitates mapping of PEP8
-          compliant property to JSON or YAML attribute names, which are either
-          camelCased, are python keywords, or otherwise not appropriate for
-          usage in python code.
+          a JSON object. Specifying a `name` facilitates mapping of PEP8
+          compliant property names to JSON or YAML attribute names which might
+          be incompatible with well-formatted python code due to various
+          reasons such as being camelCased, or being python keywords. To
+          infer an appropriate property name programmatically, use the utility
+          function `sob.utilities.string.property_name`.
     """
     _types: Optional[Types] = None
 
@@ -276,23 +292,23 @@ class Property:
 
     def __copy__(self) -> 'Property':
         new_instance = self.__class__()
-        for a in dir(self):
-            if a[0] != '_' and a != 'data':
-                v = getattr(self, a)
-                if not callable(v):
-                    setattr(new_instance, a, v)
+        attribute_name: str
+        for attribute_name in dir(self):
+            if attribute_name[0] != '_' and attribute_name != 'data':
+                value = getattr(self, attribute_name)
+                if not callable(value):
+                    setattr(new_instance, attribute_name, value)
         return new_instance
 
     def __deepcopy__(self, memo: dict) -> 'Property':
         new_instance = self.__class__()
         for a, v in properties_values(self):
-            setattr(new_instance, a, deepcopy(v, memo))
+            setattr(new_instance, a, deepcopy(v, memo=memo))
         return new_instance
 
 
-abc.properties.Property.register(Property)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.String.register
 class String(Property):
     """
     See `sob.properties.Property`
@@ -312,10 +328,8 @@ class String(Property):
         )
 
 
-abc.properties.Property.register(String)
-abc.properties.String.register(String)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Date.register
 class Date(Property):
     """
     ...See `sob.properties.Property`
@@ -350,10 +364,8 @@ class Date(Property):
         self.str2date = str2date
 
 
-abc.properties.Date.register(Date)
-abc.properties.Property.register(Date)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.DateTime.register
 class DateTime(Property):
     """
     (See [`sob.properties.Property`](#Property))
@@ -387,10 +399,8 @@ class DateTime(Property):
         )
 
 
-abc.properties.DateTime.register(Date)
-abc.properties.Property.register(Date)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Bytes.register
 class Bytes(Property):
     """
     (See [`sob.properties.Property`](#Property))
@@ -412,19 +422,23 @@ class Bytes(Property):
         )
 
 
-abc.properties.Bytes.register(Date)
-abc.properties.Property.register(Date)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Enumerated.register
 class Enumerated(Property):
     """
-    (See [`sob.properties.Property`](#Property))
+    Parameters:
 
-    + Properties:
+    This class accepts the following keyword parameters in *addition* to all
+    parameters applicable to the base class [Property](#Property).
 
-    - values ([Any]):  A list or set of possible values.
+    - values ([typing.Any]):  A list or set of possible values.
+
+    Properties:
+
+    This class exposes public properties matching its keyword parameters.
     """
 
+    # noinspection PyShadowingNames
     def __init__(
         self,
         types: Optional[
@@ -435,12 +449,12 @@ class Enumerated(Property):
                 Undefined
             ]
         ] = UNDEFINED,
-        values: Optional[Union[Sequence, Set]] = None,
+        values: Optional[Union[TYPES]] = None,
         name: Optional[str] = None,
         required: bool = False,
         versions: Optional[Collection] = None
     ) -> None:
-        self._values: Optional[Set[Any]] = None
+        self._values: Optional[Set[Union[TYPES]]] = None
         super().__init__(
             types=types,
             name=name,
@@ -473,10 +487,8 @@ class Enumerated(Property):
         )
 
 
-abc.properties.Enumerated.register(Enumerated)
-abc.properties.Property.register(Enumerated)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Number.register
 class Number(Property):
     """
     See `sob.properties.Property`
@@ -496,10 +508,8 @@ class Number(Property):
         )
 
 
-abc.properties.Number.register(Number)
-abc.properties.Property.register(Number)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Integer.register
 class Integer(Property):
     """
     See `sob.properties.Property`
@@ -519,10 +529,8 @@ class Integer(Property):
         )
 
 
-abc.properties.Integer.register(Integer)
-abc.properties.Property.register(Integer)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Boolean.register
 class Boolean(Property):
     """
     See `sob.properties.Property`
@@ -542,10 +550,8 @@ class Boolean(Property):
         )
 
 
-abc.properties.Boolean.register(Boolean)
-abc.properties.Property.register(Boolean)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Array.register
 class Array(Property):
     """
     See `sob.properties.Property`...
@@ -604,10 +610,8 @@ class Array(Property):
         self._item_types = item_types
 
 
-abc.properties.Array.register(Array)
-abc.properties.Property.register(Array)
-
-
+# noinspection PyUnresolvedReferences
+@abc.properties.Dictionary.register
 class Dictionary(Property):
     """
     See `sob.properties.Property`...
@@ -677,10 +681,6 @@ class Dictionary(Property):
         if (value_types is not None) and not isinstance(value_types, Types):
             value_types = Types(value_types)
         self._value_types = value_types
-
-
-abc.properties.Dictionary.register(Dictionary)
-abc.properties.Property.register(Dictionary)
 
 
 # This constant maps data types to their corresponding properties

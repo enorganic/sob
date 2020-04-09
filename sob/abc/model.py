@@ -1,6 +1,6 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Iterable, List, Tuple, Dict, Union
+from typing import Any, Iterable, List, Tuple, Dict, Union, Callable
 from ..utilities.types import TYPES
 
 __all__: List[str] = [
@@ -11,9 +11,7 @@ __all__: List[str] = [
 ]
 
 
-class Model(ABC):
-
-    __metaclass__ = ABCMeta
+class Model(metaclass=ABCMeta):
 
     @abstractmethod
     def _marshal(self) -> Dict[str, Any]:
@@ -24,7 +22,7 @@ class Model(ABC):
         pass
 
 
-class Object(Model, ABC, OrderedDict):
+class Object(Model, OrderedDict, metaclass=ABCMeta):
 
     @abstractmethod
     def __setattr__(self, property_name: str, value: Any) -> None:
@@ -55,7 +53,7 @@ class Object(Model, ABC, OrderedDict):
         pass
 
 
-class Dictionary(Model, ABC, OrderedDict):
+class Dictionary(Model, OrderedDict, metaclass=ABCMeta):
 
     @abstractmethod
     def keys(self) -> Iterable[str]:
@@ -69,7 +67,7 @@ class Dictionary(Model, ABC, OrderedDict):
         pass
 
 
-class Array(Model, ABC, list):
+class Array(Model, list, metaclass=ABCMeta):
 
     @abstractmethod
     def append(self, value: Any) -> None:

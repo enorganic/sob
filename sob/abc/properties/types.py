@@ -1,8 +1,8 @@
-from abc import ABC, abstractmethod
-from typing import Optional, Union, Sequence, Iterable
+from abc import ABCMeta, abstractmethod
+from typing import Optional, Union, Sequence, Iterable, Callable
 
 
-class Types(ABC):
+class Types(metaclass=ABCMeta):
 
     # noinspection PyUnusedLocal
     @abstractmethod
@@ -56,6 +56,6 @@ class Types(ABC):
         pass
 
 
-class ImmutableTypes(Types, ABC):
+class ImmutableTypes(Types, metaclass=ABCMeta):
 
     pass

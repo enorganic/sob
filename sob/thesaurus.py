@@ -13,7 +13,7 @@ from copy import copy, deepcopy
 from datetime import datetime, date
 from io import IOBase
 from typing import (
-    Optional, Union, Sequence, Tuple, Iterable, Dict, List, Callable, Set
+    Optional, Union, Sequence, Tuple, Iterable, Dict, List, Set
 )
 from urllib.response import addbase
 
@@ -337,7 +337,7 @@ class Synonyms(set):
             self.__ior__(items)
 
     def add(self, item: Union[_READABLE_TYPES + TYPES]) -> None:
-        __doc__ = """
+        """
         This method adds a synonymous item to the set. If the item is a
         file-like (input/output) object, that object is first read,
         deserialized, and unmarshalled.

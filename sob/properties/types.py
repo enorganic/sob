@@ -9,7 +9,7 @@ from typing import Optional, Sequence, Union, List, Tuple
 from .. import abc
 from ..abc.properties import Property
 from ..utilities import qualified_name
-from ..utilities.types import Null, NULL, TYPES as _TYPES, NoneType
+from ..utilities.types import Null, NULL, TYPES as _TYPES
 
 __all__: List[str] = [
     'NULL',
@@ -44,6 +44,7 @@ def _validate_type_or_property(
         raise TypeError(type_or_property)
 
 
+# noinspection PyUnresolvedReferences
 @abc.properties.types.Types.register
 class Types(list):
     """
@@ -110,6 +111,7 @@ class Types(list):
     def __copy__(self) -> 'Types':
         return self.__class__(self)
 
+    # noinspection PyArgumentList
     def __deepcopy__(self, memo: dict = None) -> 'Types':
         return self.__class__(
             tuple(
@@ -152,7 +154,7 @@ class Types(list):
         )
 
 
-@abc.properties.types.Types.register
+# noinspection PyUnresolvedReferences
 @abc.properties.types.ImmutableTypes.register
 class ImmutableTypes(Types):
 

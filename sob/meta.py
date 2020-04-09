@@ -21,6 +21,8 @@ _DOT_SYNTAX_RE = re.compile(
 )
 
 
+# noinspection PyUnresolvedReferences
+@abc.meta.Meta.register
 class Meta:
 
     def __copy__(self):
@@ -62,9 +64,8 @@ class Meta:
         return '\n'.join(lines)
 
 
-abc.meta.Meta.register(Meta)
-
-
+# noinspection PyUnresolvedReferences
+@abc.meta.Version.register
 class Version(Meta):
 
     def __init__(
@@ -207,10 +208,8 @@ class Version(Meta):
         return '&'.join(representation)
 
 
-abc.meta.Version.register(Version)
-abc.meta.Meta.register(Version)
-
-
+# noinspection PyUnresolvedReferences
+@abc.meta.Object.register
 class Object(Meta):
 
     def __init__(
@@ -252,10 +251,8 @@ class Object(Meta):
         self._properties = Properties(properties_)
 
 
-abc.meta.Object.register(Object)
-abc.meta.Meta.register(Object)
-
-
+# noinspection PyUnresolvedReferences
+@abc.meta.Dictionary.register
 class Dictionary(Meta):
 
     def __init__(
@@ -295,10 +292,8 @@ class Dictionary(Meta):
         self._value_types = value_types
 
 
-abc.meta.Dictionary.register(Dictionary)
-abc.meta.Meta.register(Dictionary)
-
-
+# noinspection PyUnresolvedReferences
+@abc.meta.Array.register
 class Array(Meta):
 
     def __init__(
@@ -338,10 +333,8 @@ class Array(Meta):
         self._item_types = item_types
 
 
-abc.meta.Array.register(Array)
-abc.meta.Meta.register(Array)
-
-
+# noinspection PyUnresolvedReferences
+@abc.meta.Properties.register
 class Properties(OrderedDict):
 
     def __init__(
@@ -378,6 +371,7 @@ class Properties(OrderedDict):
     def __copy__(self) -> 'Properties':
         return self.__class__(self)
 
+    # noinspection PyArgumentList
     def __deepcopy__(self, memo: dict = None) -> 'Properties':
         key: str
         value: abc.properties.Property
@@ -431,10 +425,6 @@ class Properties(OrderedDict):
             return '\n'.join(representation)
         else:
             return ''.join(representation)
-
-
-abc.meta.Properties.register(Properties)
-abc.meta.Meta.register(Properties)
 
 
 def read(
@@ -532,8 +522,8 @@ def writable(
 
 
 def write(
-    model: Union[type, abc.model.Object],
-    meta: Meta
+    model: Union[type, abc.model.Model],
+    meta: abc.meta.Meta
 ) -> None:
     if isinstance(model, abc.model.Model):
         model_type = type(model)
@@ -716,7 +706,7 @@ def _version_match(
 
 
 def _version_properties(
-    properties_: Sequence[abc.properties.Property],
+    properties_: Union[Sequence[abc.properties.Property], Types],
     specification: str,
     version_number: Union[str, int, Sequence[int]]
 ) -> Optional[Sequence[abc.properties.Property]]:

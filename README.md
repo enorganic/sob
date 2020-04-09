@@ -1,4 +1,7 @@
 # sob
 
-This library is intended as a framework for serializing/de-serializing JSON/YAML
-into python class instances and vice versa.
+`sob` is an object serialization/deserialization library intended to facilitate
+authoring of API models which are readable and introspective, and to expedite
+code and data validation and testing.
+
+# sob.model.thesaurus.Thesaurus.add

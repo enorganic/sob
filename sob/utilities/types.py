@@ -1,10 +1,14 @@
 import decimal
 import numbers
-from abc import ABC
+from abc import ABCMeta
 from collections import abc, OrderedDict
 from datetime import date, datetime
-from typing import Any, Optional, Dict, Hashable, Tuple
+from typing import Any, Optional, Dict, Hashable, Tuple, List
 from . import inspect
+
+__all__: List[str] = [
+    ''
+]
 
 UNDEFINED: Optional['Undefined'] = None
 
@@ -64,11 +68,12 @@ locals()['UNDEFINED'] = Undefined()
 Module: type = type(inspect)
 
 
-class NoneType(ABC):
+class NoneType(metaclass=ABCMeta):
 
     pass
 
 
+# noinspection PyUnresolvedReferences
 NoneType.register(type(None))
 NULL: Optional['Null'] = None
 

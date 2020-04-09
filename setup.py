@@ -1,8 +1,8 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 setup(
     name='sob',
-    version="0.2.15",
+    version="0.2.17",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -31,7 +31,7 @@ setup(
             "pytest>=5.4.1",
             "flake8>=3.7.9",
             "setuptools-setup-versions>=0.0.30",
-            "readme-md-docstrings>=0.0.8"
+            "readme-md-docstrings>=0.0.10"
         ],
         "dev": [
             "wheel>=0.34.2",
@@ -39,7 +39,7 @@ setup(
             "pytest>=5.4.1",
             "flake8>=3.7.9",
             "setuptools-setup-versions>=0.0.30",
-            "readme-md-docstrings>=0.0.8"
+            "readme-md-docstrings>=0.0.10"
         ]
     }
 )

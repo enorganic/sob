@@ -1,19 +1,21 @@
-import abc
-from abc import ABC, ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod
 from numbers import Number
-from typing import Optional, Sequence, Union, Dict, Tuple, List, Iterable
+from typing import (
+    Optional, Sequence, Union, Dict, Tuple, List, Iterable, Callable
+)
 
 from .properties import Property
 from .properties.types import Types
 
 
-class Meta(ABC):
+class Meta(metaclass=ABCMeta):
 
-    __metaclass__ = ABCMeta
+    pass
 
 
-class Object(Meta, ABC):
+class Object(Meta, metaclass=ABCMeta):
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -32,8 +34,9 @@ class Object(Meta, ABC):
         self.properties: Optional[Properties] = None
 
 
-class Dictionary(Meta, ABC):
+class Dictionary(Meta, metaclass=ABCMeta):
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -49,8 +52,9 @@ class Dictionary(Meta, ABC):
         self.value_types: Optional[Types] = None
 
 
-class Array(Meta, ABC):
+class Array(Meta, metaclass=ABCMeta):
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -66,8 +70,9 @@ class Array(Meta, ABC):
         self.item_types: Optional[Types] = None
 
 
-class Properties(Meta, ABC):
+class Properties(Meta, metaclass=ABCMeta):
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -109,8 +114,9 @@ class Properties(Meta, ABC):
         pass
 
 
-class Version(Meta, ABC):
+class Version(Meta, metaclass=ABCMeta):
 
+    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -136,3 +142,4 @@ class Version(Meta, ABC):
         self.greater_than_or_equal_to: Optional[
             Sequence[Union[str, Number]]
         ] = greater_than_or_equal_to
+
