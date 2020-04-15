@@ -1,8 +1,18 @@
 from copy import deepcopy
-from typing import Callable, Optional, Union
+from typing import Callable, Optional, Type, Union
 
 from . import abc
-from .utilities import calling_function_qualified_name, qualified_name
+from .utilities import qualified_name
+from .utilities.assertion import assert_argument_is_instance
+
+_MODEL_OR_INSTANCE_TYPING = Union[
+    Type[abc.model.Object],
+    Type[abc.model.Dictionary],
+    Type[abc.model.Array],
+    abc.model.Object,
+    abc.model.Dictionary,
+    abc.model.Array
+]
 
 
 class Hooks:
@@ -142,8 +152,8 @@ class Dictionary(Hooks):
 
 
 def read(
-    model_instance: Union[type, abc.model.Model]
-) -> Hooks:
+    model_instance: _MODEL_OR_INSTANCE_TYPING
+) -> Union[Array, Dictionary, Object]:
     """
     Read metadata from a model instance (the returned metadata may be
     inherited, and therefore should not be written to)
@@ -156,7 +166,7 @@ def read(
 
 def writable(
     model: Union[type, abc.model.Model]
-) -> Hooks:
+) -> Union[Object, Array, Dictionary]:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
@@ -195,10 +205,23 @@ def writable(
     return new_hooks
 
 
-def type_(model: Union[type, abc.model.Model]) -> type:
+def type_(
+    model: _MODEL_OR_INSTANCE_TYPING
+) -> type:
     """
     Get the type of metadata required for an object
     """
+    meta_type: type
+    assert_argument_is_instance(
+        'model',
+        model,
+        (
+            type,
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    )
     if isinstance(model, type):
         meta_type = (
             Object
@@ -206,35 +229,20 @@ def type_(model: Union[type, abc.model.Model]) -> type:
             Array
             if issubclass(model, abc.model.Array) else
             Dictionary
-            if issubclass(model, abc.model.Dictionary)
-            else None
         )
-    elif isinstance(model, abc.model.Model):
+    else:
         meta_type = (
             Object
             if isinstance(model, abc.model.Object) else
             Array
             if isinstance(model, abc.model.Array) else
             Dictionary
-            if isinstance(model, abc.model.Dictionary)
-            else None
-        )
-    else:
-        model_qualified_name = qualified_name(abc.model.Model)
-        raise TypeError(
-            '`%s` requires an argument of type `%s` or an instance of `type` '
-            'which is a  subclass of `%s`--not %s' % (
-                calling_function_qualified_name(),
-                model_qualified_name,
-                model_qualified_name,
-                repr(model)
-            )
         )
     return meta_type
 
 
 def write(
-    model: Union[type, abc.model.Model],
+    model: _MODEL_OR_INSTANCE_TYPING,
     meta: Hooks
 ) -> None:
     """
@@ -244,9 +252,7 @@ def write(
     meta_type = type_(model)
     if not isinstance(meta, meta_type):
         raise ValueError(
-            'Hooks assigned to `%s` must be of type `%s`' % (
-                qualified_name(type(model)),
-                qualified_name(meta_type)
-            )
+            f'Hooks assigned to `{qualified_name(type(model))}` '
+            f'must be of type `{qualified_name(meta_type)}`'
         )
     setattr(model, '_hooks', meta)

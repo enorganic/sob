@@ -17,7 +17,7 @@ module_name = __file__.split('/')[-3].replace('-', '_')
 
 for file_or_directory in (
     'dist', 'build', '%s.egg-info' % module_name,
-    '.cache', '.pytest_cache', '.tox'
+    '.cache', '.pytest_cache', '.mypy_cache', '.tox'
 ):
     if os.path.exists(file_or_directory):
         command = (

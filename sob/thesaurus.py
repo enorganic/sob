@@ -2,39 +2,39 @@
 This module provides functionality for creating a data model from a
 set of example structures.
 """
-import binascii
 import collections
 import functools
 import numbers
 import os
+from types import ModuleType
 from base64 import b64decode
 from collections import OrderedDict
 from copy import copy, deepcopy
-from datetime import datetime, date
+from datetime import date, datetime
 from io import IOBase
-from typing import (
-    Optional, Union, Sequence, Tuple, Iterable, Dict, List, Set
-)
+from typing import (Dict, Iterable, List, Optional, Set, Tuple, Union)
 from urllib.response import addbase
 
-from iso8601 import parse_date, ParseError
+import binascii
+from iso8601 import ParseError, parse_date
 
 from . import __name__ as _parent_module_name, abc, meta
-from .model import detect_format, unmarshal, from_meta
+from .model import detect_format, from_meta, unmarshal
 from .properties import Property, TYPES_PROPERTIES
-from .utilities import qualified_name, get_source
+from .utilities import get_source, qualified_name
 from .utilities.assertion import (
     assert_argument_is_instance, assert_argument_is_subclass
 )
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
-from .utilities.types import TYPES, NULL, Module, Null
 from .utilities.string import class_name, property_name
-
+from .utilities.types import NULL, Null, TYPES
 
 __all__: List[str] = [
-    'Module', 'Synonyms', 'Thesaurus'
+    'Synonyms', 'Thesaurus'
 ]
+
+from .utilities.typing import MarshallableTypes
 
 _READABLE_TYPES: Tuple[type, ...] = (IOBase, addbase)
 
@@ -50,8 +50,8 @@ def _read(data: Union[_READABLE_TYPES]) -> str:
 
 
 def _update_types(
-    types: abc.properties.types.Types,
-    new_types: abc.properties.types.Types,
+    types: abc.types.Types,
+    new_types: abc.types.Types,
     memo: Optional[Dict[str, type]] = None
 ) -> None:
     """
@@ -341,10 +341,10 @@ class Synonyms(set):
         This method adds a synonymous item to the set. If the item is a
         file-like (input/output) object, that object is first read,
         deserialized, and unmarshalled.
-        
-        Parameters:
-        
-        - item ({}):
+
+Parameters:
+
+- item ({}):
           A file-like or a JSON-serializable python object.
         """.format(
             '|'.join(
@@ -443,7 +443,7 @@ class Synonyms(set):
         item: dict
         for item in self:
             assert isinstance(item, dict)
-            value: Union[TYPES]
+            value: MarshallableTypes
             for name, value in item.items():
                 if name not in property_names_values:
                     property_names_values[name] = []
@@ -484,7 +484,6 @@ class Synonyms(set):
                 # values).
                 if item_type is float:
                     item_type = numbers.Number
-                types: List[Union[type, Property]] = []
                 if is_model:
                     metadata.properties[property_name_] = Property(
                         name=key,
@@ -629,10 +628,22 @@ class Thesaurus(OrderedDict):
 
     def __init__(
         self,
-        *args: Sequence[Union[_READABLE_TYPES + TYPES]],
-        **kwargs: Sequence[Union[_READABLE_TYPES + TYPES]]
+        items: Optional[Union[
+            Dict[
+                str,
+                Iterable[Union[_READABLE_TYPES + TYPES]]
+            ],
+            Iterable[Tuple[
+                str,
+                Iterable[Union[_READABLE_TYPES + TYPES]]
+            ]],
+        ]] = None,
+        **kwargs: Union[_READABLE_TYPES + TYPES]
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            *(items or ()),
+            **kwargs
+        )
 
     def __setitem__(
         self,
@@ -657,18 +668,16 @@ class Thesaurus(OrderedDict):
         assert isinstance(other, Thesaurus)
         key: str
         value: List[Union[TYPES]]
-        for key, value in other._items.items():
-            self[key]._items.extend(value)
+        for key, value in other.items():
+            self[key] |= value
 
-    def __copy__(self) -> '_Module':
-        new_module: Thesaurus = type(self)()
-        new_module._items = copy(self._items)
-        return new_module
+    def __copy__(self) -> 'Thesaurus':
+        return type(self)(self.items())
 
-    def __deepcopy__(self, memo: dict) -> '_Module':
-        new_module: Thesaurus = type(self)()
-        new_module._items = deepcopy(self._items, memo=memo)
-        return new_module
+    def __deepcopy__(self, memo: dict) -> 'Thesaurus':
+        return type(self)(
+            deepcopy(item) for item in self.items()
+        )
 
     def __add__(
         self,
@@ -760,7 +769,7 @@ class Thesaurus(OrderedDict):
         """
         return self._get_module_source(name='__main__')
 
-    def get_module(self) -> Module:
+    def get_module(self) -> ModuleType:
         """
         This method generates and returns a module defining data models
         applicable to the data contained in this thesaurus. This module is not
@@ -775,7 +784,7 @@ class Thesaurus(OrderedDict):
         # For pickling to work, the `__module__` variable needs to be set to
         # the calling module.
         name: str = calling_module_name(2)
-        module: Module = Module(name)
+        module: ModuleType = ModuleType(name)
         exec(self.get_module_source(name=name), module.__dict__)
         return module
 

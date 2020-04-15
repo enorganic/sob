@@ -1,51 +1,18 @@
-"""
-This module defines a class for describing data types associated with a
-property.
-"""
-
 from copy import deepcopy
-from typing import Optional, Sequence, Union, List, Tuple
+from typing import Any, Iterable, Optional, Tuple, Type, Union
 
-from .. import abc
-from ..abc.properties import Property
-from ..utilities import qualified_name
-from ..utilities.types import Null, NULL, TYPES as _TYPES
-
-__all__: List[str] = [
-    'NULL',
-    'Null',
-    'TYPES',
-    'Types',
-    'ImmutableTypes'
-]
-
+from . import abc
+from .utilities.types import TYPES as _TYPES
+from .utilities.inspect import qualified_name
+from .utilities.types import Null
 
 TYPES: Tuple[type, ...] = _TYPES + (
     abc.model.Model,
 )
 
 
-def _validate_type_or_property(
-    type_or_property: Union[type, abc.properties.Property]
-) -> None:
-    if not (
-        isinstance(type_or_property, (type, Property)) and
-        (
-            (type_or_property is Null) or
-            (
-                isinstance(type_or_property, type) and
-                issubclass(
-                    type_or_property, TYPES
-                )
-            ) or
-            isinstance(type_or_property, Property)
-        )
-    ):
-        raise TypeError(type_or_property)
-
-
 # noinspection PyUnresolvedReferences
-@abc.properties.types.Types.register
+@abc.types.Types.register
 class Types(list):
     """
     Instances of this class are lists which will only take values which are
@@ -62,7 +29,7 @@ class Types(list):
         self,
         items: Optional[
             Union[
-                Sequence[
+                Iterable[
                     Union[
                         type,
                         abc.properties.Property
@@ -73,7 +40,7 @@ class Types(list):
             ]
         ] = None
     ) -> None:
-        if isinstance(items, (type, Property)):
+        if isinstance(items, (type, abc.properties.Property)):
             items = (items,)
         if items is None:
             super().__init__()
@@ -87,24 +54,28 @@ class Types(list):
                 'modified.'
             )
 
-    def __setitem__(self, index: int, value: Union[type, Property]) -> None:
+    def __setitem__(  # type: ignore
+        self,
+        index: int,
+        value: Union[type, abc.properties.Property]
+    ) -> Any:
         self._mutability_check()
         _validate_type_or_property(value)
         super().__setitem__(index, value)
 
     def append(
         self,
-        value: Union[type, Property]
+        value: Union[type, abc.properties.Property]
     ) -> None:
         self._mutability_check()
         _validate_type_or_property(value)
         super().append(value)
 
-    def __delitem__(self, index: int) -> None:
+    def __delitem__(self, index: Union[int, slice]) -> None:
         self._mutability_check()
         super().__delitem__(index)
 
-    def pop(self, index: int = -1) -> Union[type, Property]:
+    def pop(self, index: int = -1) -> Union[type, abc.properties.Property]:
         self._mutability_check()
         return super().pop(index)
 
@@ -155,7 +126,29 @@ class Types(list):
 
 
 # noinspection PyUnresolvedReferences
-@abc.properties.types.ImmutableTypes.register
+@abc.types.Types.register
+@abc.types.ImmutableTypes.register
 class ImmutableTypes(Types):
 
     _mutable: bool = False
+
+
+def _validate_type_or_property(
+    type_or_property: Union[
+        Type[abc.properties.Property], abc.properties.Property
+    ]
+) -> None:
+    if not (
+        isinstance(type_or_property, (type, abc.properties.Property)) and
+        (
+            (type_or_property is Null) or
+            (
+                isinstance(type_or_property, type) and
+                issubclass(
+                    type_or_property, TYPES
+                )
+            ) or
+            isinstance(type_or_property, abc.properties.Property)
+        )
+    ):
+        raise TypeError(type_or_property)

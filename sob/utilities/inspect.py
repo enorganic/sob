@@ -1,34 +1,25 @@
-import importlib
-import sys
+import collections
 from collections import OrderedDict
 from inspect import (
     FrameInfo, Parameter, getargvalues, getmodulename, getsource, signature,
     stack
 )
+from types import ModuleType
 from typing import (
-    Any, AnyStr, Callable, Dict, Iterator, List, Optional, Tuple, Union
+    Any, Callable, Dict, Iterator, List, Optional, Sequence, Set, Tuple, Union
 )
 
-from .types import Module, UNDEFINED
+import builtins
+import sys
 
-# `BUILTINS_DICT` is used to check for namespace conflicts
-BUILTINS_DICT = {}
-
-
-def _index_builtins():
-    global BUILTINS_DICT
-    builtins = importlib.import_module('builtins')
-    for property_name_ in dir(builtins):
-        BUILTINS_DICT[property_name_] = getattr(builtins, property_name_)
-
-
-_index_builtins()
+from .string import indent
+from .types import UNDEFINED, Undefined
 
 
 def properties_values(
     object_: object,
     include_private: bool = False
-) -> Iterator[Tuple[AnyStr, Any]]:
+) -> Iterator[Tuple[str, Any]]:
     """
     This function iterates over an object's public (non-callable)
     properties, yielding a tuple comprised of each attribute/property name and
@@ -41,7 +32,16 @@ def properties_values(
                 yield attribute, value
 
 
-def qualified_name(type_: Union[type, Module]) -> str:
+QUALIFIED_NAME_ARGUMENT_TYPES: Tuple[type, ...] = (
+    type,
+    collections.abc.Callable,
+    ModuleType
+)
+
+
+def qualified_name(
+    type_or_module: Union[type, Callable, ModuleType]
+) -> str:
     """
     >>> print(qualified_name(qualified_name))
     sob.utilities.inspect.qualified_name
@@ -50,28 +50,36 @@ def qualified_name(type_: Union[type, Module]) -> str:
     >>> print(qualified_name(model.marshal))
     sob.model.marshal
     """
-    if hasattr(type_, '__qualname__'):
+    print(repr(type_or_module))
+    assert isinstance(
+        type_or_module,
+        QUALIFIED_NAME_ARGUMENT_TYPES
+    )
+    type_name: str
+    # noinspection SpellCheckingInspection
+    if isinstance(type_or_module, ModuleType):
+        type_name = type_or_module.__name__
+    else:
         type_name = '.'.join(
             name_part
-            for name_part in type_.__qualname__.split('.')
+            for name_part in getattr(
+                type_or_module,
+                '__qualname__',
+                getattr(
+                    type_or_module,
+                    '__name__'
+                )
+            ).split('.')
             if name_part[0] != '<'
         )
-    else:
-        type_name = type_.__name__
-    if isinstance(type_, Module):
-        if type_name in (
+        if type_or_module.__module__ not in (
             'builtins', '__builtin__', '__main__', '__init__'
         ):
-            type_name = None
-    else:
-        if type_.__module__ not in (
-            'builtins', '__builtin__', '__main__', '__init__'
-        ):
-            type_name = type_.__module__ + '.' + type_name
+            type_name = type_or_module.__module__ + '.' + type_name
     return type_name
 
 
-def calling_functions_qualified_names(depth: int = 1) -> Iterator[str]:
+def calling_functions_qualified_names(depth: int = 1) -> List[str]:
     """
     This function returns the qualified names of all calling functions in the
     stack, starting with the function at the indicated `depth` (defaults to 1).
@@ -86,7 +94,7 @@ def calling_functions_qualified_names(depth: int = 1) -> Iterator[str]:
     """
     depth += 1
     name = calling_function_qualified_name(depth=depth)
-    names = []
+    names: List[str] = []
     while name:
         if name and not (names and names[0] == name):
             names.insert(0, name)
@@ -133,9 +141,9 @@ def _get_frame_info_names(frame_info: FrameInfo) -> List[str]:
                     (
                         argument_value_type.__name__
                         not in
-                        BUILTINS_DICT
+                        builtins.__dict__
                     ) or (
-                        BUILTINS_DICT[argument_value_type.__name__]
+                        builtins.__dict__[argument_value_type.__name__]
                         is not
                         argument_value_type
                     )
@@ -182,6 +190,7 @@ def calling_module_name(depth: int = 1) -> Optional[str]:
     return name
 
 
+# noinspection PyUnresolvedReferences
 def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     """
     Return the fully qualified name of the function from within which this is
@@ -197,6 +206,7 @@ def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     ...     def __call__(self) -> None:
     ...          return self.my_method()
     ...
+    ...     # noinspection PyMethodMayBeStatic
     ...     def my_method(self) -> str:
     ...          return calling_function_qualified_name()
     >>> print(MyClass()())
@@ -213,7 +223,13 @@ def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     return '.'.join(reversed(names))
 
 
-def get_source(object_: object) -> str:
+def get_source(
+    object_: Union[
+        type,
+        Callable,
+        ModuleType
+    ]
+) -> str:
     """
     Get the source code which defined an object.
     """
@@ -222,11 +238,11 @@ def get_source(object_: object) -> str:
     except AttributeError:
         object_source = None
     if not isinstance(object_source, str):
-        object_source = getsource(object_)
+        object_source = getsource(object_)  # noqa
     return object_source
 
 
-def parameters_defaults(function: Callable) -> OrderedDict:
+def parameters_defaults(function: Callable) -> Dict[str, Any]:
     """
     Returns an ordered dictionary mapping a function's argument names to
     default values, or `UNDEFINED` in the case of
@@ -256,3 +272,106 @@ def parameters_defaults(function: Callable) -> OrderedDict:
         else:
             defaults[parameter_name] = parameter.default
     return defaults
+
+
+def _repr_items(
+    items: Union[Sequence, Set]
+) -> str:
+    """
+    Returns a string representation of the items in a `list`, `tuple`, or
+    `set`.
+    """
+    lines: List[str] = []
+    for item in items:
+        lines.append(indent(represent(item), start=0))
+    return ',\n'.join(lines)
+
+
+def _repr_list(list_instance: list) -> str:
+    """
+    Returns a string representation of `list` argument values
+    """
+    return '[\n%s\n]' % _repr_items(list_instance)
+
+
+def _repr_tuple(tuple_instance: tuple) -> str:
+    """
+    Returns a string representation of `tuple` argument values
+    """
+    return '(\n{}\n)'.format(
+        _repr_items(tuple_instance) + (
+            ','
+            if len(tuple_instance) == 1 else
+            ''
+        )
+    )
+
+
+def _repr_set(set_instance: set) -> str:
+    """
+    Returns a string representation of `set` argument values
+    """
+    return '{\n%s\n}' % _repr_items(
+        sorted(
+            set_instance,
+            key=lambda item: repr(item)
+        )
+    )
+
+
+def represent(value: Any) -> str:
+    """
+    Returns a string representation of a value.
+    """
+    value_representation: str
+    if isinstance(value, type):
+        value_representation = qualified_name(value)
+    else:
+        value_type: type = type(value)
+        if value_type is list:
+            value_representation = _repr_list(value)
+        elif value_type is tuple:
+            value_representation = _repr_tuple(value)
+        elif value_type is set:
+            value_representation = _repr_set(value)
+        else:
+            value_representation = repr(value)
+    return value_representation
+
+
+def get_method(
+    object_instance: object,
+    method_name: str,
+    default: Optional[Union[Callable, Undefined]] = UNDEFINED
+) -> Optional[Callable]:
+    """
+    This function attempts to retrieve a method, by name.
+
+    Parameters:
+
+    - object_instance (object)
+    - method_name (str)
+    - default (collections.Callable|None) = None
+
+    This function returns an object's method, if the method exists.
+    If the object does not have a method with the given name, this
+    function returns `None`.
+    """
+    method: Callable
+    try:
+        method = getattr(object_instance, method_name)
+    except AttributeError:
+        if isinstance(default, Undefined):
+            raise
+        else:
+            return default
+    if callable(method):
+        return method
+    else:
+        if isinstance(default, Undefined):
+            raise AttributeError(
+                f'{qualified_name(type(object_instance))}.{method_name} '
+                'is not callable.'
+            )
+        else:
+            return method

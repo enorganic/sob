@@ -1,9 +1,11 @@
+import enum
 import re
-from keyword import iskeyword
-from typing import List, Optional, Tuple
-from unicodedata import normalize
+import sys
 
-from .inspect import BUILTINS_DICT
+import builtins
+from keyword import iskeyword
+from typing import List, Match, Optional, Pattern, Tuple
+from unicodedata import normalize
 
 
 def property_name(string: str) -> str:
@@ -85,7 +87,7 @@ def property_name(string: str) -> str:
     )
     # Append an underscore to the keyword until it does not conflict with any
     # python keywords or built-ins
-    while iskeyword(name) or (name in BUILTINS_DICT):
+    while iskeyword(name) or (name in builtins.__dict__):
         name += '_'
     return name.lstrip('_')
 
@@ -120,7 +122,7 @@ def class_name(string):
     ABCAcronym
     """
     name = camel(string, capitalize=True)
-    if iskeyword(name) or (name in BUILTINS_DICT):
+    if iskeyword(name) or (name in builtins.__dict__):
         name += '_'
     return name
 
@@ -170,11 +172,12 @@ def camel(string: str, capitalize: bool = False) -> str:
     >>> print(camel('in'))
     in
     """
+    substring: str
     string = normalize('NFKD', string)
-    characters = []
+    characters: List[str] = []
     if not capitalize:
         string = string.lower()
-    capitalize_next = capitalize
+    capitalize_next: bool = capitalize
     for substring in string:
         if substring in _UNNACCENTED_ALPHANUMERIC_CHARACTERS:
             if capitalize_next:
@@ -186,6 +189,21 @@ def camel(string: str, capitalize: bool = False) -> str:
             capitalize_next = True
     character_string = ''.join(characters)
     return character_string
+
+
+_DIGITS: str = '0123456789'
+# noinspection SpellCheckingInspection
+_LOWERCASE_ALPHABET: str = 'abcdefghijklmnopqrstuvwxyz'
+# noinspection SpellCheckingInspection
+_UPPERCASE_ALPHABET: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+
+
+class _CharacterType(enum.Enum):
+
+    DIGIT = enum.auto()
+    LOWERCASE = enum.auto()
+    UPPERCASE = enum.auto()
+    OTHER = enum.auto()
 
 
 def camel_split(string: str) -> Tuple[str, ...]:
@@ -227,45 +245,53 @@ def camel_split(string: str) -> Tuple[str, ...]:
     ... )
     ('THE', 'Birds', 'And', 'The', 'Bees')
     """
-    words = []
-    character_type = None
-    acronym = False
-    for s in string:
-        if s in '0123456789':
-            if character_type == 0:
-                words[-1].append(s)
-            else:
-                words.append([s])
-            character_type = 0
-            acronym = False
-        elif s in 'abcdefghijklmnopqrstuvwxyz':
-            if character_type == 1:
-                words[-1].append(s)
-            elif character_type == 2:
-                if acronym:
-                    words.append([words[-1].pop()] + [s])
+    words: List[List[str]] = []
+    preceding_character_type: Optional[_CharacterType] = None
+    for character in string:
+        character_type: _CharacterType = (
+            _CharacterType.LOWERCASE
+            if character in _LOWERCASE_ALPHABET else
+            _CharacterType.DIGIT
+            if character in _DIGITS else
+            _CharacterType.UPPERCASE
+            if character in _UPPERCASE_ALPHABET else
+            _CharacterType.OTHER
+        )
+        if character_type == _CharacterType.LOWERCASE:
+            if preceding_character_type == _CharacterType.LOWERCASE:
+                # If following another lowercase character, a lowercase
+                # character always continues that word
+                words[-1].append(character)
+            elif preceding_character_type == _CharacterType.UPPERCASE:
+                if len(words[-1]) > 1:
+                    # When following a multi-character uppercase word,
+                    # the preceding word's last character should be removed
+                    # and a new word created from that preceding character
+                    # as well as the current lowercase character (until
+                    # followed by a lowercase character, the preceding
+                    # uppercase character was inferred to be part of an,
+                    # however now we know it was either following an acronym,
+                    # or following a single-character word)
+                    words.append([words[-1].pop()] + [character])
                 else:
-                    words[-1].append(s)
+                    # When following an uppercase character, a lowercase
+                    # character should be added to the preceding word if that
+                    # word has only one character thus far
+                    words[-1].append(character)
             else:
-                words.append([s])
-            character_type = 1
-            acronym = False
-        elif s in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ':
-            if character_type == 2:
-                words[-1].append(s)
-                acronym = True
-            else:
-                words.append([s])
-                acronym = False
-            character_type = 2
+                words.append([character])
+            preceding_character_type = _CharacterType.LOWERCASE
         else:
-            if character_type == 3:
-                words[-1].append(s)
+            # Any type of character besides one from the *lowercase alphabet*
+            # should start a new word if it follows a character of a
+            # different type
+            if preceding_character_type == character_type:
+                words[-1].append(character)
             else:
-                words.append([s])
-            character_type = 3
+                words.append([character])
+            preceding_character_type = character_type
     return tuple(
-        ''.join(w) for w in words
+        ''.join(word) for word in words
     )
 
 
@@ -293,7 +319,7 @@ def indent(
     return indented_text
 
 
-_URL_DIRECTORY_AND_FILE_NAME_RE = re.compile(r'^(.*/)([^/]*)')
+_URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r'^(.*/)([^/]*)')
 
 
 def url_directory_and_file_name(url: str) -> Tuple[str, str]:
@@ -302,7 +328,9 @@ def url_directory_and_file_name(url: str) -> Tuple[str, str]:
     """
     directory: str
     file_name: str
-    directory, file_name = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url).groups()
+    match: Optional[Match] = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
+    assert match is not None
+    directory, file_name = match.groups()
     return directory, file_name
 
 
@@ -347,14 +375,16 @@ def split_long_comment_line(
         odio a urna elementum, eu tempor nisl efficitur.
     """
     if len(line) > max_line_length:
-        indent_: str = re.match(
+        match: Optional[Match] = re.match(
             (
                 r'^[ ]*(?:%s[ ]*)?' % prefix
                 if prefix else
                 r'^[ ]*'
             ),
             line
-        ).group()
+        )
+        assert match is not None
+        indent_: str = match.group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
         lines: List[str] = []
@@ -371,7 +401,7 @@ def split_long_comment_line(
             lines.append(indent_ + wrapped_line.rstrip())
         wrapped_line = '\n'.join(lines)
     else:
-        wrapped_line: str = line
+        wrapped_line = line
     return wrapped_line
 
 
@@ -393,7 +423,7 @@ def split_long_docstring_lines(
     if '\t' in docstring:
         docstring = docstring.replace('\t', indent_)
     lines = docstring.split('\n')
-    indentation_length = float('inf')
+    indentation_length: int = sys.maxsize
     for line in lines:
         match = re.match(r'^[ ]+', line)
         if match:

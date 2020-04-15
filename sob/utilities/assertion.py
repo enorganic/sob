@@ -1,12 +1,12 @@
-from typing import Any, List, Union, Sequence, Iterable
+from typing import Any, List, Tuple, Union, Iterable
 
-from .inspect import qualified_name
+from .inspect import represent
 
 
 def assert_argument_is_instance(
     name: str,
     value: Any,
-    type_: Union[type, Sequence[type]]
+    type_: Union[type, Tuple[type, ...]]
 ) -> None:
     if not isinstance(value, type_):
         raise TypeError(
@@ -17,7 +17,7 @@ def assert_argument_is_instance(
                     if isinstance(type_, type) else
                     _repr_or_list(type_, quotes='`')
                 ),
-                _repr(value)
+                represent(value)
             )
         )
 
@@ -25,27 +25,20 @@ def assert_argument_is_instance(
 def assert_argument_is_subclass(
     name: str,
     value: Any,
-    type_: Union[type, Sequence[type]]
+    type_: Union[type, Tuple[type, ...]]
 ) -> None:
     if not issubclass(value, type_):
         raise TypeError(
             '`%s` must be a sub-class of %s (not `%s`).' % (
                 name,
                 (
-                    f'`{_repr(type_)}`'
-                    if issubclass(type_, type) else
+                    f'`{represent(type_)}`'
+                    if isinstance(type_, type) else
                     _repr_or_list(type_, quotes='`')
                 ),
-                _repr(value)
+                represent(value)
             )
         )
-
-
-def _repr(value: Any) -> str:
-    if isinstance(value, type):
-        return qualified_name(value)
-    else:
-        return repr(value)
 
 
 def _repr_or_list(
@@ -58,7 +51,7 @@ def _repr_or_list(
         open_quote = quotes[0]
         close_quote = quotes[-1]
     repr_values: List[str] = [
-        f'{open_quote}{_repr(value)}{close_quote}'
+        f'{open_quote}{represent(value)}{close_quote}'
         for value in values
     ]
     if len(repr_values) > 1:
@@ -80,6 +73,6 @@ def assert_argument_in(
             '`%s` must be %s--not %s.' % (
                 name,
                 _repr_or_list(valid_values, quotes='`'),
-                repr(value)
+                represent(value)
             )
         )

@@ -1,26 +1,26 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
-import builtins
 import collections
 import collections.abc
 import json
 import re
 from base64 import b64decode, b64encode
-from copy import deepcopy, copy
+from copy import copy, deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from io import IOBase
-
-from itertools import chain
 from numbers import Number
+from types import GeneratorType
 from typing import (
-    Any, Callable, Dict, Generator, IO, Iterable, List, Mapping, Optional,
-    Sequence, Set, Tuple, Union
+    Any, Callable, Dict, IO, Iterable, List, Mapping, Optional, Sequence, Set,
+    Tuple, Union
 )
 from urllib.parse import urljoin
 
+import builtins
 import yaml
+from itertools import chain
 from more_itertools import chunked
 
 from . import (
@@ -28,16 +28,18 @@ from . import (
     utilities
 )
 from .errors import get_exception_text
+from .types import TYPES
 from .utilities import indent, qualified_name
 from .utilities.assertion import (
-    assert_argument_is_instance, assert_argument_in
+    assert_argument_in, assert_argument_is_instance
 )
-from .utilities.inspect import calling_module_name
+from .utilities.inspect import calling_module_name, get_method, represent
 from .utilities.io import get_url, read
 from .utilities.string import split_long_docstring_lines
 from .utilities.types import (
-    UNDEFINED, Undefined, NULL, Null, NoneType, JSON_TYPES
+    JSON_TYPES, NULL, NoneType, Null, UNDEFINED, Undefined
 )
+from .utilities.typing import JSONTypes, MarshallableTypes
 
 _LINE_LENGTH: int = 79
 
@@ -77,16 +79,24 @@ class Model:
 
     def _init_format(
         self,
-        data: Optional[Union[Sequence, Set, Dict, 'Model']] = None
+        data: Optional[Union[str, bytes, IOBase]] = None
     ) -> Any:
+        """
+        This function deserializes raw JSON or YAML and remembers what format
+        that data came in.
+        """
         deserialized_data: Any
         format_: str
         deserialized_data, format_ = detect_format(data)
         if format_ is not None:
-            meta.format_(self, format_)
+            meta.set_format(self, format_)
         return deserialized_data
 
     def _init_pointer(self) -> None:
+        """
+        This function sets the root pointer value, and recursively applies
+        appropriate pointers to child elements.
+        """
         if meta.pointer(self) is None:
             meta.pointer(self, '#')
 
@@ -103,7 +113,7 @@ class Object(Model):
 
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        _data: Optional[Union[str, bytes, dict, Sequence, IOBase]] = None
     ) -> None:
         self._meta: Optional[meta.Object]
         self._hooks: Optional[hooks.Object]
@@ -145,7 +155,7 @@ class Object(Model):
                     '%s\n\n%s.%s: %s' % (
                         errors.get_exception_text(),
                         qualified_name(type(self)),
-                        error.args[0], repr(dictionary)
+                        error.args[0], represent(dictionary)
                     )
                 )
 
@@ -187,7 +197,7 @@ class Object(Model):
         return id(self)
 
     def _get_property_definition(
-        self,
+        self: abc.model.Object,
         property_name: str
     ) -> abc.properties.Property:
         """
@@ -210,7 +220,7 @@ class Object(Model):
         property_definition = self._get_property_definition(property_name)
 
         if value is not None:
-            if isinstance(value, Generator):
+            if isinstance(value, GeneratorType):
                 value = tuple(value)
             try:
                 value = _unmarshal_property_value(property_definition, value)
@@ -334,11 +344,11 @@ class Object(Model):
         """
         try:
             value = getattr(self, property_name)
-            if isinstance(value, Generator):
+            if isinstance(value, GeneratorType):
                 value = tuple(value)
             if value is not None:
                 if not callable(value):
-                    value = deepcopy(value, memo)
+                    value = deepcopy(value, memo=memo)  # noqa
                 setattr(other, property_name, value)
         except TypeError as error:
             label = '%s.%s: ' % (qualified_name(type(self)), property_name)
@@ -486,7 +496,7 @@ class Object(Model):
             ):
                 yield (
                     'Error encountered while attempting to validate '
-                    '`{}.{}}`:\n\n{}}'.format(
+                    '`{}.{}`:\n\n{}'.format(
                         qualified_name(type(self)),
                         property_name,
                         error_message
@@ -660,10 +670,10 @@ class Array(list, Model):
     def append(
         self,
         value: Union[
-            properties.types.TYPES + (NoneType,)
+            TYPES + (NoneType,)
         ]
     ) -> None:
-        if not isinstance(value, properties.types.TYPES + (NoneType,)):
+        if not isinstance(value, TYPES + (NoneType,)):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: hooks.Array = hooks.read(self)
         if instance_hooks and instance_hooks.before_append:
@@ -686,30 +696,34 @@ class Array(list, Model):
         im = meta.read(self)
         cm = meta.read(type(self))
         if im is not cm:
-            meta.write(new_instance, deepcopy(im, memo=memo))
+            meta.write(new_instance, deepcopy(im, memo=memo))  # noqa
         ih = hooks.read(self)
         ch = hooks.read(type(self))
         if ih is not ch:
-            hooks.write(new_instance, deepcopy(ih, memo=memo))
+            hooks.write(new_instance, deepcopy(ih, memo=memo))  # noqa
         for i in self:
-            new_instance.append(deepcopy(i, memo=memo))
+            new_instance.append(deepcopy(i, memo=memo))  # noqa
         return new_instance
 
     def _marshal(self) -> tuple:
-        a = self
-        h = hooks.read(a)
-        if (h is not None) and (h.before_marshal is not None):
-            a = h.before_marshal(a)
-        m = meta.read(a)
-        a = tuple(
+        marshalled_data = self
+        instance_hooks: hooks.Array = hooks.read(marshalled_data)
+        if (instance_hooks is not None) and (
+            instance_hooks.before_marshal is not None
+        ):
+            marshalled_data = instance_hooks.before_marshal(marshalled_data)
+        metadata = meta.read(marshalled_data)
+        marshalled_data = tuple(
             marshal(
-                i,
-                types=None if m is None else m.item_types
-            ) for i in a
+                item,
+                types=None if metadata is None else metadata.item_types
+            ) for item in marshalled_data
         )
-        if (h is not None) and (h.after_marshal is not None):
-            a = h.after_marshal(a)
-        return a
+        if (instance_hooks is not None) and (
+            instance_hooks.after_marshal is not None
+        ):
+            marshalled_data = instance_hooks.after_marshal(marshalled_data)
+        return marshalled_data
 
     def _validate(
         self,
@@ -844,7 +858,7 @@ class Dictionary(collections.OrderedDict, Model):
 
     def __init__(
         self,
-        items: Optional[Union[Mapping, IO, str, bytes]] = None,
+        items: Optional[Union[dict, IOBase, str, bytes]] = None,
         value_types: Optional[
             Union[
                 Sequence[
@@ -916,7 +930,7 @@ class Dictionary(collections.OrderedDict, Model):
     def __setitem__(
         self,
         key: int,
-        value: Union[JSON_TYPES]
+        value: JSONTypes
     ) -> None:
         instance_hooks: hooks.Dictionary = hooks.read(self)
         if instance_hooks and instance_hooks.before_setitem:
@@ -1327,7 +1341,7 @@ class _Unmarshal:
         # Verify that the data can be parsed before attempting to un-marshal
         if not isinstance(
             data,
-            properties.types.TYPES + (NoneType,)
+            TYPES + (NoneType,)
         ):
             raise errors.UnmarshalTypeError(
                 data=data
@@ -1356,7 +1370,7 @@ class _Unmarshal:
         ] = item_types
         self.meta: Optional[meta.Meta] = None
 
-    def __call__(self) -> Union[properties.types.TYPES]:
+    def __call__(self) -> MarshallableTypes:
         """
         Return `self.data` unmarshalled
         """
@@ -1381,7 +1395,7 @@ class _Unmarshal:
             if self.meta is None:
                 # If the data provided is a `Generator`, make it static by
                 # casting the data into a tuple
-                if isinstance(self.data, Generator):
+                if isinstance(self.data, GeneratorType):
                     self.data = tuple(self.data)
                 if self.types is None:
                     # If no types are provided, we unmarshal the data into one
@@ -1394,10 +1408,11 @@ class _Unmarshal:
     @property
     def as_container_or_simple_type(self) -> Any:
         """
-        This function unmarshalls and returns the data into one of sob's
+        This function unmarshals and returns the data into one of sob's
         container types, or if the data is of a simple data type--it returns
         that data unmodified
         """
+        type_: type
         unmarshalled_data = self.data
         if unmarshalled_data is None:
             unmarshalled_data = NULL
@@ -1411,7 +1426,8 @@ class _Unmarshal:
             type_ = type(self.data)
             if self.item_types is not None:
                 unmarshalled_data = type_(
-                    self.data, item_types=self.item_types
+                    self.data,
+                    item_types=self.item_types
                 )
         elif isinstance(self.data, (dict, collections.OrderedDict)):
             unmarshalled_data = Dictionary(
@@ -1420,7 +1436,7 @@ class _Unmarshal:
             )
         elif _is_non_string_sequence_or_set_instance(self.data):
             # `None` is interpreted as `NULL` during un-marshalling
-            items: List[Union[properties.types.TYPES]] = [
+            items: List[Union[TYPES]] = [
                 (
                     NULL
                     if item is None else
@@ -1428,13 +1444,13 @@ class _Unmarshal:
                 )
                 for item in self.data
             ]
-            unmarshalled_data = Array(                
+            unmarshalled_data = Array(
                 items,
                 item_types=self.item_types
             )
         elif not isinstance(
             self.data,
-            properties.types.TYPES
+            TYPES
         ):
             raise errors.UnmarshalValueError(
                 '%s cannot be un-marshalled' % repr(self.data)
@@ -1578,9 +1594,7 @@ class _Unmarshal:
         self,
         type_: Union[type, properties.Property],
     ) -> Any:
-        unmarshalled_data: Optional[Union[
-            abc.model.Model, Number, str, bytes, date, datetime
-        ]] = None
+        unmarshalled_data: Optional[Union[JSON_TYPES]] = None
         if isinstance(
             type_,
             properties.Property
@@ -1607,7 +1621,7 @@ class _Unmarshal:
 
 
 def unmarshal(
-    data: Union[JSON_TYPES],
+    data: JSONTypes,
     types: Optional[
         Union[
             Sequence[
@@ -1635,7 +1649,7 @@ def unmarshal(
             properties.Property
         ]
     ] = None
-) -> Union[properties.types.TYPES]:
+) -> MarshallableTypes:
     """
     Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
     and recursively does the same for all member data.
@@ -1657,57 +1671,77 @@ def unmarshal(
 
 
 # endregion
+# region serialize
 
 
-def serialize(
-    data: Union[abc.model.Model, str, Number],
-    format_: str = 'json'
-) -> str:
-    """
-    Serializes instances of `Object` as JSON or YAML.
-    """
-    instance_hooks = None
+def _before_serialize_instance_hooks(
+    data: Union[abc.model.Model]
+) -> Tuple[
+    MarshallableTypes,
+    Optional[hooks.Hooks]
+]:
+    instance_hooks: Optional[hooks.Hooks] = None
     if isinstance(data, abc.model.Model):
         instance_hooks = hooks.read(data)
         if (instance_hooks is not None) and (
             instance_hooks.before_serialize is not None
         ):
             data = instance_hooks.before_serialize(data)
-    if format_ not in ('json', 'yaml'):
-        format_ = format_.lower()
-        if format_ not in ('json', 'yaml'):
-            raise ValueError(
-                'Supported `sob.model.serialize()` `format_` argument values '
-                f'include "json" and "yaml" (not "{format_}").'
-            )
+    return data, instance_hooks
+
+
+def _after_serialize_instance_hooks(
+    data: Union[abc.model.Model],
+    instance_hooks: hooks.Hooks
+) -> MarshallableTypes:
+    if instance_hooks.after_serialize is not None:
+        data = instance_hooks.after_serialize(data)
+    return data
+
+
+def serialize(
+    data: Union[utilities.types.JSON_TYPES + (abc.model.Model,)],
+    format_: str = 'json'
+) -> str:
+    """
+    This function serializes data as JSON or YAML.
+
+    Parameters:
+
+    - data ([Model](#Model)|str|dict|list|int|float|bool|None)
+    - format_ (str): "json" or "yaml".
+    """
+    assert_argument_in('format_', format_, ('json', 'yaml'))
+    instance_hooks: Optional[hooks.Hooks]
+    data, instance_hooks = _before_serialize_instance_hooks(data)
     if format_ == 'json':
         data = json.dumps(marshal(data))
     elif format_ == 'yaml':
         data = yaml.dump(marshal(data))
-    if (
-        instance_hooks is not None
-    ) and (
-        instance_hooks.after_serialize is not None
-    ):
+    if instance_hooks:
         data = instance_hooks.after_serialize(data)
     return data
+
+
+# endregion
+# region deserialize
 
 
 def deserialize(
     data: Optional[Union[str, IOBase]],
     format_: str = 'json'
-) -> Union[JSON_TYPES]:
+) -> JSONTypes:
     """
+    This function deserializes JSON or YAML encoded data.
+
     Parameters:
 
-        - data (str|io.IOBase): This can be a string or file-like
-          object containing JSON or YAML serialized information.
+    - data (str|io.IOBase): This can be a string or file-like object containing
+      JSON or YAML serialized data.
+    - format_ (str) = "json": "json" or "yaml".
 
-        - format_ (str): "json" or "yaml"
-
-    Returns:
-
-        A deserialized representation of the information you provided.
+    This function returns `None` (for JSON null values), or an instance of
+    `str`, `dict`, `list`, `int`, `float` or `bool`.
     """
     deserialized_data: str
     assert_argument_in('format_', format_, ('json', 'yaml'))
@@ -1715,8 +1749,7 @@ def deserialize(
         if format_ == 'json':
             deserialized_data = json.loads(
                 data,
-                object_hook=collections.OrderedDict,
-                object_pairs_hook=collections.OrderedDict
+                object_hook=collections.OrderedDict
             )
         else:
             deserialized_data = yaml.load(data, yaml.FullLoader)
@@ -1733,6 +1766,9 @@ def deserialize(
     return deserialized_data
 
 
+# endregion
+
+
 def detect_format(
     data: Optional[Union[str, IOBase]]
 ) -> Tuple[Any, Optional[str]]:
@@ -1746,10 +1782,11 @@ def detect_format(
     - data (str|io.IOBase): A string or file-like object containing
       JSON or YAML serialized data.
 
-    Returns (tuple):
+    This function returns a `tuple` of two items:
 
-    - The deserialized (but not unmarshalled) `data`
-    - "json" or "yaml"
+    - (str|dict|list|int|float|bool): The deserialized (but not un-marshalled)
+      data.
+    - (str): Either "json" or "yaml".
     """
     string_data: str
     if isinstance(data, str):
@@ -1799,25 +1836,28 @@ def detect_format(
 def _call_validate_method(
     data: Optional[abc.model.Model]
 ) -> Iterable[str]:
+    error_message: str
     error_messages: Set[str] = set()
-    if '_validate' in dir(data):
-        validate_method = getattr(data, '_validate')
-        if callable(validate_method):
-            error_message: str
-            for error_message in validate_method(raise_errors=False):
-                if error_message not in error_messages:
-                    yield error_message
-                    error_messages.add(error_message)
+    for error_message in get_method(
+        data,
+        '_validate',
+        lambda *args, **kwargs: []
+    )(
+        raise_errors=False
+    ):
+        if error_message not in error_messages:
+            yield error_message
+            error_messages.add(error_message)
 
 
 def _validate_typed(
     data: Optional[abc.model.Model],
     types: Optional[
         Union[type, properties.Property, Object, Callable]
-    ] = None,
-    raise_errors: bool = True
-) -> Sequence[str]:
-    valid = False
+    ] = None
+) -> List[str]:
+    error_messages: List[str] = []
+    valid: bool = False
     for type_ in types:
         if isinstance(type_, type) and isinstance(data, type_):
             valid = True
@@ -1831,64 +1871,63 @@ def _validate_typed(
                 valid = True
                 break
             except errors.ValidationError:
-                pass
-    if not valid:
-        error_message = (
-            'Invalid data:\n\n%s\n\n'
-            'The data must be one of the following types:\n\n%s' % (
-                '\n'.join(
-                    '  ' + line
-                    for line in repr(data).split('\n')
-                ),
-                '\n'.join(chain(
-                    ('  (',),
-                    (
-                        '    %s,' % '\n'.join(
-                            '    ' + line
-                            for line in repr(type_).split('\n')
-                        ).strip()
-                        for type_ in types
-                    ),
-                    ('  )',)
-                ))
-            )
+                error_messages.append(get_exception_text())
+    if valid:
+        error_messages.clear()
+    else:
+        types_bullet_list: str = '\n\n'.join(
+            indent(represent(type_), 4)
+            for type_ in types
         )
+        error_messages.append(
+            f'Invalid data:\n\n'
+            f'    {indent(represent(data))}\n\n'
+            f'The data must be one of the following types:\n\n'
+            f'    {types_bullet_list}'
+        )
+    return error_messages
+
 
 def validate(
-    data: Optional[abc.model.Model],
+    data: Optional[Model],
     types: Optional[
         Union[type, properties.Property, Object, Callable]
     ] = None,
     raise_errors: bool = True
 ) -> Sequence[str]:
     """
-    This function verifies that all properties/items/values in an instance of
-    `sob.abc.model.Model` are of the correct data type(s), and that all
-    required attributes are present (if applicable). If `raise_errors` is
-    `True` (this is the default)--violations will result in a validation error.
-    If `raise_errors` is `False`--a list of error messages will be returned if
-    invalid/missing information is found, or an empty list otherwise.
+    This function verifies that all properties/items/values in model instance
+    are of the correct data type(s), and that all required attributes are
+    present (if applicable).
+
+    Parameters:
+
+    - data ([Model](#Model))
+    - types
+      (type|[Property](#Property)|[Object](#Object)|collections.Callable|None)
+      = None
+
+    If `raise_errors` is `True` (this is the default), violations will result
+    in a validation error. If `raise_errors` is `False`, a list of error
+    messages will be returned.
     """
-    if isinstance(data, Generator):
+    if isinstance(data, GeneratorType):
         data = tuple(data)
-    error_messages = []
-    error_message: Optional[str] = None
+    error_messages: List[str] = []
     if types is not None:
-        pass
-    if error_message is not None:
-        if (not error_messages) or (error_message not in error_messages):
-            error_messages.append(error_message)
-    for error_message in _call_validate_method(data):
-        error_messages.append(error_message)
+        error_messages.extend(_validate_typed(data, types))
+    error_messages.extend(_call_validate_method(data))
     if raise_errors and error_messages:
-        # If there is no top-level error message, include a representation of
-        # the top-level data element
-        if error_message not in error_messages:
-            error_messages.insert(
-                0,
-                f'\n{repr(data)}'
-            )
-        raise errors.ValidationError('\n' + '\n\n'.join(error_messages))
+        data_representation: str = f'    {indent(represent(data))}'
+        error_messages_representation: str = '\n\n'.join(error_messages)
+        if data_representation not in error_messages_representation:
+            error_messages_representation = '\n\n'.join([
+                data_representation,
+                error_messages_representation
+            ])
+        raise errors.ValidationError(
+            error_messages_representation
+        )
     return error_messages
 
 
@@ -1908,7 +1947,10 @@ class _UnmarshalProperty:
     ) -> None:
         self.property = property
 
-    def validate_enumerated(self, value: Any) -> Any:
+    def validate_enumerated(
+        self,
+        value: TYPES
+    ) -> None:
         """
         Verify that a value is one of the enumerated options
         """
@@ -1929,48 +1971,48 @@ class _UnmarshalProperty:
                 )
             )
 
-    def parse_date(self, value: Optional[str]) -> Union[
-        date, NoneType
-    ]:
+    def unmarshal_enumerated(
+        self,
+        value: TYPES
+    ) -> TYPES:
+        """
+        Verify that a value is one of the enumerated options
+        """
+        unmarshalled_value: TYPES = value
+        self.validate_enumerated(value)
+        if self.property.types is not None:
+            unmarshalled_value = unmarshal(
+                value,
+                types=self.property.types
+            )
+        return unmarshalled_value
+
+    def parse_date(self, value: Optional[str]) -> Optional[date]:
         if value is None:
             return value
         else:
+            assert_argument_is_instance('value', value, (date, str))
             if isinstance(value, date):
-                date_ = value
-            elif isinstance(value, str):
-                date_ = self.property.str2date(value)
+                date_instance = value
             else:
-                raise TypeError(
-                    '%s is not a `str`.' % repr(value)
-                )
-            if isinstance(date_, date):
-                return date_
-            else:
-                raise TypeError(
-                    '"%s" is not a properly formatted date string.' % value
-                )
+                date_instance = self.property.str2date(value)
+            assert isinstance(date_instance, date)
+            return date_instance
 
     def parse_datetime(
         self,
         value: Optional[str]
-    ) -> Union[datetime, NoneType]:
+    ) -> Optional[datetime]:
         if value is None:
             return value
         else:
+            assert_argument_is_instance('value', value, (datetime, str))
             if isinstance(value, datetime):
-                datetime_ = value
-            elif isinstance(value, str):
-                datetime_ = self.property.str2datetime(value)
+                datetime_instance = value
             else:
-                raise TypeError(
-                    '%s is not a `str`.' % repr(value)
-                )
-            if isinstance(datetime_, datetime):
-                return datetime_
-            else:
-                raise TypeError(
-                    f'"{value}" is not a properly formatted date-time string.'
-                )
+                datetime_instance = self.property.str2datetime(value)
+            assert isinstance(datetime_instance, datetime)
+            return datetime_instance
 
     @staticmethod
     def parse_bytes(
@@ -1993,30 +2035,44 @@ class _UnmarshalProperty:
             )
         return unmarshalled_data
 
-    def __call__(self, value: Any) -> Any:
-        unmarshalled_value: Any = value
-        if isinstance(self.property, properties.Date):
-            unmarshalled_value = self.parse_date(value)
-        elif isinstance(self.property, properties.DateTime):
-            unmarshalled_value = self.parse_datetime(value)
-        elif isinstance(self.property, properties.Bytes):
-            unmarshalled_value = self.parse_bytes(value)
-        elif isinstance(self.property, properties.Array):
-            unmarshalled_value = unmarshal(
-                value,
-                types=self.property.types,
-                item_types=self.property.item_types
+    def __call__(
+        self,
+        value: TYPES
+    ) -> TYPES:
+        type_: type
+        matched: bool = False
+        unmarshalled_value: TYPES = value
+        for type_, method in (
+            (properties.Date, self.parse_date),
+            (properties.DateTime, self.parse_datetime),
+            (properties.Bytes, self.parse_bytes),
+            (
+                properties.Array,
+                lambda value_: unmarshal(
+                    value_,
+                    types=self.property.types,
+                    item_types=self.property.item_types
+                )
+            ),
+            (
+                properties.Dictionary,
+                lambda value_: unmarshal(
+                    value_,
+                    types=self.property.types,
+                    value_types=self.property.value_types
+                )
+            ),
+            (
+                properties.Enumerated,
+                self.unmarshal_enumerated
             )
-        elif isinstance(self.property, properties.Dictionary):
-            unmarshalled_value = unmarshal(
-                value,
-                types=self.property.types,
-                value_types=self.property.value_types
-            )
-        else:
-            if isinstance(self.property, properties.Enumerated):
-                self.validate_enumerated(value)
-            elif isinstance(
+        ):
+            if isinstance(self.property, type_):
+                matched = True
+                unmarshalled_value = method(value)
+                break
+        if not matched:
+            if isinstance(
                 value,
                 collections.abc.Iterable
             ) and not isinstance(
@@ -2049,13 +2105,13 @@ class _UnmarshalProperty:
 
 
 def _unmarshal_property_value(
-    property: properties.Property,
+    property_: properties.Property,
     value: Any
 ) -> Any:
     """
-    Unmarshal a property value
+    Un-marshal a property value
     """
-    return _UnmarshalProperty(property)(value)
+    return _UnmarshalProperty(property_)(value)
 
 
 # endregion
@@ -2213,7 +2269,7 @@ def replace_nulls(
 
 
 def _type_hint_from_property_types(
-    property_types: Optional[properties.types.Types],
+    property_types: Optional[abc.types.Types],
     module: str
 ) -> str:
     type_hint: str = ''

@@ -1,24 +1,30 @@
 import collections
-import numbers
-import operator
+import itertools
 import re
 from collections import OrderedDict
-from copy import copy, deepcopy
-from itertools import chain
-from numbers import Number
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from copy import deepcopy
+from typing import (
+    Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, Type
+)
 
+from . import abc
 from . import errors
-from .properties.types import Types
+from .types import TYPES, Types
 from .utilities import (
-    calling_function_qualified_name, properties_values, qualified_name, indent
+    calling_function_qualified_name, indent, properties_values, qualified_name
 )
 from .utilities.assertion import assert_argument_is_instance
-from . import abc
+from .utilities.inspect import represent
+from .utilities.typing import MarshallableTypes
 
-_DOT_SYNTAX_RE = re.compile(
-    r'^\d+(\.\d+)*$'
-)
+_MODEL_OR_INSTANCE_TYPING = Union[
+    Type[abc.model.Object],
+    Type[abc.model.Dictionary],
+    Type[abc.model.Array],
+    abc.model.Object,
+    abc.model.Dictionary,
+    abc.model.Array
+]
 
 
 # noinspection PyUnresolvedReferences
@@ -65,147 +71,6 @@ class Meta:
 
 
 # noinspection PyUnresolvedReferences
-@abc.meta.Version.register
-class Version(Meta):
-
-    def __init__(
-        self,
-        version_number: Optional[str] = None,
-        specification: Optional[Sequence[str]] = None,
-        equals: Optional[Sequence[Union[str, Number]]] = None,
-        not_equals: Optional[Sequence[Union[str, Number]]] = None,
-        less_than: Optional[Sequence[Union[str, Number]]] = None,
-        less_than_or_equal_to: Optional[Sequence[Union[str, Number]]] = None,
-        greater_than: Optional[Sequence[Union[str, Number]]] = None,
-        greater_than_or_equal_to: Optional[Sequence[Union[str, Number]]] = None
-    ) -> None:
-        if isinstance(version_number, str) and (
-            (specification is None) and
-            (equals is None) and
-            (not_equals is None) and
-            (less_than is None) and
-            (less_than_or_equal_to is None) and
-            (greater_than is None) and
-            (greater_than_or_equal_to is None)
-        ):
-            specification = None
-            for s in version_number.split('&'):
-                if '==' in s:
-                    s, equals = s.split('==')
-                elif '<=' in s:
-                    s, less_than_or_equal_to = s.split('<=')
-                elif '>=' in s:
-                    s, greater_than_or_equal_to = s.split('>=')
-                elif '<' in s:
-                    s, less_than = s.split('<')
-                elif '>' in s:
-                    s, greater_than = s.split('>')
-                elif '!=' in s:
-                    s, not_equals = s.split('!=')
-                elif '=' in s:
-                    s, equals = s.split('=')
-                if specification:
-                    if s != specification:
-                        raise ValueError(
-                            'Multiple specifications cannot be associated '
-                            'with an instance of ' +
-                            '`sob.meta.Version`: ' + repr(version_number)
-                        )
-                elif s:
-                    specification = s
-        self.specification = specification
-        self.equals = equals
-        self.not_equals = not_equals
-        self.less_than = less_than
-        self.less_than_or_equal_to = less_than_or_equal_to
-        self.greater_than = greater_than
-        self.greater_than_or_equal_to = greater_than_or_equal_to
-
-    def __eq__(self, other: Any) -> bool:
-        compare_properties_functions = (
-            ('equals', operator.eq),
-            ('not_equals', operator.ne),
-            ('less_than', operator.lt),
-            ('less_than_or_equal_to', operator.le),
-            ('greater_than', operator.gt),
-            ('greater_than_or_equal_to', operator.ge),
-        )
-        if (
-            (isinstance(other, str) and _DOT_SYNTAX_RE.match(other)) or
-            isinstance(other, (collections.abc.Sequence, int))
-        ):
-            if isinstance(other, (bytes, numbers.Number)):
-                other = str(other)
-            if isinstance(other, str):
-                other = other.rstrip('.0')
-                if other == '':
-                    other_components = (0,)
-                else:
-                    other_components = tuple(
-                        int(other_component)
-                        for other_component in other.split('.')
-                    )
-            else:
-                other_components = tuple(other)
-            for compare_property, compare_function in (
-                compare_properties_functions
-            ):
-                compare_value = getattr(self, compare_property)
-                if compare_value is not None:
-                    compare_values = tuple(
-                        int(number_string)
-                        for number_string in compare_value.split('.')
-                    )
-                    other_values = copy(other_components)
-                    length_difference = len(other_values) - len(compare_values)
-                    if length_difference < 0:
-                        other_values = tuple(
-                            chain(
-                                other_values,
-                                [0] * (-length_difference)
-                            )
-                        )
-                    elif length_difference > 0:
-                        compare_values = tuple(
-                            chain(
-                                compare_values,
-                                [0] * length_difference
-                            )
-                        )
-                    if not compare_function(other_values, compare_values):
-                        return False
-        else:
-            for compare_property, compare_function in (
-                compare_properties_functions
-            ):
-                compare_value = getattr(self, compare_property)
-                if (
-                    compare_value is not None
-                ) and not compare_function(
-                    other,
-                    compare_value
-                ):
-                    return False
-        return True
-
-    def __str__(self) -> str:
-        representation: List[str] = []
-        property_name: str
-        repr_operator: str
-        for property_name, repr_operator in (
-            ('equals', '=='),
-            ('not_equals', '!='),
-            ('greater_than', '>'),
-            ('greater_than_or_equal_to', '>='),
-            ('less_than', '<'),
-            ('less_than_or_equal_to', '<='),
-        ):
-            v = getattr(self, property_name)
-            if v is not None:
-                representation.append(
-                    self.specification + repr_operator + v
-                )
-        return '&'.join(representation)
 
 
 # noinspection PyUnresolvedReferences
@@ -227,7 +92,7 @@ class Object(Meta):
         ] = None
     ) -> None:
         self._properties: Optional[Properties] = None
-        self.properties = properties
+        setattr(self, 'properties', properties)
 
     @property
     def properties(self) -> Optional['Properties']:
@@ -279,8 +144,7 @@ class Dictionary(Meta):
             Sequence[
                 Union[
                     type,
-                    abc.properties.Property,
-                    abc.model.Object
+                    abc.properties.Property
                 ]
             ]
         ]
@@ -301,16 +165,17 @@ class Array(Meta):
         item_types: Optional[
             Sequence[
                 Union[
-                    abc.properties.Property, type
+                    abc.properties.Property,
+                    type
                 ]
             ]
         ] = None
     ):
-        self._item_types: Optional[Tuple] = None
-        self.item_types = item_types
+        self._item_types: Optional[Types] = None
+        setattr(self, 'item_types', item_types)
 
     @property
-    def item_types(self):
+    def item_types(self) -> Optional[Types]:
         return self._item_types
 
     @item_types.setter
@@ -320,8 +185,7 @@ class Array(Meta):
             Sequence[
                 Union[
                     type,
-                    abc.properties.Property,
-                    abc.model.Object
+                    abc.properties.Property
                 ]
             ]
         ]
@@ -345,7 +209,7 @@ class Properties(OrderedDict):
                     str,
                     abc.properties.Property
                 ],
-                List[
+                Iterable[
                     Tuple[
                         str,
                         abc.properties.Property
@@ -428,15 +292,18 @@ class Properties(OrderedDict):
 
 
 def read(
-    model: Union[type, abc.model.Model]
+    model: _MODEL_OR_INSTANCE_TYPING
 ) -> Union[abc.meta.Dictionary, abc.meta.Array, abc.meta.Object]:
     if isinstance(
         model,
-        abc.model.Model
+        (abc.model.Object, abc.model.Dictionary, abc.model.Array)
     ):
         return getattr(model, '_meta') or read(type(model))
     elif isinstance(model, type):
-        if issubclass(model, abc.model.Model):
+        if issubclass(
+            model,
+            (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+        ):
             return getattr(model, '_meta')
         else:
             raise TypeError(
@@ -464,7 +331,7 @@ def read(
 
 
 def writable(
-    model: Union[type, abc.model.Model]
+    model: _MODEL_OR_INSTANCE_TYPING
 ) -> Union[abc.meta.Object, abc.meta.Array, abc.meta.Dictionary]:
     """
     This function returns an instance of [sob.meta.Meta](#Meta) which can
@@ -473,11 +340,29 @@ def writable(
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    if isinstance(model, abc.model.Model):
+    if isinstance(
+        model,
+        (
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    ):
         if getattr(model, '_meta') is None:
             model._meta = deepcopy(writable(type(model)))
-    elif isinstance(model, type) and issubclass(model, abc.model.Model):
-        model_meta: Optional[Meta] = getattr(model, '_meta')
+    elif isinstance(model, type) and issubclass(
+        model,
+        (
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    ):
+        model_meta: Union[
+            abc.meta.Object,
+            abc.meta.Dictionary,
+            abc.meta.Array
+        ] = getattr(model, '_meta')
         if model_meta is None:
             # If this model doesn't have any metadata yet--create an
             # appropriate metadata instance
@@ -487,15 +372,13 @@ def writable(
                 Array()
                 if issubclass(model, abc.model.Array) else
                 Dictionary()
-                if issubclass(model, abc.model.Dictionary)
-                else None
             )
         else:
             # Ensure that the metadata is not being inherited from a base
             # class by copying the metadata if it has the same ID as any
             # base class
             for base in model.__bases__:
-                base_meta: Optional[Meta] = None
+                base_meta: Optional[abc.meta.Meta] = None
                 try:
                     base_meta = getattr(base, '_meta')
                 except AttributeError:
@@ -505,7 +388,7 @@ def writable(
                         model._meta = deepcopy(model_meta)
                         break
     else:
-        repr_model = repr(model)
+        repr_model = represent(model)
         raise TypeError(
             '%s requires a parameter which is an instance or sub-class of '
             '`%s`, not%s' % (
@@ -522,18 +405,32 @@ def writable(
 
 
 def write(
-    model: Union[type, abc.model.Model],
-    meta: abc.meta.Meta
+    model: _MODEL_OR_INSTANCE_TYPING,
+    meta: Union[abc.meta.Array, abc.meta.Object, abc.meta.Dictionary]
 ) -> None:
-    if isinstance(model, abc.model.Model):
+    if isinstance(
+        model,
+        (
+            abc.model.Object,
+            abc.model.Array,
+            abc.model.Dictionary
+        )
+    ):
         model_type = type(model)
-    elif isinstance(model, type) and issubclass(model, abc.model.Model):
+    elif isinstance(model, type) and issubclass(
+        model,
+        (
+            abc.model.Object,
+            abc.model.Array,
+            abc.model.Dictionary
+        )
+    ):
         model_type = model
     else:
         repr_model = repr(model)
         raise TypeError(
-            '%s requires a value for the parameter `model` which is an '
-            'instance or sub-class of `%s`, not%s' % (
+            '{} requires a value for the parameter `model` which is an '
+            'instance or sub-class of `{}`, not{}'.format(
                 calling_function_qualified_name(),
                 qualified_name(abc.model.Model),
                 (
@@ -549,8 +446,6 @@ def write(
         Array
         if issubclass(model_type, abc.model.Array) else
         Dictionary
-        if issubclass(model_type, abc.model.Dictionary)
-        else None
     )
     if not isinstance(meta, metadata_type):
         raise ValueError(
@@ -562,27 +457,80 @@ def write(
     model._meta = meta
 
 
-def get_pointer(model: abc.model.Model) -> Optional[str]:
+def get_pointer(
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ]
+) -> Optional[str]:
     return getattr(model, '_pointer')
 
 
+def _read_object(
+    model: Union[
+        abc.model.Object,
+        Type[abc.model.Object]
+    ]
+) -> abc.meta.Object:
+    metadata: abc.meta.Meta = read(model)
+    assert isinstance(metadata, abc.meta.Object)
+    return metadata
+
+
+def _read_object_properties(
+    model: Union[
+        abc.model.Object,
+        Type[abc.model.Object]
+    ]
+) -> Iterable[
+    Tuple[str, abc.properties.Property]
+]:
+    metadata: abc.meta.Object = _read_object(model)
+    return (metadata.properties or {}).items()
+
+
+def _read_object_property_names(
+    model: Union[
+        abc.model.Object,
+        Type[abc.model.Object]
+    ]
+) -> Iterable[str]:
+    metadata: abc.meta.Object = _read_object(model)
+    return (metadata.properties or {}).keys()
+
+
 def set_pointer(
-    model: abc.model.Model,
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
     pointer_: str
 ) -> None:
+    key: str
+    value: Any
     assert_argument_is_instance('pointer_', pointer_, str)
     model._pointer = pointer_
     if isinstance(model, abc.model.Dictionary):
         for key, value in model.items():
-            if isinstance(value, abc.model.Model):
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 pointer(value, '%s/%s' % (
                     pointer_, key.replace('~', '~0').replace('/', '~1'))
                 )
     elif isinstance(model, abc.model.Object):
-        for property_name, property_ in read(model).properties.items():
-            key: str = property_.name or property_name
-            value: Any = getattr(model, property_name)
-            if isinstance(value, abc.model.Model):
+        property_name: str
+        property_: abc.properties.Property
+        for property_name, property_ in _read_object_properties(model):
+            key = property_.name or property_name
+            value = getattr(model, property_name)
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 pointer(
                     value,
                     '%s/%s' % (
@@ -593,53 +541,130 @@ def set_pointer(
     elif isinstance(model, abc.model.Array):
         index: int
         for index in range(len(model)):
-            value: Any = model[index]
-            if isinstance(value, abc.model.Model):
+            value = model[index]
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 pointer(value, '%s/%s' % (pointer_, str(index)))
 
 
 def pointer(
-    model: abc.model.Model,
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
     pointer_: Optional[str] = None
 ) -> Optional[str]:
     """
     Get or set a model's pointer
     """
-    assert_argument_is_instance('model', model, abc.model.Model)
+    assert_argument_is_instance(
+        'model',
+        model,
+        (
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    )
     if pointer_ is not None:
         set_pointer(model, pointer_)
     return get_pointer(model)
 
 
+def _traverse_models(
+    model_instance: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ]
+) -> Iterable[
+    Union[
+        abc.model.Object,
+        abc.model.Array,
+        abc.model.Dictionary
+    ]
+]:
+    """
+    Iterate over all child model instances
+    """
+    if isinstance(model_instance, abc.model.Dictionary):
+        for value in model_instance.values():
+            if isinstance(
+                value,
+                (
+                    abc.model.Object,
+                    abc.model.Dictionary,
+                    abc.model.Array
+                )
+            ):
+                yield value
+    elif isinstance(model_instance, abc.model.Object):
+        property_name: str
+        for property_name in _read_object_property_names(model_instance):
+            value = getattr(model_instance, property_name)
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
+                yield value
+    elif isinstance(model_instance, abc.model.Array):
+        for value in model_instance:
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
+                yield value
+
+
+# noinspection PyShadowingNames
 def set_url(
-    model: abc.model.Model,
-    url_: Optional[str]
+    model_instance: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
+    source_url: Optional[str]
 ) -> None:
-    assert_argument_is_instance('model', model, abc.model.Model)
-    if url_ is not None:
-        assert_argument_is_instance('url_', url_, str)
-    model._url = url_
-    if isinstance(model, abc.model.Dictionary):
-        for value in model.values():
-            if isinstance(value, abc.model.Model):
-                set_url(value, url_)
-    elif isinstance(model, abc.model.Object):
-        for property_name in read(model).properties.keys():
-            value = getattr(model, property_name)
-            if isinstance(value, abc.model.Model):
-                set_url(value, url_)
-    elif isinstance(model, abc.model.Array):
-        for value in model:
-            if isinstance(value, abc.model.Model):
-                set_url(value, url_)
+    assert_argument_is_instance(
+        'model', model_instance,
+        (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+    )
+    if source_url is not None:
+        assert_argument_is_instance('url_', source_url, str)
+    model_instance._url = source_url
+    child_model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ]
+    itertools.starmap(
+        set_url,
+        (
+            (child_model, source_url)
+            for child_model in _traverse_models(model_instance)
+        )
+    )
 
 
-def get_url(model: abc.model.Model) -> Optional[str]:
+def get_url(
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ]
+) -> Optional[str]:
     return getattr(model, '_url')
 
 
 def url(
-    model: abc.model.Model,
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
     url_: Optional[str] = None
 ) -> Optional[str]:
     if url_ is not None:
@@ -648,10 +673,22 @@ def url(
 
 
 def set_format(
-    model: abc.model.Model,
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
     serialization_format: Optional[str] = None
 ) -> None:
-    assert_argument_is_instance('model', model, abc.model.Model)
+    assert_argument_is_instance(
+        'model',
+        model,
+        (
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    )
     assert_argument_is_instance(
         'serialization_format',
         serialization_format,
@@ -660,25 +697,44 @@ def set_format(
     model._format = serialization_format
     if isinstance(model, abc.model.Dictionary):
         for value in model.values():
-            if isinstance(value, abc.model.Model):
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 set_format(value, serialization_format)
     elif isinstance(model, abc.model.Object):
-        for property_name in read(model).properties.keys():
+        for property_name in _read_object_property_names(model):
             value = getattr(model, property_name)
-            if isinstance(value, abc.model.Model):
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 set_format(value, serialization_format)
     elif isinstance(model, abc.model.Array):
         for value in model:
-            if isinstance(value, abc.model.Model):
+            if isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
                 set_format(value, serialization_format)
 
 
-def get_format(model: abc.model.Model) -> Optional[str]:
+def get_format(
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ]
+) -> Optional[str]:
     return getattr(model, '_format')
 
 
 def format_(
-    model: abc.model.Model,
+    model: Union[
+        abc.model.Object,
+        abc.model.Dictionary,
+        abc.model.Array
+    ],
     serialization_format: Optional[str] = None
 ) -> Optional[str]:
     if serialization_format is not None:
@@ -706,10 +762,25 @@ def _version_match(
 
 
 def _version_properties(
-    properties_: Union[Sequence[abc.properties.Property], Types],
+    properties_: Union[
+        abc.types.Types,
+        Iterable[
+            Union[
+                abc.properties.Property,
+                type
+            ]
+        ]
+    ],
     specification: str,
     version_number: Union[str, int, Sequence[int]]
-) -> Optional[Sequence[abc.properties.Property]]:
+) -> Optional[
+    Iterable[
+        Union[
+            abc.properties.Property,
+            type
+        ]
+    ]
+]:
     changed: bool = False
     new_properties = []
     for property_ in properties_:
@@ -728,9 +799,12 @@ def _version_properties(
                     changed = True
                 new_properties.append(new_property)
             else:
+                # Exclude this property, as it's not a match
                 changed = True
         else:
-            new_properties.append(property_)
+            new_properties.append(
+                property_
+            )
     if changed:
         return tuple(new_properties)
     else:
@@ -749,47 +823,151 @@ def _version_property(
     ) and (
         property_.item_types is not None
     ):
-        item_types = _version_properties(
+        item_type_items = _version_properties(
             property_.item_types,
             specification,
             version_number
         )
-        if item_types is not None:
+        if item_type_items is not None:
             if not changed:
                 property_ = deepcopy(property_)
+            item_types = Types(item_type_items)
+            assert isinstance(item_types, abc.types.Types)
             property_.item_types = item_types
             changed = True
     elif isinstance(
         property_,
         abc.properties.Dictionary
     ) and (
-            property_.value_types is not None
+        property_.value_types is not None
     ):
-        value_types = _version_properties(
+        value_types_items = _version_properties(
             property_.value_types,
             specification,
             version_number
         )
-        if value_types is not None:
+        if value_types_items is not None:
             if not changed:
                 property_ = deepcopy(property_)
+            value_types = Types(value_types_items)
+            assert isinstance(value_types, abc.types.Types)
             property_.value_types = value_types
             changed = True
     if property_.types is not None:
-        types = _version_properties(
+        types_items = _version_properties(
             property_.types,
             specification,
             version_number
         )
-        if types is not None:
+        if types_items is not None:
             if not changed:
                 property_ = deepcopy(property_)
+            types = Types(types_items)
+            assert isinstance(types, abc.types.Types)
             property_.types = types
     return property_
 
 
+def _version_object(
+    data: abc.model.Object,
+    specification: str,
+    version_number: Union[str, int, Sequence[int]]
+) -> None:
+    instance_meta = read(data)
+    class_meta = read(type(data))
+    property_name: str
+    property_: abc.properties.Property
+    for property_name, property_ in tuple(
+        instance_meta.properties.items()
+    ):
+        if _version_match(
+            property_,
+            specification,
+            version_number
+        ):
+            new_property = _version_property(
+                property_,
+                specification,
+                version_number
+            )
+            if new_property is not property_:
+                if instance_meta is class_meta:
+                    instance_meta = writable(data)
+                instance_meta.properties[property_name] = new_property
+        else:
+            if instance_meta is class_meta:
+                instance_meta = writable(data)
+            del instance_meta.properties[property_name]
+            version_ = getattr(data, property_name)
+            if version_ is not None:
+                raise errors.VersionError(
+                    '%s - the property `%s` is not applicable in %s '
+                    'version %s:\n%s' % (
+                        qualified_name(type(data)),
+                        property_name,
+                        specification,
+                        version_number,
+                        str(data)
+                    )
+                )
+        value = getattr(data, property_name)
+        if isinstance(
+            value, (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+        ):
+            version(value, specification, version_number)
+
+
+def _version_dictionary(
+    data: abc.model.Dictionary,
+    specification: str,
+    version_number: Union[str, int, Sequence[int]]
+) -> None:
+    instance_meta = read(data)
+    class_meta = read(type(data))
+    if instance_meta and instance_meta.value_types:
+        new_value_types = _version_properties(
+            instance_meta.value_types,
+            specification,
+            version_number
+        )
+        if new_value_types:
+            if instance_meta is class_meta:
+                instance_meta = writable(data)
+            instance_meta.value_types = new_value_types
+    for value in data.values():
+        if isinstance(
+            value,
+            (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+        ):
+            version(value, specification, version_number)
+
+
+def _version_array(
+    data: abc.model.Array,
+    specification: str,
+    version_number: Union[str, int, Sequence[int]]
+) -> None:
+    instance_meta = read(data)
+    class_meta = read(type(data))
+    if instance_meta and instance_meta.item_types:
+        new_item_types = _version_properties(
+            instance_meta.item_types,
+            specification,
+            version_number
+        )
+        if new_item_types:
+            if instance_meta is class_meta:
+                instance_meta = writable(data)
+            instance_meta.item_types = new_item_types
+    for item in data:
+        if isinstance(
+            item, (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+        ):
+            version(item, specification, version_number)
+
+
 def version(
-    data: abc.model.Model,
+    data: Union[abc.model.Object, abc.model.Dictionary, abc.model.Array],
     specification: str,
     version_number: Union[str, int, Sequence[int]]
 ) -> None:
@@ -801,105 +979,101 @@ def version(
 
     Parameters:
 
-    - data (sob.abc.model.Model)
+    - data ([sob.model.Model](#Model))
     - specification (str): The specification to which the `version_number`
       argument applies.
     - version_number (str|int|[int]): A version number represented as text
       (in the form of integers separated by periods), an integer, or a
       sequence of integers.
     """
-    assert_argument_is_instance('data', data, abc.model.Model)
-    instance_meta = read(data)
-    class_meta = read(type(data))
+    assert_argument_is_instance(
+        'data',
+        data,
+        (
+            abc.model.Object,
+            abc.model.Dictionary,
+            abc.model.Array
+        )
+    )
     if isinstance(data, abc.model.Object):
-        for property_name in tuple(instance_meta.properties.keys()):
-            property_ = instance_meta.properties[property_name]
-            if _version_match(
-                property_,
-                specification,
-                version_number
-            ):
-                new_property = _version_property(
-                    property_,
-                    specification,
-                    version_number
-                )
-                if new_property is not property_:
-                    if instance_meta is class_meta:
-                        instance_meta = writable(data)
-                    instance_meta.properties[property_name] = new_property
-            else:
-                if instance_meta is class_meta:
-                    instance_meta = writable(data)
-                del instance_meta.properties[property_name]
-                version_ = getattr(data, property_name)
-                if version_ is not None:
-                    raise errors.VersionError(
-                        '%s - the property `%s` is not applicable in %s '
-                        'version %s:\n%s' % (
-                            qualified_name(type(data)),
-                            property_name,
-                            specification,
-                            version_number,
-                            str(data)
-                        )
-                    )
-            value = getattr(data, property_name)
-            if isinstance(value, abc.model.Model):
-                version(value, specification, version_number)
+        _version_object(
+            data,
+            specification,
+            version_number
+        )
     elif isinstance(data, abc.model.Dictionary):
-        if instance_meta and instance_meta.value_types:
-            new_value_types = _version_properties(
-                instance_meta.value_types,
-                specification,
-                version_number
-            )
-            if new_value_types:
-                if instance_meta is class_meta:
-                    instance_meta = writable(data)
-                instance_meta.value_types = new_value_types
-        for value in data.values():
-            if isinstance(value, abc.model.Model):
-                version(value, specification, version_number)
-    elif isinstance(data, abc.model.Array):
-        if instance_meta and instance_meta.item_types:
-            new_item_types = _version_properties(
-                instance_meta.item_types,
-                specification,
-                version_number
-            )
-            if new_item_types:
-                if instance_meta is class_meta:
-                    instance_meta = writable(data)
-                instance_meta.item_types = new_item_types
-        for item in data:
-            if isinstance(item, abc.model.Model):
-                version(item, specification, version_number)
+        _version_dictionary(
+            data,
+            specification,
+            version_number
+        )
+    else:
+        _version_array(
+            data,
+            specification,
+            version_number
+        )
 
 
 def copy_to(
-    source: abc.model.Model,
-    target: abc.model.Model
+    source: Union[abc.model.Object, abc.model.Dictionary, abc.model.Array],
+    target: Union[abc.model.Object, abc.model.Dictionary, abc.model.Array]
 ) -> None:
-    if source != target:
-        assert_argument_is_instance('source', source, abc.model.Model)
-        if type(source) is not type(target):
-            raise ValueError(
-                'The source and target must be of the same type'
-            )
-        source_meta = read(source)
-        target_meta = read(target)
-        if source_meta is not target_meta:
-            write(target, source_meta)
-        if isinstance(source, abc.model.Object):
-            for property_name in source_meta.properties.keys():
-                source_property_value = getattr(source, property_name)
-                target_property_value = getattr(target, property_name)
-                if isinstance(source_property_value, abc.model.Model):
-                    copy_to(source_property_value, target_property_value)
-        elif isinstance(source, abc.model.Array):
-            for index in range(len(source)):
-                copy_to(source[index], target[index])
-        elif isinstance(source, abc.model.Dictionary):
-            for key in source.keys():
-                copy_to(source[key], target[key])
+    """
+    This function copies metadata from one model instance to another
+    """
+    # Verify both arguments are models
+    argument_name: str
+    argument_value: Union[
+        abc.model.Object, abc.model.Dictionary, abc.model.Array
+    ]
+    for argument_name, argument_value in (
+        ('source', source),
+        ('target', target)
+    ):
+        assert_argument_is_instance(
+            argument_name,
+            argument_value,
+            (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+        )
+    # Verify both arguments of of the same `type`
+    assert type(source) is type(target)
+    # Copy the metadata
+    source_meta: Union[
+        abc.meta.Object,
+        abc.meta.Dictionary,
+        abc.meta.Array
+    ] = read(source)
+    target_meta: Union[
+        abc.meta.Object,
+        abc.meta.Dictionary,
+        abc.meta.Array
+    ] = read(target)
+    if source_meta is not target_meta:
+        write(target, source_meta)
+    # ... and recursively do the same for member data
+    if isinstance(source, abc.model.Object):
+        for property_name in source_meta.properties.keys():
+            source_property_value = getattr(source, property_name)
+            target_property_value = getattr(target, property_name)
+            if target_property_value and isinstance(
+                source_property_value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
+                copy_to(source_property_value, target_property_value)
+    elif isinstance(source, abc.model.Array):
+        for index, value in enumerate(source):
+            target_value: MarshallableTypes = target[index]
+            if target_value and isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
+                copy_to(value, target_value)
+    elif isinstance(source, abc.model.Dictionary):
+        for key, value in source.items():
+            target_value: MarshallableTypes = target[key]
+            if target_value and isinstance(
+                value,
+                (abc.model.Object, abc.model.Dictionary, abc.model.Array)
+            ):
+                copy_to(value, target_value)

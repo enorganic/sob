@@ -1,11 +1,13 @@
-import sys
 from traceback import format_exception
-from typing import Any, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union
+
+import sys
 
 from .abc.model import Model
 from .abc.properties import Property
-from .properties.types import TYPES
-from .utilities.inspect import qualified_name
+from .types import TYPES
+from .utilities import indent
+from .utilities.inspect import represent
 
 
 class ValidationError(Exception):
@@ -58,78 +60,40 @@ class UnmarshalError(Exception):
     ) -> None:
         self._message: Optional[str] = None
         self._parameter: Optional[str] = None
-        self._index: Optional[int] = None
+        self._index: Union[str, int, None] = None
         self._key: Optional[str] = None
-        error_message_lines = ['']
+        error_message_lines: List[str] = []
         # Identify which parameter is being used for type validation
-        types_label = None
-        if types:
-            types_label = 'types'
-        elif item_types:
-            types_label = 'item_types'
-            types = item_types
-        elif value_types:
-            types_label = 'value_types'
-            types = value_types
-        # Assemble the error message
-        # Assemble a text representation of the `data`
-        data_lines = []
-        lines = repr(data).strip().split('\n')
-        if len(lines) == 1:
-            data_lines.append(lines[0])
-        else:
-            data_lines.append('')
-            for line in lines:
-                data_lines.append(
-                    '     ' + line
-                )
-        # Assemble a text representation of the `types`, `item_types`, or
-        # `value_types`.
+        types_label: str = (
+            'item_types'
+            if item_types else
+            'value_types'
+            if value_types else
+            'types'
+        )
+        types = item_types or value_types or types
         if types is None:
-
             error_message_lines.append(
                 'The data provided is not an instance of an un-marshallable '
-                'type:'
+                'type:\n'
             )
-
         else:
-
             error_message_lines.append(
                 'The data provided does not match any of the expected types '
-                'and/or property definitions:'
+                'and/or property definitions:\n'
             )
-
         error_message_lines.append(
-            ' - data: %s' % '\n'.join(data_lines)
+            f'- data: {indent(represent(data))}'
         )
-
         if types is None:
             types = TYPES
             types_label = 'un-marshallable types'
-        types_lines = ['(']
-        for negative_index, type_ in enumerate(
-            types,
-            -(len(types)-1)
-        ):
-            if isinstance(type_, type):
-                lines = (qualified_name(type_),)
-            else:
-                lines = repr(type_).split('\n')
-            for line in lines:
-                types_lines.append(
-                    '     ' + line
-                )
-            if negative_index:
-                types_lines[-1] += ','
-        types_lines.append('   )')
-
         error_message_lines.append(
-            ' - %s: %s' % (types_label, '\n'.join(types_lines))
+            f'- {types_label}: '
+            f'{indent(represent(tuple(types)), number_of_spaces=2)}'
         )
-
         if message:
             error_message_lines += ['', message]
-
         self.message = '\n'.join(error_message_lines)
 
     @property
@@ -153,11 +117,11 @@ class UnmarshalError(Exception):
             self.assemble_message()
 
     @property
-    def index(self) -> Optional[int]:
+    def index(self) -> Union[str, int, None]:
         return self._index
 
     @index.setter
-    def index(self, index_or_key: Union[str, int]) -> None:
+    def index(self, index_or_key: Union[str, int, None]) -> None:
         if index_or_key != self.index:
             self._index = index_or_key
             self.assemble_message()

@@ -1,54 +1,56 @@
 import os
-from io import UnsupportedOperation, RawIOBase
-from typing import IO, Any, Optional, Union
+from io import IOBase, UnsupportedOperation
+from typing import Callable, Optional, Union
 from urllib.parse import urljoin
-from urllib.response import addinfourl
+
+from .inspect import get_method
 
 
-def _has_callable_attribute(
-    object_instance: object,
-    attribute_name: str
-) -> bool:
-    try:
-        attribute_value: Any = getattr(object_instance, attribute_name)
-    except AttributeError:
-        return False
-    return callable(attribute_value)
+def read(file: IOBase) -> Union[str, bytes]:
+    """
+    Read a file-like object and return the text or binary data it contains.
 
+    Parameters:
 
-def read(data: Union[str, IO, RawIOBase]) -> Union[str, bytes]:
-    readall_is_callable: bool = _has_callable_attribute(data, 'readall')
-    read_is_callable: bool = _has_callable_attribute(data, 'read')
-    if (
-        readall_is_callable or
-        read_is_callable
-    ):
-        if _has_callable_attribute(data, 'seek'):
+    - file (io.IOBase): A readable, file-like object.
+
+    This function returns an instance of `str` or `bytes`.
+    """
+    read_method_name: str
+    seek_method: Optional[Callable] = get_method(file, 'seek', None)
+    if seek_method:
+        try:
+            seek_method(0)
+        except UnsupportedOperation:
+            pass
+    for read_method_name in ('readall', 'read'):
+        read_method: Optional[Callable] = get_method(
+            file, read_method_name, None
+        )
+        if read_method:
             try:
-                data.seek(0)
+                return read_method()
             except UnsupportedOperation:
                 pass
-        if readall_is_callable:
-            try:
-                data = data.readall()
-            except UnsupportedOperation:
-                data = data.read()
-        else:
-            data = data.read()
-        return data
-    else:
-        raise TypeError(
-            '%s is not a file-like object' % repr(data)
-        )
+    raise TypeError(
+        f'{repr(file)} is not a file-like object'
+    )
 
 
-def get_url(file_like_object: Union[IO, addinfourl]) -> Optional[str]:
+def get_url(file: IOBase) -> Optional[str]:
     """
-    Get the URL from which an input-output (file-like) object was sourced
+    Get the URL from which an input-output (file-like) object was sourced.
+
+    Parameters:
+
+    - file (io.IOBase):
+
+    This function returns an instance of `str` if the originating URL or
+    file-path can be inferred, otherwise it returns `None`.
     """
-    url: Optional[str] = None
-    if hasattr(file_like_object, 'url'):
-        url = file_like_object.url
-    elif hasattr(file_like_object, 'name'):
-        url = urljoin('file:', os.path.abspath(file_like_object.name))
+    url: Optional[str] = getattr(file, 'url', None)
+    if url is None:
+        url = getattr(file, 'name', None)
+        if url is not None:
+            url = urljoin('file:', os.path.abspath(url))
     return url

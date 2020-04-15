@@ -1,7 +1,9 @@
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import Any, Iterable, List, Tuple, Dict, Union, Callable
-from ..utilities.types import TYPES
+from typing import List, Dict, Optional, Union
+
+from . import meta
+from ..utilities.typing import JSONTypes
 
 __all__: List[str] = [
     'Model',
@@ -13,8 +15,16 @@ __all__: List[str] = [
 
 class Model(metaclass=ABCMeta):
 
+    _meta: meta.Meta
+    _pointer: Optional[str]
+    _url: Optional[str]
+    _format: Optional[str]
+
     @abstractmethod
-    def _marshal(self) -> Dict[str, Any]:
+    def _marshal(self) -> Union[
+        Dict[str, JSONTypes],
+        List[JSONTypes]
+    ]:
         pass
 
     @abstractmethod
@@ -24,60 +34,26 @@ class Model(metaclass=ABCMeta):
 
 class Object(Model, OrderedDict, metaclass=ABCMeta):
 
-    @abstractmethod
-    def __setattr__(self, property_name: str, value: Any) -> None:
-        pass
+    _meta: meta.Object
 
     @abstractmethod
-    def __setitem__(self, key: str, value: Any) -> None:
-        pass
-
-    @abstractmethod
-    def __delattr__(self, key: str) -> None:
-        pass
-
-    @abstractmethod
-    def __getitem__(self, key: str) -> None:
-        pass
-
-    @abstractmethod
-    def __str__(self) -> str:
-        pass
-
-    @abstractmethod
-    def __repr__(self) -> str:
-        pass
-
-    @abstractmethod
-    def __eq__(self, other: Any) -> bool:
+    def _marshal(self) -> Dict[str, JSONTypes]:
         pass
 
 
 class Dictionary(Model, OrderedDict, metaclass=ABCMeta):
 
-    @abstractmethod
-    def keys(self) -> Iterable[str]:
-        pass
+    _meta: meta.Dictionary
 
     @abstractmethod
-    def values(self) -> Iterable[Any]:
-        pass
-
-    def items(self) -> Iterable[Tuple[str, Union[TYPES]]]:
+    def _marshal(self) -> Dict[str, JSONTypes]:
         pass
 
 
 class Array(Model, list, metaclass=ABCMeta):
 
+    _meta: meta.Array
+
     @abstractmethod
-    def append(self, value: Any) -> None:
-        pass
-
-    def __iter__(self) -> Iterable[Any]:
-        pass
-
-    def __len__(self) -> int:
-        pass
-
-    def __getitem__(self, index: int) -> Any:
+    def _marshal(self) -> List[JSONTypes]:
         pass

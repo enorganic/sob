@@ -19,7 +19,7 @@ class A(model.Object):
 
     def __init__(
         self,
-        _: Optional[str] = None,
+        _data: Optional[str] = None,
         is_a_class: Optional[bool] = None,
         boolean: Optional[bool] = None,
         string: Optional[str] = None,
@@ -39,7 +39,7 @@ class A(model.Object):
         self.delta = delta
         self.iso8601_datetime = iso8601_datetime
         self.iso8601_date = iso8601_date
-        super().__init__(_)
+        super().__init__(_data)
 
 
 meta.writable(A).properties = [
@@ -530,83 +530,6 @@ def test_validation():
     pass
 
 
-def test_version():
-
-    testy1 = deepcopy(testy)
-    testy2 = deepcopy(testy)
-    testy3 = deepcopy(testy)
-
-    meta.version(
-        testy1,
-        'testy',
-        1
-    )
-
-    testy1.version_1 = 99
-    error = None
-    try:
-        testy1.version_2 = 99
-    except KeyError as e:
-        error = e
-    assert isinstance(error, KeyError)
-    meta.version(
-        testy2,
-        'testy',
-        2
-    )
-    testy2.version_2 = 99
-    error = None
-    try:
-        testy2.version_1 = 99
-    except KeyError as e:
-        error = e
-    assert isinstance(error, KeyError)
-    meta.version(
-        testy3,
-        'testy',
-        3
-    )
-    testy1.version_switch = 99
-    error = None
-    try:
-        testy1.version_switch = '99'
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-    error = None
-    try:
-        testy1.version_switch = (9, 9)
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-    testy2.version_switch = '99'
-    error = None
-    try:
-        testy2.version_switch = 99
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-    error = None
-    try:
-        testy2.version_switch = (9, 9)
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-    testy3.version_switch = (9, 9)
-    error = None
-    try:
-        testy3.version_switch = 99
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-    error = None
-    try:
-        testy3.version_switch = '99'
-    except TypeError as e:
-        error = e
-    assert isinstance(error, TypeError)
-
-
 def test_request() -> None:
     """
     This will test `sob.requests`,
@@ -773,7 +696,6 @@ def test_utilities():
 if __name__ == '__main__':
     test_json_serialization()
     test_json_deserialization()
-    test_version()
     test_validation()
     test_request()
     test_utilities()

@@ -3,11 +3,18 @@ import numbers
 from abc import ABCMeta
 from collections import abc, OrderedDict
 from datetime import date, datetime
-from typing import Any, Optional, Dict, Hashable, Tuple, List
-from . import inspect
+from types import GeneratorType
+from typing import Any, Optional, Dict, Hashable, Tuple, List, TypeVar
 
 __all__: List[str] = [
-    ''
+    'UNDEFINED',
+    'Undefined',
+    'NoneType',
+    'NULL',
+    'DefinitionExistsError',
+    'Null',
+    'TYPES',
+    'JSON_TYPES'
 ]
 
 UNDEFINED: Optional['Undefined'] = None
@@ -64,8 +71,6 @@ class Undefined:
 
 
 locals()['UNDEFINED'] = Undefined()
-
-Module: type = type(inspect)
 
 
 class NoneType(metaclass=ABCMeta):
@@ -134,8 +139,8 @@ locals()['NULL'] = Null()
 
 TYPES: Tuple[type, ...] = (
     str, bytes, bool,
-    dict, OrderedDict,
-    abc.Set, abc.Sequence, abc.Generator,
+    dict,
+    abc.Set, abc.Sequence, GeneratorType,
     numbers.Number, decimal.Decimal,
     date, datetime,
     Null
