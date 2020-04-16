@@ -15,7 +15,7 @@ from numbers import Number
 from types import GeneratorType
 from typing import (
     Any, Callable, Dict, IO, Iterable, List, Mapping, Optional, Sequence, Set,
-    Tuple, Union
+    Tuple, Type, Union
 )
 from urllib.parse import urljoin
 
@@ -2400,30 +2400,34 @@ def _type_hint_from_property(
 
 def _get_class_declaration(
     name: str,
-    superclass: type
+    superclass: Type[
+        Union[Array, Dictionary, Object]
+    ]
 ) -> str:
     """
     Construct a class declaration
     """
     qualified_superclass_name: str = qualified_name(superclass)
+    # # Get the corresponding abstract base class name
+    # qualified_abc_name_list: List[str] = qualified_superclass_name.split('.')
+    # qualified_abc_name_list.insert(1, 'abc')
+    # qualified_abc_name: str = '.'.join(qualified_abc_name_list)
     # If the class declaration line is longer than 79 characters--break it
     # up (attempt to conform to PEP8)
     if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
-        class_declaration: str = 'class %s(%s):' % (
-            name,
-            qualified_superclass_name
+        class_declaration: str = (
+            # f'@{qualified_abc_name}.register  # noqa\n'
+            f'class {name}({qualified_superclass_name}):'
         )
     else:
-        class_declaration: str = 'class %s(%s\n    %s\n):' % (
-            name,
-            # If the first line is still too long for PEP8--add a comment to
-            # prevent linters from getting hung up
-            (
-                '  # noqa'
-                if len(name) + 7 > _LINE_LENGTH else
-                ''
-            ),
-            qualified_superclass_name
+        # If the first line is still too long for PEP8--add a comment to
+        # prevent linters from getting hung up
+        noqa: str = '  # noqa' if len(name) + 7 > _LINE_LENGTH else ''
+        class_declaration: str = (
+            # f'@{qualified_abc_name}.register  # noqa\n'
+            f'class {name}({noqa}\n'
+            f'    {qualified_superclass_name}\n'
+            '):'
         )
     return class_declaration
 
