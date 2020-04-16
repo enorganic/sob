@@ -1683,20 +1683,31 @@ def unmarshal(
 # region serialize
 
 
-def _before_serialize_instance_hooks(
-    data: Union[abc.model.Model]
+def _get_serialize_instance_hooks(
+    data: Union[
+        abc.model.Dictionary,
+        abc.model.Array,
+        abc.model.Object
+    ]
 ) -> Tuple[
-    MarshallableTypes,
-    Optional[hooks.Hooks]
+    Callable[[JSONTypes], str],
+    Callable[[str], str]
 ]:
-    instance_hooks: Optional[hooks.Hooks] = None
-    if isinstance(data, abc.model.Model):
-        instance_hooks = hooks.read(data)
-        if (instance_hooks is not None) and (
-            instance_hooks.before_serialize is not None
-        ):
-            data = instance_hooks.before_serialize(data)
-    return data, instance_hooks
+    before_serialize: Callable[
+        [JSONTypes],
+        str
+    ] = lambda _data, *args, **kwargs: _data
+    after_serialize: Callable[
+        [str],
+        str
+    ] = lambda _data, *args, **kwargs: _data
+    instance_hooks: Optional[hooks.Hooks] = hooks.read(data)
+    if instance_hooks is not None:
+        if instance_hooks.before_serialize is not None:
+            before_serialize = instance_hooks.before_serialize
+        if instance_hooks.after_serialize is not None:
+            after_serialize = instance_hooks.after_serialize
+    return before_serialize, after_serialize
 
 
 def _after_serialize_instance_hooks(
@@ -1709,7 +1720,7 @@ def _after_serialize_instance_hooks(
 
 
 def serialize(
-    data: Union[utilities.types.JSON_TYPES + (abc.model.Model,)],
+    data: JSONTypes,
     format_: str = 'json'
 ) -> str:
     """
@@ -1721,14 +1732,32 @@ def serialize(
     - format_ (str): "json" or "yaml".
     """
     assert_argument_in('format_', format_, ('json', 'yaml'))
-    instance_hooks: Optional[hooks.Hooks]
-    data, instance_hooks = _before_serialize_instance_hooks(data)
+    dumps: Callable[[JSONTypes], str]
     if format_ == 'json':
-        data = json.dumps(marshal(data))
-    elif format_ == 'yaml':
-        data = yaml.dump(marshal(data))
-    if instance_hooks:
-        data = instance_hooks.after_serialize(data)
+        dumps = json.dumps
+    else:
+        def dumps(_data: JSONTypes) -> str: return yaml.dump(_data)
+    if isinstance(
+        data,
+        (
+            abc.model.Dictionary,
+            abc.model.Array,
+            abc.model.Object
+        )
+    ):
+        instance_hooks: Optional[hooks.Hooks]
+        before_serialize: Callable[[JSONTypes], str]
+        after_serialize: Callable[[JSONTypes], str]
+        before_serialize, after_serialize = _get_serialize_instance_hooks(data)
+        data = after_serialize(
+            dumps(
+                before_serialize(
+                    marshal(data)
+                )
+            )
+        )
+    else:
+        data = dumps(data)
     return data
 
 

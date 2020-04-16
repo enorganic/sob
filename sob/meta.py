@@ -1,15 +1,12 @@
 import collections
-import itertools
-import re
 from collections import OrderedDict
 from copy import deepcopy
 from typing import (
-    Any, Dict, Iterable, List, Optional, Sequence, Tuple, Union, Type
+    Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, Union
 )
 
-from . import abc
-from . import errors
-from .types import TYPES, Types
+from . import abc, errors
+from .types import Types
 from .utilities import (
     calling_function_qualified_name, indent, properties_values, qualified_name
 )
@@ -629,24 +626,24 @@ def set_url(
     source_url: Optional[str]
 ) -> None:
     assert_argument_is_instance(
-        'model', model_instance,
+        'model',
+        model_instance,
         (abc.model.Object, abc.model.Dictionary, abc.model.Array)
     )
     if source_url is not None:
-        assert_argument_is_instance('url_', source_url, str)
+        assert_argument_is_instance(
+            'url_',
+            source_url,
+            str
+        )
     model_instance._url = source_url
     child_model: Union[
         abc.model.Object,
         abc.model.Dictionary,
         abc.model.Array
     ]
-    itertools.starmap(
-        set_url,
-        (
-            (child_model, source_url)
-            for child_model in _traverse_models(model_instance)
-        )
-    )
+    for child_model in _traverse_models(model_instance):
+        set_url(child_model, source_url)
 
 
 def get_url(
