@@ -50,7 +50,6 @@ def qualified_name(
     >>> print(qualified_name(model.marshal))
     sob.model.marshal
     """
-    print(repr(type_or_module))
     assert isinstance(
         type_or_module,
         QUALIFIED_NAME_ARGUMENT_TYPES
