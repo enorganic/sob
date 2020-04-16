@@ -9,6 +9,7 @@ from base64 import b64decode, b64encode
 from copy import copy, deepcopy
 from datetime import date, datetime
 from decimal import Decimal
+from inspect import signature
 from io import IOBase
 from numbers import Number
 from types import GeneratorType
@@ -1562,7 +1563,10 @@ class _Unmarshal:
         else:
             type_ = dictionary_type
             data = self.before_hook(type_)
-            unmarshalled_data = type_(data, value_types=self.value_types)
+            if 'value_types' in signature(type_.__init__).parameters:
+                unmarshalled_data = type_(data, value_types=self.value_types)
+            else:
+                unmarshalled_data = type_(data)
             unmarshalled_data = self.after_hook(type_, unmarshalled_data)
         return unmarshalled_data
 
@@ -1587,7 +1591,12 @@ class _Unmarshal:
         type_: type
     ) -> 'Array':
         type_ = self.get_array_type(type_)
-        unmarshalled_data = type_(self.data, item_types=self.item_types)
+        if 'item_types' in signature(
+            type_.__init__
+        ).parameters:
+            unmarshalled_data = type_(self.data, item_types=self.item_types)
+        else:
+            unmarshalled_data = type_(self.data)
         return unmarshalled_data
 
     def as_type(
