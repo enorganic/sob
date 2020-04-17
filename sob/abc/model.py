@@ -1,6 +1,8 @@
+import collections
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
-from typing import List, Dict, Optional, Union
+from io import IOBase
+from typing import Any, Iterable, List, Dict, Optional, Union
 
 from . import meta
 from ..utilities.typing import JSONTypes
@@ -32,7 +34,7 @@ class Model(metaclass=ABCMeta):
         pass
 
 
-class Object(Model, OrderedDict, metaclass=ABCMeta):
+class Object(Model, collections.abc.MutableMapping, metaclass=ABCMeta):
 
     _meta: meta.Object
 
@@ -40,8 +42,63 @@ class Object(Model, OrderedDict, metaclass=ABCMeta):
     def _marshal(self) -> Dict[str, JSONTypes]:
         pass
 
+    @abstractmethod
+    def __copy__(self) -> 'Object':
+        pass
 
-class Dictionary(Model, OrderedDict, metaclass=ABCMeta):
+    @abstractmethod
+    def __deepcopy__(self, memo: Optional[dict]) -> 'Object':
+        pass
+
+    @abstractmethod
+    def __delattr__(self, key: str) -> None:
+        pass
+
+    @abstractmethod
+    def __eq__(self, other: Any) -> bool:
+        pass
+
+    @abstractmethod
+    def __getitem__(self, key: str) -> None:
+        pass
+
+    @abstractmethod
+    def __hash__(self) -> int:
+        pass
+
+    @abstractmethod
+    def __init__(
+        self,
+        _data: Optional[Union[str, bytes, dict, IOBase]] = None
+    ) -> None:
+        pass
+
+    @abstractmethod
+    def __iter__(self) -> Iterable[str]:
+        pass
+
+    @abstractmethod
+    def __ne__(self, other: Any) -> bool:
+        pass
+
+    @abstractmethod
+    def __repr__(self) -> str:
+        pass
+
+    @abstractmethod
+    def __setattr__(self, property_name: str, value: Any) -> None:
+        pass
+
+    @abstractmethod
+    def __setitem__(self, key: str, value: Any) -> None:
+        pass
+
+    @abstractmethod
+    def __str__(self) -> str:
+        pass
+
+
+class Dictionary(Model, collections.abc.MutableMapping, metaclass=ABCMeta):
 
     _meta: meta.Dictionary
 
@@ -50,7 +107,7 @@ class Dictionary(Model, OrderedDict, metaclass=ABCMeta):
         pass
 
 
-class Array(Model, list, metaclass=ABCMeta):
+class Array(Model, collections.abc.MutableSequence, metaclass=ABCMeta):
 
     _meta: meta.Array
 

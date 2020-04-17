@@ -12,8 +12,7 @@ __all__: List[str] = [
     'NoneType',
     'NULL',
     'DefinitionExistsError',
-    'Null',
-    'TYPES',
+    'Null', 'MARSHALLABLE_TYPES',
     'JSON_TYPES'
 ]
 
@@ -117,7 +116,8 @@ class Null:
     def __str__(self) -> str:
         return 'null'
 
-    def _marshal(self) -> None:
+    @staticmethod
+    def _marshal() -> None:
         return None
 
     def __repr__(self) -> str:
@@ -137,9 +137,9 @@ class Null:
 locals()['NULL'] = Null()
 
 
-TYPES: Tuple[type, ...] = (
-    str, bytes, bool,
-    dict,
+MARSHALLABLE_TYPES: Tuple[type, ...] = (
+    str, bytes, bytearray, bool,
+    abc.MutableMapping,
     abc.Set, abc.Sequence, GeneratorType,
     numbers.Number, decimal.Decimal,
     date, datetime,

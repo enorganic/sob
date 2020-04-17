@@ -24,6 +24,40 @@ _MODEL_OR_INSTANCE_TYPING = Union[
 ]
 
 
+def _is_dictionary(_dictionary: Any) -> bool:
+    return isinstance(
+        _dictionary,
+        abc.model.Dictionary
+    ) or (
+        isinstance(_dictionary, type) and
+        issubclass(_dictionary, abc.model.Dictionary)
+    )
+
+
+def _is_array(_array: Any) -> bool:
+    return isinstance(
+        _array,
+        abc.model.Array
+    ) or (
+        isinstance(_array, type) and
+        issubclass(_array, abc.model.Array)
+    )
+
+
+def _is_object(_object: Any) -> bool:
+    return isinstance(
+        _object,
+        abc.model.Object
+    ) or (
+        isinstance(_object, type) and
+        issubclass(_object, abc.model.Object)
+    )
+
+
+def _is_model(_model: Any) -> bool:
+    return _is_object(_model) or _is_array(_model) or _is_dictionary(_model)
+
+
 # noinspection PyUnresolvedReferences
 @abc.meta.Meta.register
 class Meta:
@@ -40,6 +74,7 @@ class Meta:
     def __deepcopy__(self, memo: dict = None) -> 'Meta':
         new_instance = self.__class__()
         for a, v in properties_values(self):
+            # noinspection PyArgumentList
             setattr(new_instance, a, deepcopy(v, memo=memo))
         return new_instance
 
@@ -337,6 +372,7 @@ def writable(
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
+    assert _is_model(model)
     if isinstance(
         model,
         (

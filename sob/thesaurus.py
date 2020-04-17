@@ -28,7 +28,7 @@ from .utilities.assertion import (
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
 from .utilities.string import class_name, property_name
-from .utilities.types import NULL, Null, TYPES
+from .utilities.types import NULL, Null, MARSHALLABLE_TYPES
 
 __all__: List[str] = [
     'Synonyms', 'Thesaurus'
@@ -321,7 +321,7 @@ class Synonyms(set):
         self,
         items: Iterable[
             Union[
-                _READABLE_TYPES + TYPES
+                _READABLE_TYPES + MARSHALLABLE_TYPES
             ]
         ] = ()
     ) -> None:
@@ -336,7 +336,7 @@ class Synonyms(set):
             )
             self.__ior__(items)
 
-    def add(self, item: Union[_READABLE_TYPES + TYPES]) -> None:
+    def add(self, item: Union[_READABLE_TYPES + MARSHALLABLE_TYPES]) -> None:
         """
         This method adds a synonymous item to the set. If the item is a
         file-like (input/output) object, that object is first read,
@@ -349,10 +349,10 @@ Parameters:
         """.format(
             '|'.join(
                 qualified_name(item_type)
-                for item_type in (_READABLE_TYPES + TYPES)
+                for item_type in (_READABLE_TYPES + MARSHALLABLE_TYPES)
             )
         )
-        assert isinstance(item, _READABLE_TYPES + TYPES)
+        assert isinstance(item, _READABLE_TYPES + MARSHALLABLE_TYPES)
         if isinstance(item, _READABLE_TYPES):
             # Deserialize and unmarshal file-like objects
             item = unmarshal(detect_format(_read(item))[0])
@@ -383,7 +383,7 @@ Parameters:
 
     def union(
         self,
-        other: Iterable[Union[_READABLE_TYPES + TYPES]]
+        other: Iterable[Union[_READABLE_TYPES + MARSHALLABLE_TYPES]]
     ) -> 'Synonyms':
         """
         This method returns an instance of `Synonyms` which incorporates
@@ -395,7 +395,7 @@ Parameters:
 
     def __ior__(
         self,
-        other: Iterable[Union[_READABLE_TYPES + TYPES]]
+        other: Iterable[Union[_READABLE_TYPES + MARSHALLABLE_TYPES]]
     ) -> 'Synonyms':
         for item in other:
             self.add(item)
@@ -438,8 +438,8 @@ Parameters:
                 data_type = date
         return data_type
 
-    def _get_property_names_values(self) -> Dict[str, List[Union[TYPES]]]:
-        property_names_values: Dict[str, List[Union[TYPES]]] = OrderedDict()
+    def _get_property_names_values(self) -> Dict[str, List[Union[MARSHALLABLE_TYPES]]]:
+        property_names_values: Dict[str, List[Union[MARSHALLABLE_TYPES]]] = OrderedDict()
         item: dict
         for item in self:
             assert isinstance(item, dict)
@@ -460,7 +460,7 @@ Parameters:
         metadata.properties = meta.Properties()
         key: str
         property_name_: str
-        values: List[Union[TYPES]]
+        values: List[Union[MARSHALLABLE_TYPES]]
         for key, values in (
             self._get_property_names_values().items()
         ):
@@ -525,7 +525,7 @@ Parameters:
         memo: Optional[Dict[str, abc.model.Model]] = None
     ) -> Iterable[type]:
         unified_items: Synonyms = type(self)()
-        items: List[TYPES]
+        items: List[MARSHALLABLE_TYPES]
         for items in self:
             unified_items |= items
         item_type: Optional[type] = None
@@ -631,14 +631,14 @@ class Thesaurus(OrderedDict):
         items: Optional[Union[
             Dict[
                 str,
-                Iterable[Union[_READABLE_TYPES + TYPES]]
+                Iterable[Union[_READABLE_TYPES + MARSHALLABLE_TYPES]]
             ],
             Iterable[Tuple[
                 str,
-                Iterable[Union[_READABLE_TYPES + TYPES]]
+                Iterable[Union[_READABLE_TYPES + MARSHALLABLE_TYPES]]
             ]],
         ]] = None,
-        **kwargs: Union[_READABLE_TYPES + TYPES]
+        **kwargs: Union[_READABLE_TYPES + MARSHALLABLE_TYPES]
     ) -> None:
         super().__init__(
             *(items or ()),
@@ -648,7 +648,7 @@ class Thesaurus(OrderedDict):
     def __setitem__(
         self,
         key: str,
-        value: Iterable[Union[_READABLE_TYPES + TYPES]]
+        value: Iterable[Union[_READABLE_TYPES + MARSHALLABLE_TYPES]]
     ) -> None:
         if not isinstance(value, Synonyms):
             value = Synonyms(value)
@@ -667,7 +667,7 @@ class Thesaurus(OrderedDict):
     ) -> None:
         assert isinstance(other, Thesaurus)
         key: str
-        value: List[Union[TYPES]]
+        value: List[Union[MARSHALLABLE_TYPES]]
         for key, value in other.items():
             self[key] |= value
 

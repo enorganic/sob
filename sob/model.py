@@ -29,7 +29,7 @@ from . import (
     utilities
 )
 from .errors import get_exception_text
-from .types import TYPES
+from .types import MARSHALLABLE_TYPES
 from .utilities import indent, qualified_name
 from .utilities.assertion import (
     assert_argument_in, assert_argument_is_instance
@@ -114,7 +114,7 @@ class Object(Model):
 
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, Sequence, IOBase]] = None
+        _data: Optional[Union[str, bytes, dict, IOBase]] = None
     ) -> None:
         self._meta: Optional[meta.Object]
         self._hooks: Optional[hooks.Object]
@@ -671,10 +671,10 @@ class Array(list, Model):
     def append(
         self,
         value: Union[
-            TYPES + (NoneType,)
+            MARSHALLABLE_TYPES + (NoneType,)
         ]
     ) -> None:
-        if not isinstance(value, TYPES + (NoneType,)):
+        if not isinstance(value, MARSHALLABLE_TYPES + (NoneType,)):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: hooks.Array = hooks.read(self)
         if instance_hooks and instance_hooks.before_append:
@@ -1241,18 +1241,16 @@ def _marshal_typed(
 
 
 def marshal(
-    data: Any,
-    types: Optional[
-        Sequence[Union[type, properties.Property, Callable]]
-    ] = None,
+    data: MarshallableTypes,
+    types: Optional[Sequence[Union[type, properties.Property]]] = None,
     value_types: Optional[Sequence[Union[type, properties.Property]]] = None,
-    item_types: Optional[Sequence[Union[type, properties.Property]]] = None,
-) -> Any:
+    item_types: Optional[Sequence[Union[type, properties.Property]]] = None
+) -> JSONTypes:
     """
     Recursively converts data which is not serializable using the `json` module
     into formats which *can* be represented as JSON.
     """
-    marshalled_data: Any
+    marshalled_data: JSONTypes
     if isinstance(data, Decimal):
         # Instances of `decimal.Decimal` can'ts be serialized as JSON, so we
         # convert them to `float`
@@ -1342,7 +1340,7 @@ class _Unmarshal:
         # Verify that the data can be parsed before attempting to un-marshal
         if not isinstance(
             data,
-            TYPES + (NoneType,)
+            MARSHALLABLE_TYPES + (NoneType,)
         ):
             raise errors.UnmarshalTypeError(
                 data=data
@@ -1437,7 +1435,7 @@ class _Unmarshal:
             )
         elif _is_non_string_sequence_or_set_instance(self.data):
             # `None` is interpreted as `NULL` during un-marshalling
-            items: List[Union[TYPES]] = [
+            items: List[Union[MARSHALLABLE_TYPES]] = [
                 (
                     NULL
                     if item is None else
@@ -1451,7 +1449,7 @@ class _Unmarshal:
             )
         elif not isinstance(
             self.data,
-            TYPES
+            MARSHALLABLE_TYPES
         ):
             raise errors.UnmarshalValueError(
                 '%s cannot be un-marshalled' % repr(self.data)
@@ -1720,7 +1718,7 @@ def _after_serialize_instance_hooks(
 
 
 def serialize(
-    data: JSONTypes,
+    data: MarshallableTypes,
     format_: str = 'json'
 ) -> str:
     """
@@ -1987,7 +1985,7 @@ class _UnmarshalProperty:
 
     def validate_enumerated(
         self,
-        value: TYPES
+        value: MARSHALLABLE_TYPES
     ) -> None:
         """
         Verify that a value is one of the enumerated options
@@ -2011,12 +2009,12 @@ class _UnmarshalProperty:
 
     def unmarshal_enumerated(
         self,
-        value: TYPES
-    ) -> TYPES:
+        value: MARSHALLABLE_TYPES
+    ) -> MARSHALLABLE_TYPES:
         """
         Verify that a value is one of the enumerated options
         """
-        unmarshalled_value: TYPES = value
+        unmarshalled_value: MARSHALLABLE_TYPES = value
         self.validate_enumerated(value)
         if self.property.types is not None:
             unmarshalled_value = unmarshal(
@@ -2075,11 +2073,11 @@ class _UnmarshalProperty:
 
     def __call__(
         self,
-        value: TYPES
-    ) -> TYPES:
+        value: MARSHALLABLE_TYPES
+    ) -> MARSHALLABLE_TYPES:
         type_: type
         matched: bool = False
-        unmarshalled_value: TYPES = value
+        unmarshalled_value: MARSHALLABLE_TYPES = value
         for type_, method in (
             (properties.Date, self.parse_date),
             (properties.DateTime, self.parse_datetime),

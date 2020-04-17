@@ -2,13 +2,9 @@ from copy import deepcopy
 from typing import Any, Iterable, Optional, Tuple, Type, Union
 
 from . import abc
-from .utilities.types import TYPES as _TYPES
+from .utilities.types import MARSHALLABLE_TYPES
 from .utilities.inspect import qualified_name
 from .utilities.types import Null
-
-TYPES: Tuple[type, ...] = _TYPES + (
-    abc.model.Model,
-)
 
 
 # noinspection PyUnresolvedReferences
@@ -145,7 +141,7 @@ def _validate_type_or_property(
             (
                 isinstance(type_or_property, type) and
                 issubclass(
-                    type_or_property, TYPES
+                    type_or_property, MARSHALLABLE_TYPES
                 )
             ) or
             isinstance(type_or_property, abc.properties.Property)

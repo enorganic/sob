@@ -5,7 +5,7 @@ import sys
 
 from .abc.model import Model
 from .abc.properties import Property
-from .types import TYPES
+from .types import MARSHALLABLE_TYPES
 from .utilities import indent
 from .utilities.inspect import represent
 
@@ -86,7 +86,7 @@ class UnmarshalError(Exception):
             f'- data: {indent(represent(data))}'
         )
         if types is None:
-            types = TYPES
+            types = MARSHALLABLE_TYPES
             types_label = 'un-marshallable types'
         error_message_lines.append(
             f'- {types_label}: '
