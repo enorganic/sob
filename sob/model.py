@@ -30,7 +30,8 @@ from . import (
 )
 from .errors import get_exception_text
 from .types import MARSHALLABLE_TYPES
-from .utilities import indent, qualified_name
+from .utilities.string import indent as indent_
+from .utilities.inspect import qualified_name
 from .utilities.assertion import (
     assert_argument_in, assert_argument_is_instance
 )
@@ -791,7 +792,7 @@ class Array(list, Model):
             )
         if instance_meta != class_meta and instance_meta.item_types:
             representation_lines.append(
-                '    item_types=' + indent(repr(instance_meta.item_types))
+                '    item_types=' + indent_(repr(instance_meta.item_types))
             )
         representation_lines.append(')')
         if len(representation_lines) > 2:
@@ -1129,7 +1130,7 @@ class Dictionary(collections.OrderedDict, Model):
 
         if instance_meta != class_meta and instance_meta.value_types:
             representation_lines.append(
-                '    value_types=' + indent(repr(instance_meta.value_types)),
+                '    value_types=' + indent_(repr(instance_meta.value_types)),
             )
         representation_lines.append(')')
         if len(representation_lines) > 2:
@@ -1725,7 +1726,8 @@ def _after_serialize_instance_hooks(
 
 def serialize(
     data: MarshallableTypes,
-    format_: str = 'json'
+    format_: str = 'json',
+    indent: Optional[int] = None
 ) -> str:
     """
     This function serializes data as JSON or YAML.
@@ -1740,7 +1742,7 @@ def serialize(
     if format_ == 'json':
         dumps = json.dumps
     else:
-        def dumps(_data: JSONTypes) -> str: return yaml.dump(_data)
+        dumps = yaml.dump
     if isinstance(
         data,
         (
@@ -1757,11 +1759,12 @@ def serialize(
             dumps(
                 before_serialize(
                     marshal(data)
-                )
+                ),
+                indent=indent
             )
         )
     else:
-        data = dumps(data)
+        data = dumps(data, indent=indent)
     return data
 
 
@@ -1859,7 +1862,7 @@ def detect_format(
             'The data provided could not be parsed:\n\n'
             '{}\n\n'
             '{}'.format(
-                indent(repr(data), start=0),
+                indent_(repr(data), start=0),
                 '\n\n'.join(
                     '{}:\n\n{}'.format(
                         format_,
@@ -1918,12 +1921,12 @@ def _validate_typed(
         error_messages.clear()
     else:
         types_bullet_list: str = '\n\n'.join(
-            indent(represent(type_), 4)
+            indent_(represent(type_), 4)
             for type_ in types
         )
         error_messages.append(
             f'Invalid data:\n\n'
-            f'    {indent(represent(data))}\n\n'
+            f'    {indent_(represent(data))}\n\n'
             f'The data must be one of the following types:\n\n'
             f'    {types_bullet_list}'
         )
@@ -1960,7 +1963,7 @@ def validate(
         error_messages.extend(_validate_typed(data, types))
     error_messages.extend(_call_validate_method(data))
     if raise_errors and error_messages:
-        data_representation: str = f'    {indent(represent(data))}'
+        data_representation: str = f'    {indent_(represent(data))}'
         error_messages_representation: str = '\n\n'.join(error_messages)
         if data_representation not in error_messages_representation:
             error_messages_representation = '\n\n'.join([
@@ -2319,7 +2322,7 @@ def _type_hint_from_property_types(
         if len(property_types) > 1:
             type_hint = 'typing.Union[\n{}\n]'.format(
                 ',\n'.join(
-                    indent(
+                    indent_(
                         _type_hint_from_property(item_type, module),
                         start=0
                     )
@@ -2373,7 +2376,7 @@ def _type_hint_from_property(
         if item_type_hint:
             type_hint = (
                 'typing.Sequence[\n'
-                f'    {indent(item_type_hint)}\n'
+                f'    {indent_(item_type_hint)}\n'
                 ']'
             )
         else:
@@ -2387,7 +2390,7 @@ def _type_hint_from_property(
             type_hint = (
                 'typing.Dict[\n'
                 '    str,\n'
-                f'    {indent(value_type_hint)}\n'
+                f'    {indent_(value_type_hint)}\n'
                 ']'
             )
         else:
@@ -2471,7 +2474,7 @@ def _class_definition_from_meta(
         ]
         if repr_docstring is not None:
             out.append(repr_docstring)
-        repr_value_typing: str = indent(
+        repr_value_typing: str = indent_(
             _type_hint_from_property_types(
                 metadata.value_types,
                 module
@@ -2506,7 +2509,7 @@ def _class_definition_from_meta(
         ]
         if repr_docstring:
             out.append(repr_docstring)
-        repr_item_typing: str = indent(
+        repr_item_typing: str = indent_(
             _type_hint_from_property_types(
                 metadata.item_types,
                 module
@@ -2567,7 +2570,7 @@ def _class_definition_from_meta(
                 ) else
                 ','
             )
-            repr_property_typing: str = indent(
+            repr_property_typing: str = indent_(
                 _type_hint_from_property(property_, module),
                 12
             )
