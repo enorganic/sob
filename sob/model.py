@@ -2623,6 +2623,10 @@ def from_meta(
     # first
     if re.search(r'\bnumbers\.Number\b', class_definition):
         imports.append('import numbers')
+    # `datetime` may or may not be referenced in a given model--so check
+    # first
+    if re.search(r'\bdatetime\b', class_definition):
+        imports.append('import datetime')
     imports.append(
         f'import {_parent_module_name}'
     )
