@@ -859,7 +859,13 @@ class Dictionary(collections.OrderedDict, Model):
 
     def __init__(
         self,
-        items: Optional[Union[dict, IOBase, str, bytes]] = None,
+        items: Optional[
+            Union[
+                Dict[str, Any],
+                Sequence[Tuple[str, Any]],
+                IOBase, str, bytes
+            ]
+        ] = None,
         value_types: Optional[
             Union[
                 Sequence[
@@ -2481,6 +2487,12 @@ def _class_definition_from_meta(
             '                typing.Dict[\n'
             '                     str,\n'
             f'                    {repr_value_typing}\n'
+            '                ],\n'
+            '                typing.Sequence[\n'
+            '                    typing.Tuple[\n'
+            '                        str,\n'
+            f'                        {repr_value_typing}\n'
+            '                    ]\n'
             '                ],\n'
             '                io.IOBase, str, bytes\n'
             '            ]\n'
