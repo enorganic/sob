@@ -2,7 +2,7 @@ from setuptools import setup  # type: ignore
 
 setup(
     name='sob',
-    version="0.3.10",
+    version="0.3.11",
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -30,7 +30,7 @@ setup(
             "pytest~=5.4.1",
             "flake8~=3.7.9",
             "setuptools-setup-versions~=0.0.33",
-            "readme-md-docstrings~=0.0.10"
+            "readme-md-docstrings~=0.0.14"
         ],
         "dev": [
             "mypy~=0.770",
@@ -39,7 +39,7 @@ setup(
             "pytest~=5.4.1",
             "flake8~=3.7.9",
             "setuptools-setup-versions~=0.0.33",
-            "readme-md-docstrings~=0.0.10"
+            "readme-md-docstrings~=0.0.14"
         ]
     }
 )
