@@ -6,7 +6,7 @@ from warnings import warn
 import yaml as yaml_
 
 from . import meta
-from .abc.model import Array, Dictionary, Model, Object
+from .abc.model import Array, Dictionary, Object
 from .errors import (
     ObjectDiscrepancyError
 )
@@ -222,7 +222,7 @@ def _object(
         object_instance
     ).properties.items():
         property_value = getattr(object_instance, property_name)
-        if isinstance(property_value, Model):
+        if isinstance(property_value, (Dictionary, Array, Object)):
             model(
                 property_value,
                 format_=format_,
@@ -231,7 +231,7 @@ def _object(
 
 
 def model(
-    model_instance: Model,
+    model_instance: Union[Dictionary, Array, Object],
     format_: str = 'json',
     raise_validation_errors: bool = True
 ) -> None:
@@ -264,7 +264,7 @@ def model(
     assert_argument_is_instance(
         'model_instance',
         model_instance,
-        Model
+        (Dictionary, Array, Object)
     )
     assert_argument_in('format_', format_, ('json', 'yaml'))
     meta.format_(model_instance, format_)
@@ -277,7 +277,7 @@ def model(
     elif isinstance(model_instance, Array):
         validate(model_instance)
         for item in model_instance:
-            if isinstance(item, Model) or (
+            if isinstance(item, (Dictionary, Array, Object)) or (
                 hasattr(item, '__iter__') and
                 (not isinstance(item, (str, bytes)))
             ):
@@ -289,7 +289,7 @@ def model(
     elif isinstance(model_instance, Dictionary):
         validate(model_instance)
         for key, value in model_instance.items():
-            if isinstance(value, Model) or (
+            if isinstance(value, (Dictionary, Array, Object)) or (
                 hasattr(value, '__iter__') and
                 (not isinstance(value, (str, bytes)))
             ):
@@ -301,7 +301,7 @@ def model(
 
 
 def json(
-    model_instance: Model,
+    model_instance: Union[Dictionary, Array, Object],
     raise_validation_errors: bool = True,
 ) -> None:
     model(
@@ -312,7 +312,7 @@ def json(
 
 
 def yaml(
-    model_instance: Model,
+    model_instance: Union[Dictionary, Array, Object],
     raise_validation_errors: bool = True,
 ) -> None:
     model(
