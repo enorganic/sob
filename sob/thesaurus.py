@@ -4,7 +4,6 @@ set of example structures.
 """
 import collections
 import functools
-import numbers
 import os
 from types import ModuleType
 from base64 import b64decode
@@ -479,11 +478,6 @@ Parameters:
                 else:
                     is_model = False
             if item_type:
-                # `float` is represented by `numbers.Number` in
-                # `sob.properties` (so that it can also represent `int`
-                # values).
-                if item_type is float:
-                    item_type = numbers.Number
                 if is_model:
                     metadata.properties[property_name_] = Property(
                         name=key,
@@ -641,7 +635,7 @@ class Thesaurus(OrderedDict):
         **kwargs: Union[_READABLE_TYPES + MARSHALLABLE_TYPES]
     ) -> None:
         super().__init__(
-            *(items or ()),
+            *((items,) if items else ()),
             **kwargs
         )
 
@@ -799,5 +793,6 @@ class Thesaurus(OrderedDict):
         - path (str): The file path where the data will be written.
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
+        module_source: str = self.get_module_source()
         with open(path, 'w') as module_io:
-            module_io.write(self.get_module_source())
+            module_io.write(module_source)

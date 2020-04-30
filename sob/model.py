@@ -11,7 +11,6 @@ from datetime import date, datetime
 from decimal import Decimal
 from inspect import signature
 from io import IOBase
-from numbers import Number
 from types import GeneratorType
 from typing import (
     Any, Callable, Dict, IO, Iterable, List, Mapping, Optional, Sequence, Set,
@@ -104,6 +103,7 @@ class Model:
 
 
 # noinspection PyUnresolvedReferences
+@abc.model.Model.register
 @abc.model.Object.register
 class Object(Model):
     """
@@ -542,6 +542,7 @@ class Object(Model):
 
 
 # noinspection PyUnresolvedReferences
+@abc.model.Model.register
 @abc.model.Array.register
 class Array(list, Model):
     """
@@ -823,6 +824,7 @@ class Array(list, Model):
 
 
 # noinspection PyUnresolvedReferences
+@abc.model.Model.register
 @abc.model.Dictionary.register
 class Dictionary(collections.OrderedDict, Model):
     """
@@ -1264,7 +1266,7 @@ def marshal(
         marshalled_data = float(data)
     elif (data is None) or isinstance(
         data,
-        (str, Number)
+        (str, int, float)
     ):
         # Don't do anything with `None`--this just means an attributes is not
         # used for this instance (an explicit `null` would be passed as
@@ -1383,7 +1385,7 @@ class _Unmarshal:
         unmarshalled_data: Optional[
             Union[
                 abc.model.Model,
-                Number,
+                int, float,
                 str, bytes,
                 date, datetime,
                 tuple
@@ -1467,7 +1469,7 @@ class _Unmarshal:
     def as_typed(self) -> abc.model.Model:
         unmarshalled_data: Union[
             abc.model.Model,
-            Number,
+            int, float,
             str, bytes,
             date, datetime,
             Undefined
@@ -2317,7 +2319,7 @@ def _type_hint_from_property_types(
     property_types: Optional[abc.types.Types],
     module: str
 ) -> str:
-    type_hint: str = ''
+    type_hint: str = 'typing.Any'
     if property_types is not None:
         if len(property_types) > 1:
             type_hint = 'typing.Union[\n{}\n]'.format(
@@ -2335,6 +2337,7 @@ def _type_hint_from_property_types(
 
 
 def _type_hint_from_type(type_: type, module: str) -> str:
+    type_hint: str
     if type_ in (Union, Dict, Any, Sequence, IO):
         type_hint = type_.__name__
     else:
@@ -2395,6 +2398,14 @@ def _type_hint_from_property(
             )
         else:
             type_hint = 'dict'
+    elif isinstance(property_or_type, properties.Number):
+        type_hint = (
+            'typing.Union[\n'
+            '    float,\n'
+            '    int,\n'
+            '    decimal.Decimal\n'
+            ']'
+        )
     elif property_or_type and property_or_type.types:
         type_hint = _type_hint_from_property_types(
             property_or_type.types,
@@ -2405,24 +2416,34 @@ def _type_hint_from_property(
     return type_hint
 
 
+def _get_abc_from_superclass_name(qualified_superclass_name: str) -> str:
+    """
+    Get the corresponding abstract base class name
+    """
+    qualified_abc_name_list: List[str] = qualified_superclass_name.split('.')
+    qualified_abc_name_list.insert(1, 'abc')
+    return '.'.join(qualified_abc_name_list)
+
+
 def _get_class_declaration(
     name: str,
-    superclass: Type[
+    superclass_: Type[
         Union[Array, Dictionary, Object]
     ]
 ) -> str:
     """
     Construct a class declaration
     """
-    qualified_superclass_name: str = qualified_name(superclass)
-    # # Get the corresponding abstract base class name
-    # qualified_abc_name_list: List[str] = qualified_superclass_name.split('.')
-    # qualified_abc_name_list.insert(1, 'abc')
-    # qualified_abc_name: str = '.'.join(qualified_abc_name_list)
+    qualified_superclass_name: str = qualified_name(superclass_)
+    # qualified_model_abc_name: str = qualified_name(abc.model.Model)
+    # qualified_abc_name: str = _get_abc_from_superclass_name(
+    #     qualified_superclass_name
+    # )
     # If the class declaration line is longer than 79 characters--break it
     # up (attempt to conform to PEP8)
     if 9 + len(name) + len(qualified_superclass_name) <= _LINE_LENGTH:
         class_declaration: str = (
+            # f'@{qualified_model_abc_name}.register  # noqa\n'
             # f'@{qualified_abc_name}.register  # noqa\n'
             f'class {name}({qualified_superclass_name}):'
         )
@@ -2431,6 +2452,7 @@ def _get_class_declaration(
         # prevent linters from getting hung up
         noqa: str = '  # noqa' if len(name) + 7 > _LINE_LENGTH else ''
         class_declaration: str = (
+            # f'@{qualified_model_abc_name}.register  # noqa\n'
             # f'@{qualified_abc_name}.register  # noqa\n'
             f'class {name}({noqa}\n'
             f'    {qualified_superclass_name}\n'
@@ -2613,15 +2635,15 @@ def from_meta(
 
     Parameters:
 
-        - name (str): The name of the class.
-        - class_meta ([sob.meta.Meta](#Meta))
-        - module (str): Specify the value for the class definition's
-          `__module__` property. The invoking module will be
-          used if this is not specified. Note: If using the result of this
-          function with `sob.utilities.inspect.get_source` to generate static
-          code--this should be set to "__main__". The default behavior is only
-          appropriate when using this function as a factory.
-        - docstring (str): A docstring to associate with the class definition.
+    - name (str): The name of the class.
+    - class_meta ([sob.meta.Meta](#Meta))
+    - module (str): Specify the value for the class definition's
+      `__module__` property. The invoking module will be
+      used if this is not specified. Note: If using the result of this
+      function with `sob.utilities.inspect.get_source` to generate static
+      code--this should be set to "__main__". The default behavior is only
+      appropriate when using this function as a factory.
+    - docstring (str): A docstring to associate with the class definition.
     """
     # For pickling to work, the __module__ variable needs to be set...
     if module is None:
@@ -2634,10 +2656,10 @@ def from_meta(
         'import typing',
         'import io'
     ]
-    # `numbers.Number` may or may not be referenced in a given model--so check
-    # first
-    if re.search(r'\bnumbers\.Number\b', class_definition):
-        imports.append('import numbers')
+    # `decimal.Decimnal` may or may not be referenced in a given model--so
+    # check first
+    if re.search(r'\bdecimal\.Decimal\b', class_definition):
+        imports.append('import decimal')
     # `datetime` may or may not be referenced in a given model--so check
     # first
     if re.search(r'\bdatetime\b', class_definition):

@@ -1,6 +1,6 @@
 import collections
 import json as _json
-from typing import Any, Dict, List, Sequence, Tuple
+from typing import Any, Dict, List, Sequence, Tuple, Union
 from warnings import warn
 
 import yaml as yaml_

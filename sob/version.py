@@ -1,10 +1,8 @@
 import collections
-import decimal
-import numbers
 import operator
 import re
-from numbers import Number
 
+from decimal import Decimal
 from itertools import chain
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
 
@@ -94,13 +92,13 @@ def _version_string_as_tuple(
 
 
 def _version_number_as_tuple(
-    version_number: numbers.Number
+    version_number: Union[float, int, Decimal]
 ) -> Tuple[int, ...]:
     return _version_string_as_tuple(str(version_number))
 
 
 def _version_sequence_as_tuple(
-    version_sequence: Sequence[Union[str, int, float, decimal.Decimal]]
+    version_sequence: Sequence[Union[str, int, float, Decimal]]
 ) -> Tuple[int, ...]:
     return tuple(
         chain(*(
@@ -115,17 +113,17 @@ def _version_sequence_as_tuple(
 
 
 def _version_as_tuple(
-    version_: Union[str, numbers.Number, Sequence[int]]
+    version_: Union[str, int, float, Decimal, Sequence[int]]
 ) -> Tuple[int, ...]:
     version_tuple: Tuple[int, ...]
     assert_argument_is_instance(
         'version_',
         version_,
-        (str, numbers.Number, collections.abc.Sequence)
+        (str, int, float, Decimal, collections.abc.Sequence)
     )
     if isinstance(version_, str):
         version_tuple = _version_string_as_tuple(version_)
-    elif isinstance(version_, numbers.Number):
+    elif isinstance(version_, (int, float, Decimal)):
         version_tuple = _version_number_as_tuple(version_)
     else:
         version_tuple = _version_sequence_as_tuple(version_)
@@ -139,14 +137,26 @@ class Version:
         self,
         version_string: Optional[str] = None,
         specification: str = '',
-        compatible_with: Optional[Sequence[Union[str, Number]]] = None,
-        equals: Optional[Sequence[Union[str, Number]]] = None,
-        exactly_equals: Optional[Sequence[Union[str, Number]]] = None,
-        not_equals: Optional[Sequence[Union[str, Number]]] = None,
-        less_than: Optional[Sequence[Union[str, Number]]] = None,
-        less_than_or_equal_to: Optional[Sequence[Union[str, Number]]] = None,
-        greater_than: Optional[Sequence[Union[str, Number]]] = None,
-        greater_than_or_equal_to: Optional[Sequence[Union[str, Number]]] = None
+        compatible_with: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None,
+        equals: Optional[Sequence[Union[str, int, float, Decimal]]] = None,
+        exactly_equals: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None,
+        not_equals: Optional[Sequence[Union[str, int, float, Decimal]]] = None,
+        less_than: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None,
+        less_than_or_equal_to: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None,
+        greater_than: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None,
+        greater_than_or_equal_to: Optional[
+            Sequence[Union[str, int, float, Decimal]]
+        ] = None
     ) -> None:
         self.specification = specification
         self.compatible_with = compatible_with
@@ -199,7 +209,7 @@ class Version:
             _VERSION_PROPERTIES_COMPARE_FUNCTIONS
         ):
             compare_value: Optional[Union[
-                Number, str, Tuple[int, ...]
+                int, float, Decimal, str, Tuple[int, ...]
             ]] = getattr(self, compare_property_name)
             if compare_value is not None:
                 if not compare_function(
@@ -220,7 +230,7 @@ class Version:
         repr_operator: str
         for property_name, repr_operator in _VERSION_PROPERTIES_REPR_OPERATORS:
             version_: Optional[Union[
-                Number, str, Tuple[int, ...]
+                int, float, Decimal, str, Tuple[int, ...]
             ]] = getattr(self, property_name)
             if version_ is not None:
                 version_specifiers.append(

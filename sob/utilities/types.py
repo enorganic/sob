@@ -1,10 +1,9 @@
 import decimal
-import numbers
 from abc import ABCMeta
-from collections import abc, OrderedDict
+from collections import abc
 from datetime import date, datetime
 from types import GeneratorType
-from typing import Any, Optional, Dict, Hashable, Tuple, List, TypeVar
+from typing import Any, Optional, Dict, Hashable, Tuple, List
 
 __all__: List[str] = [
     'UNDEFINED',
@@ -141,7 +140,7 @@ MARSHALLABLE_TYPES: Tuple[type, ...] = (
     str, bytes, bytearray, bool,
     abc.MutableMapping,
     abc.Set, abc.Sequence, GeneratorType,
-    numbers.Number, decimal.Decimal,
+    int, float, decimal.Decimal,
     date, datetime,
     Null
 )

@@ -4,13 +4,13 @@ This module defines classes for describing properties of a model.
 
 import collections
 import collections.abc
-import numbers
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import date, datetime
 from typing import (
     Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
 )
+from decimal import Decimal
 
 from iso8601 import parse_date  # type: ignore
 from itertools import chain
@@ -434,7 +434,7 @@ class Number(Property):
     """
     See `sob.properties.Property`
     """
-    _types: ImmutableTypes = ImmutableTypes((numbers.Number,))
+    _types: ImmutableTypes = ImmutableTypes((Decimal, float, int))
 
     def __init__(
         self,

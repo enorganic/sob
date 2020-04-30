@@ -1,6 +1,5 @@
 from datetime import date, datetime
 from decimal import Decimal
-from numbers import Number
 from typing import (
     Union, MutableMapping, Sequence, MutableSequence, MutableSet, Generator,
     AnyStr
@@ -20,7 +19,7 @@ MarshallableTypes = Union[
     MutableSet,
     Sequence,
     Generator,
-    Number, Decimal,
+    int, float, Decimal,
     date, datetime,
     Null
 ]

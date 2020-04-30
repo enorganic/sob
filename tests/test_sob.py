@@ -5,7 +5,6 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from numbers import Number
 from typing import Dict, IO, Optional, Sequence, Union
 from urllib.parse import urljoin
 
@@ -144,8 +143,8 @@ class Tesstee(model.Object):
         _: Optional[Union[str, dict, IO]] = None,
         boolean: Optional[bool] = None,
         string: Optional[str] = None,
-        number: Optional[Number] = None,
-        decimal: Optional[Number] = None,
+        number: Optional[Union[float, int, Decimal]] = None,
+        decimal: Optional[Union[float, int, Decimal]] = None,
         integer: Optional[int] = None,
         rainbow: Optional[bytes] = None,
         a: Optional[A] = None,
@@ -154,11 +153,13 @@ class Tesstee(model.Object):
         testy: Optional['Tesstee'] = None,
         boolean_array: Optional[Sequence[bool]] = None,
         string_array: Optional[Sequence[str]] = None,
-        number_array: Optional[Sequence[Number]] = None,
+        number_array: Optional[Sequence[Union[float, int, Decimal]]] = None,
         integer_array: Optional[Sequence[int]] = None,
         rainbow_array: Optional[Sequence[bytes]] = None,
         testy_array: Optional[Sequence['Tesstee']] = None,
-        string_number_boolean: Optional[Union[str, Number, bool]] = None,
+        string_number_boolean: Optional[
+            Union[str, float, int, Decimal, bool]
+        ] = None,
         a_b_c: Optional[Union[A, B, C]] = None,
         c_b_a: Optional[Union[C, B, A]] = None,
         string2testy: Optional[Dict[str, 'Tesstee']] = None,
