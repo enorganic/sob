@@ -11,13 +11,17 @@ from collections import OrderedDict
 from copy import copy, deepcopy
 from datetime import date, datetime
 from io import IOBase
-from typing import (Dict, Iterable, List, Optional, Set, Tuple, Union)
+from typing import (
+    Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+)
+from urllib.parse import quote_plus
 from urllib.response import addbase
 
 import binascii
 from iso8601 import ParseError, parse_date
 
 from . import __name__ as _parent_module_name, abc, meta
+from .meta import escape_reference_token
 from .model import detect_format, from_meta, unmarshal
 from .properties import Property, TYPES_PROPERTIES
 from .utilities import get_source, qualified_name
@@ -225,39 +229,69 @@ def _update_model_class_from_meta(
         )
 
 
+def class_name_from_pointer(pointer: str) -> str:
+    """
+    This function returns a class name based on the
+    [sob.thesaurus.Thesaurus](#Thesaurus) key of the
+    [sob.thesaurus.Synonyms](#Synonyms) instance to which an element belongs,
+    combined with the *JSON pointer* of the applicable element. This function
+    can be substituted for another, when generating a module from a thesaurus,
+    by passing a function to the `name` parameter of
+    [sob.thesaurus.Thesaurus.get_module_source](#Thesaurus-getmodulesource),
+    [sob.thesaurus.Thesaurus.get_module](#Thesaurus-getmodule), or
+    [sob.thesaurus.Thesaurus.save_module](#Thesaurus-savemodule).
+
+    Parameters:
+
+    - pointer (str): The synonyms key + JSON pointer of the element for which
+      the class is being generated.
+    """
+    return class_name(
+        f'{pointer[:-2]}/item'
+        if pointer.endswith('/0') else
+        pointer.replace('/0/', '/item/')
+    )
+
+
 def _get_models_from_meta(
-    name: str,
+    pointer: str,
     metadata: Union[abc.meta.Array, abc.meta.Object],
     module: str = '__main__',
-    memo: Optional[Dict[str, type]] = None
+    memo: Optional[Dict[str, type]] = None,
+    name: Optional[
+        Callable[
+            [str],
+            str
+        ]
+    ] = class_name_from_pointer
 ) -> List[type]:
     """
     This function generates and updates classes from metadata.
 
     Parameters:
 
-    - name (str)
+    - pointer (str)
     - metadata (sob.meta.Array|sob.meta.Object)
     - module (str)
     - memo (dict)
     """
     assert memo is not None
     new_models: List[type] = []
-    # If a model of the same name already exists, we update it to
+    # If a model of the same pointer already exists, we update it to
     # reflect our metadata, otherwise--we create a new model
-    if name in memo:
+    if pointer in memo:
         _update_model_class_from_meta(
-            memo[name],
+            memo[pointer],
             metadata,
             memo=memo
         )
     else:
         new_model: type = from_meta(
-            name,
+            name(pointer),
             metadata,
             module=module
         )
-        memo[name] = new_model
+        memo[pointer] = new_model
         new_models.append(new_model)
     return new_models
 
@@ -267,7 +301,7 @@ def _is_base64(value: str) -> bool:
     Test to see if `value` can be interpreted as base-64 encoded binary data.
     """
     try:
-        b64decode(bytes(value, encoding='utf-8'))
+        b64decode(bytes(value, encoding='utf-8'), validate=True)
         return True
     except binascii.Error:
         return False
@@ -341,10 +375,9 @@ class Synonyms(set):
         file-like (input/output) object, that object is first read,
         deserialized, and unmarshalled.
 
-Parameters:
+        Parameters:
 
-- item ({}):
-          A file-like or a JSON-serializable python object.
+        - item ({}): A file-like or a JSON-serializable python object.
         """.format(
             '|'.join(
                 qualified_name(item_type)
@@ -437,22 +470,34 @@ Parameters:
                 data_type = date
         return data_type
 
-    def _get_property_names_values(self) -> Dict[str, List[Union[MARSHALLABLE_TYPES]]]:
-        property_names_values: Dict[str, List[Union[MARSHALLABLE_TYPES]]] = OrderedDict()
+    def _get_property_names_values(self) -> Dict[
+        str,
+        List[Union[MARSHALLABLE_TYPES]]
+    ]:
+        property_names_values: Dict[
+            str,
+            List[Union[MARSHALLABLE_TYPES]]
+        ] = OrderedDict()
         item: dict
         for item in self:
             assert isinstance(item, dict)
             value: MarshallableTypes
-            for name, value in item.items():
-                if name not in property_names_values:
-                    property_names_values[name] = []
-                property_names_values[name].append(value)
+            for property_name, value in item.items():
+                if property_name not in property_names_values:
+                    property_names_values[property_name] = []
+                property_names_values[property_name].append(value)
         return property_names_values
 
     def _get_object_models(
         self,
-        name: str,
+        pointer: str,
         module: str = '__main__',
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer,
         memo: Optional[Dict[str, abc.model.Model]] = None
     ) -> Iterable[type]:
         metadata: abc.meta.Object = meta.Object()
@@ -468,9 +513,10 @@ Parameters:
             is_model: bool = False
             property_synonyms: Synonyms = type(self)(values)
             for item_type in property_synonyms._get_types(
-                name=class_name(f'{name}/{property_name_}'),
+                pointer=f'{pointer}/{escape_reference_token(property_name_)}',
                 module=module,
-                memo=memo
+                memo=memo,
+                name=name
             ):
                 if issubclass(item_type, abc.model.Model):
                     is_model = True
@@ -505,17 +551,24 @@ Parameters:
                 metadata.properties[property_name_] = Property(name=key)
         model_class: type
         for model_class in _get_models_from_meta(
-            class_name(name),
+            pointer,
             metadata,
             module=module,
-            memo=memo
+            memo=memo,
+            name=name
         ):
             yield model_class
 
     def _get_array_models(
         self,
-        name: str,
+        pointer: str,
         module: str = '__main__',
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer,
         memo: Optional[Dict[str, abc.model.Model]] = None
     ) -> Iterable[type]:
         unified_items: Synonyms = type(self)()
@@ -524,9 +577,10 @@ Parameters:
             unified_items |= items
         item_type: Optional[type] = None
         for item_type in unified_items._get_types(
-            name=class_name(f'{name}/item'),
+            pointer=f'{pointer}/0',
             module=module,
-            memo=memo
+            memo=memo,
+            name=name
         ):
             yield item_type
         metadata: abc.meta.Array = meta.Array(
@@ -538,17 +592,24 @@ Parameters:
         )
         array_type: type
         for array_type in _get_models_from_meta(
-            class_name(name),
+            pointer,
             metadata,
             module=module,
-            memo=memo
+            memo=memo,
+            name=name
         ):
             yield array_type
 
     def _get_types(
         self,
-        name: str,
+        pointer: str,
         module: str = '__main__',
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer,
         memo: Optional[Dict[str, abc.model.Model]] = None
     ) -> Iterable[type]:
         # `_memo` holds a dictionary of all classes which have been created,
@@ -561,15 +622,17 @@ Parameters:
             type_iterator = []
         elif issubclass(self._data_type, dict):
             type_iterator = self._get_object_models(
-                name,
+                pointer,
                 module=module,
-                memo=memo
+                memo=memo,
+                name=name
             )
         elif issubclass(self._data_type, list):
             type_iterator = self._get_array_models(
-                name,
+                pointer,
                 module=module,
-                memo=memo
+                memo=memo,
+                name=name
             )
         else:
             type_iterator = [
@@ -587,8 +650,14 @@ Parameters:
 
     def get_models(
         self,
-        name: str,
-        module: str = '__main__'
+        pointer: str,
+        module: str = '__main__',
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
     ) -> Iterable[type]:
         """
         Retrieve a sequence of class definitions representing a data model
@@ -596,13 +665,19 @@ Parameters:
 
         Parameters:
 
-        - name (str): The name of the top-level model class. Please note that
-          PEP-8 class-naming conventions are enforced, so a `name` of
+        - pointer (str): The name of the top-level model class. Please note
+          that PEP-8 class-naming conventions are enforced, so a `name` of
           "get some", "get-some" or "get_some" would result in a class name
           of "GetSome".
         - module (str): The name of the module in which model classes will be
           defined. This defaults to "__main__".
+        - name (str) = sob.thesaurus.class_name_from_pointer:
+          A function which accepts one `str` argument—a synonym key
+          concatenated with "#" and JSON pointer (for example:
+          "key#/body/items/0") and which returns a `str` which will be the
+          resulting class name (for example: "KeyBodyItemsItem").
         """
+        assert_argument_is_instance('name', name, collections.abc.Callable)
         # This assertion ensures `self` contains data which can be described by
         # a model class.
         assert_argument_is_subclass(
@@ -611,8 +686,9 @@ Parameters:
             (dict, list)
         )
         for model_class in self._get_types(
-            name=name,
-            module=module
+            pointer='{}#'.format(quote_plus(pointer, safe='/+')),
+            module=module,
+            name=name
         ):
             assert issubclass(model_class, abc.model.Model)
             yield model_class
@@ -681,26 +757,37 @@ class Thesaurus(OrderedDict):
         new_module += other
         return new_module
 
-    def __iter__(self) -> Iterable[Tuple[str, abc.model.Model]]:
-        key: str
-        value: Synonyms
-        for name, data_list in self._items.items():
-            model: abc.model.Model
-            for model in data_list.get_model(name):
-                yield model
-
     def get_models(
         self,
-        module: Optional[str] = None
+        module: Optional[str] = None,
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
     ) -> Iterable[Union[abc.model.Array, abc.model.Object]]:
-        name: str
+        key: str
         synonyms: Synonyms
-        for name, synonyms in self.items():
+        for key, synonyms in self.items():
             model_class: type
-            for model_class in synonyms.get_models(name, module=module):
+            for model_class in synonyms.get_models(
+                key,
+                module=module,
+                name=name
+            ):
                 yield model_class
 
-    def _get_module_source(self, name: Optional[str] = None) -> str:
+    def _get_module_source(
+        self,
+        module_name: Optional[str] = None,
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
+    ) -> str:
         class_names_metadata: Dict[
             str, Union[meta.Object, meta.Array]
         ] = OrderedDict()
@@ -708,7 +795,10 @@ class Thesaurus(OrderedDict):
         classes: List[str] = []
         metadatas: List[str] = []
         model: Union[abc.model.Object, abc.model.Array]
-        for model in self.get_models(module=name):
+        for model in self.get_models(
+            module=module_name,
+            name=name
+        ):
             source: str
             imports_str: str
             import_line: str
@@ -750,7 +840,15 @@ class Thesaurus(OrderedDict):
             metadatas
         )
 
-    def get_module_source(self) -> str:
+    def get_module_source(
+        self,
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
+    ) -> str:
         """
         This method generates and returns the source code for a module
         defining data models applicable to the data contained in this
@@ -758,12 +856,26 @@ class Thesaurus(OrderedDict):
 
         Parameters:
 
-        - name (str): The name to give the module. This defaults to the module
-          from where this method is called.
+        - name (str) = sob.thesaurus.class_name_from_pointer:
+          A function which accepts one `str` argument—a synonym key
+          concatenated with "#" and JSON pointer (for example:
+          "key#/body/items/0") and which returns a `str` which will be the
+          resulting class name (for example: "KeyBodyItemsItem").
         """
-        return self._get_module_source(name='__main__')
+        return self._get_module_source(
+            '__main__',
+            name=name
+        )
 
-    def get_module(self) -> ModuleType:
+    def get_module(
+        self,
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
+    ) -> ModuleType:
         """
         This method generates and returns a module defining data models
         applicable to the data contained in this thesaurus. This module is not
@@ -772,17 +884,35 @@ class Thesaurus(OrderedDict):
 
         Parameters:
 
-        - name (str): The name to give the module. This defaults to the module
-          from where this method is called.
+        - name (str) = sob.thesaurus.class_name_from_pointer:
+          A function which accepts one `str` argument—a synonym key
+          concatenated with "#" and JSON pointer (for example:
+          "key#/body/items/0") and which returns a `str` which will be the
+          resulting class name (for example: "KeyBodyItemsItem").
         """
         # For pickling to work, the `__module__` variable needs to be set to
         # the calling module.
-        name: str = calling_module_name(2)
-        module: ModuleType = ModuleType(name)
-        exec(self.get_module_source(name=name), module.__dict__)
+        module_name: str = calling_module_name(2)
+        module: ModuleType = ModuleType(module_name)
+        exec(
+            self._get_module_source(
+                module_name,
+                name=name
+            ),
+            module.__dict__
+        )
         return module
 
-    def save_module(self, path: str) -> None:
+    def save_module(
+        self,
+        path: str,
+        name: Optional[
+            Callable[
+                [str],
+                str
+            ]
+        ] = class_name_from_pointer
+    ) -> None:
         """
         This method generates and saves the source code for a module
         defining data models applicable to the data contained in this
@@ -791,8 +921,15 @@ class Thesaurus(OrderedDict):
         Parameters:
 
         - path (str): The file path where the data will be written.
+        - name (str) = sob.thesaurus.class_name_from_pointer:
+          A function which accepts one `str` argument—a synonym key
+          concatenated with "#" and JSON pointer (for example:
+          "key#/body/items/0") and which returns a `str` which will be the
+          resulting class name (for example: "KeyBodyItemsItem").
         """
         os.makedirs(os.path.dirname(path), exist_ok=True)
-        module_source: str = self.get_module_source()
+        module_source: str = self.get_module_source(
+            name=name
+        )
         with open(path, 'w') as module_io:
             module_io.write(module_source)

@@ -533,6 +533,14 @@ def _read_object_property_names(
     return (metadata.properties or {}).keys()
 
 
+def escape_reference_token(reference_token: str) -> str:
+    return reference_token.replace(
+        '~', '~0'
+    ).replace(
+        '/', '~1'
+    )
+
+
 def set_pointer(
     model: Union[
         abc.model.Object,
@@ -551,8 +559,12 @@ def set_pointer(
                 value,
                 (abc.model.Object, abc.model.Dictionary, abc.model.Array)
             ):
-                pointer(value, '%s/%s' % (
-                    pointer_, key.replace('~', '~0').replace('/', '~1'))
+                pointer(
+                    value,
+                    '{}/{}'.format(
+                        pointer_,
+                        escape_reference_token(key)
+                    )
                 )
     elif isinstance(model, abc.model.Object):
         property_name: str
@@ -566,9 +578,9 @@ def set_pointer(
             ):
                 pointer(
                     value,
-                    '%s/%s' % (
+                    '{}/{}'.format(
                         pointer_,
-                        key.replace('~', '~0').replace('/', '~1')
+                        escape_reference_token(key)
                     )
                 )
     elif isinstance(model, abc.model.Array):

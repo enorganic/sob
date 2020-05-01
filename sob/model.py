@@ -2475,11 +2475,29 @@ def _repr_class_docstring(docstring: str = '') -> str:
     return repr_docstring
 
 
+def _model_class_from_meta(metadata: meta.Meta) -> Type[
+    Union[Array, Dictionary, Object]
+]:
+    assert isinstance(
+        metadata,
+        (meta.Object, meta.Array, meta.Dictionary)
+    )
+    return (
+        Object
+        if isinstance(metadata, meta.Object) else
+        Array
+        if isinstance(metadata, meta.Array) else
+        Dictionary
+    )
+
+
 def _class_definition_from_meta(
     name: str,
     metadata: meta.Meta,
     docstring: Optional[str] = None,
-    module: Optional[str] = None
+    module: Optional[str] = None,
+    pre_init_source: str = '',
+    post_init_source: str = ''
 ) -> str:
     """
     This returns a `str` defining a model class, as determined by an
@@ -2487,15 +2505,22 @@ def _class_definition_from_meta(
     """
     assert module is not None
     repr_docstring: str = _repr_class_docstring(docstring)
-    if isinstance(metadata, meta.Dictionary):
-        out = [
-            _get_class_declaration(
-                name,
-                Dictionary
+    out: List[str] = [
+        _get_class_declaration(
+            name,
+            _model_class_from_meta(metadata)
+        )
+    ]
+    if repr_docstring:
+        out.append(repr_docstring)
+    if pre_init_source:
+        out.append(
+            '\n' + utilities.string.indent(
+                pre_init_source,
+                start=0
             )
-        ]
-        if repr_docstring is not None:
-            out.append(repr_docstring)
+        )
+    if isinstance(metadata, meta.Dictionary):
         repr_value_typing: str = indent_(
             _type_hint_from_property_types(
                 metadata.value_types,
@@ -2526,11 +2551,6 @@ def _class_definition_from_meta(
             '        super().__init__(items)\n\n'
         )
     elif isinstance(metadata, meta.Array):
-        out = [
-            _get_class_declaration(name, Array)
-        ]
-        if repr_docstring:
-            out.append(repr_docstring)
         repr_item_typing: str = indent_(
             _type_hint_from_property_types(
                 metadata.item_types,
@@ -2554,11 +2574,6 @@ def _class_definition_from_meta(
             '        super().__init__(items)\n\n'
         )
     elif isinstance(metadata, meta.Object):
-        out = [
-            _get_class_declaration(name, Object)
-        ]
-        if repr_docstring:
-            out.append(repr_docstring)
         out.append(
             '\n'
             '    def __init__(\n'
@@ -2620,6 +2635,13 @@ def _class_definition_from_meta(
         out.append('        super().__init__(_data)\n\n')
     else:
         raise ValueError(metadata)
+    if post_init_source:
+        out.append(
+            '\n' + utilities.string.indent(
+                post_init_source,
+                start=0
+            )
+        )
     return '\n'.join(out)
 
 
@@ -2627,7 +2649,9 @@ def from_meta(
     name: str,
     metadata: abc.meta.Meta,
     module: Optional[str] = None,
-    docstring: Optional[str] = None
+    docstring: Optional[str] = None,
+    pre_init_source: str = '',
+    post_init_source: str = ''
 ) -> type:
     """
     Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
@@ -2644,12 +2668,21 @@ def from_meta(
       code--this should be set to "__main__". The default behavior is only
       appropriate when using this function as a factory.
     - docstring (str): A docstring to associate with the class definition.
+    - pre_init_source (str): Source code to insert *before* the `__init__`
+      function in the class definition.
+    - post_init_source (str): Source code to insert *after* the `__init__`
+      function in the class definition.
     """
     # For pickling to work, the __module__ variable needs to be set...
     if module is None:
         module = calling_module_name(2)
     class_definition: str = _class_definition_from_meta(
-        name, metadata, docstring, module
+        name,
+        metadata,
+        docstring=docstring,
+        module=module,
+        pre_init_source=pre_init_source,
+        post_init_source=post_init_source
     )
     namespace: Dict[str, Any] = dict(__name__='from_meta_%s' % name)
     imports = [
