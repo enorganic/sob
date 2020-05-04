@@ -563,7 +563,11 @@ def set_pointer(
                     value,
                     '{}/{}'.format(
                         pointer_,
-                        escape_reference_token(key)
+                        (
+                            escape_reference_token(key)
+                            if isinstance(key, str) else
+                            str(key)
+                        )
                     )
                 )
     elif isinstance(model, abc.model.Object):
@@ -580,7 +584,11 @@ def set_pointer(
                     value,
                     '{}/{}'.format(
                         pointer_,
-                        escape_reference_token(key)
+                        (
+                            escape_reference_token(key)
+                            if isinstance(key, str) else
+                            str(key)
+                        )
                     )
                 )
     elif isinstance(model, abc.model.Array):
