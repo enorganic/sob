@@ -3,8 +3,6 @@ import os
 import sys
 from subprocess import getstatusoutput
 
-from setuptools_setup_versions import install_requires
-
 REPOSITORY_DIRECTORY = os.path.dirname(
     os.path.dirname(
         __file__
@@ -27,8 +25,6 @@ if __name__ == '__main__':
     os.chdir(
         REPOSITORY_DIRECTORY
     )
-    # Update `setup.py` to require currently installed versions of all packages
-    install_requires.update_versions(operator='~=')
     try:
         # Build
         run(
