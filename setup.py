@@ -1,8 +1,8 @@
-from setuptools import setup  # type: ignore
+from setuptools import setup
 
 setup(
     name='sob',
-    version="0.5.0",
+    version='0.5.5',
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -11,6 +11,8 @@ setup(
     author='David Belais',
     author_email='david@belais.me',
     license='MIT',
+    include_package_data=True,
+    zip_safe=False,
     python_requires='~=3.6',
     keywords='rest api serialization serialize',
     packages=[
@@ -19,10 +21,11 @@ setup(
         'sob.utilities'
     ],
     install_requires=[
-        "pyyaml>=3",
+        "pyyaml~=3.10",
         "iso8601~=0.1",
         "more-itertools~=8.2"
     ],
+    setup_requires=['setuptools'],
     extras_require={
         "test": [
             "mypy~=0.770",
@@ -41,5 +44,10 @@ setup(
             "setuptools-setup-versions>=1.1.0,<2",
             "readme-md-docstrings~=0.1.0,<2"
         ]
-    }
+    },
+    classifiers=[
+        "Programming Language :: Python :: 3",
+        "Operating System :: OS Independent",
+        "Intended Audience :: Developers"
+    ]
 )

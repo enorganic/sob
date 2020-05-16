@@ -13,5 +13,5 @@ if __name__ == '__main__':
     # Update `setup.py` to require currently installed versions of all packages
     requirements.update_setup(
         default_operator='~=',
-        ignore=('pyyaml',)
+        ignore=('pyyaml', 'setuptools')
     )
