@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='sob',
-    version='0.5.5',
+    version='0.5.7',
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -21,7 +21,7 @@ setup(
         'sob.utilities'
     ],
     install_requires=[
-        "pyyaml~=3.10",
+        "pyyaml>=3.10",
         "iso8601~=0.1",
         "more-itertools~=8.2"
     ],
