@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='sob',
-    version='0.5.7',
+    version='0.5.8',
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
@@ -38,9 +38,9 @@ setup(
         "dev": [
             "mypy~=0.770",
             "wheel~=0.34.2",
-            "tox~=3.14.6",
-            "pytest~=5.4.1",
-            "flake8~=3.7.9",
+            "tox~=3.14",
+            "pytest~=5.4",
+            "flake8~=3.7",
             "setuptools-setup-versions>=1.1.0,<2",
             "readme-md-docstrings~=0.1.0,<2"
         ]
