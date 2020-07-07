@@ -120,16 +120,43 @@ def class_name(string):
 
     >>> print(class_name('ABC Acronym'))
     ABCAcronym
+
+    >>> print(class_name('AB CD Efg'))
+    AbCDEfg
     """
     name = camel(string, capitalize=True)
-    if iskeyword(name) or (name in builtins.__dict__):
+    while iskeyword(name) or (name in builtins.__dict__):
         name += '_'
     return name
 
-
+_UNNACCENTED_LOWERCASE_CHARACTERS: str = 'abcdefghijklmnopqrstuvwxyz'
+_UNNACCENTED_UPPERCASE_CHARACTERS: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+_NUMERIC_CHARACTERS: str = '0123456789'
 _UNNACCENTED_ALPHANUMERIC_CHARACTERS = (
-    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    f'{_UNNACCENTED_LOWERCASE_CHARACTERS}'
+    f'{_UNNACCENTED_UPPERCASE_CHARACTERS}'
+    f'{_NUMERIC_CHARACTERS}'
 )
+
+
+def _unexempt_camel_acronym(
+    characters: List[str],
+    capitalize: bool = False
+) -> None:
+    """
+    For use with `camel`, this function converts all but the first character
+    of a trailing acronym to lowercase, in order to preserve visible
+    distinction in a case of back-to-back acronyms.
+    """
+    # Iterate backwards over the characters, stopping before getting to the
+    # first character
+    index: int
+    for index in range(len(characters) - 1, 0 if capitalize else -1, -1):
+        character: str = characters[index]
+        if character in _UNNACCENTED_UPPERCASE_CHARACTERS:
+            characters[index] = character.lower()
+        else:
+            break
 
 
 def camel(string: str, capitalize: bool = False) -> str:
@@ -158,7 +185,7 @@ def camel(string: str, capitalize: bool = False) -> str:
     theBirdsAndTheBees
 
     >>> print(camel('FYI is an acronym'))
-    fyiIsAnAcronym
+    FYIIsAnAcronym
 
     >>> print(camel('in-you-go'))
     inYouGo
@@ -171,19 +198,35 @@ def camel(string: str, capitalize: bool = False) -> str:
 
     >>> print(camel('in'))
     in
+
+    >>> print(camel('AB CD Efg', capitalize=True))
+    AbCDEfg
     """
-    substring: str
+    index: int
+    character: str
     string = normalize('NFKD', string)
     characters: List[str] = []
-    if not capitalize:
-        string = string.lower()
-    capitalize_next: bool = capitalize
-    for substring in string:
-        if substring in _UNNACCENTED_ALPHANUMERIC_CHARACTERS:
+    # if not capitalize:
+    #     string = string.lower()
+    capitalize_next: bool = True
+    length: int = len(string)
+    for index, character in enumerate(string):
+        if character in _UNNACCENTED_ALPHANUMERIC_CHARACTERS:
             if capitalize_next:
-                if capitalize or characters:
-                    substring = substring.upper()
-            characters.append(substring)
+                next_index: int = index + 1
+                if (
+                   next_index < length
+                ) and (
+                    character in _UNNACCENTED_UPPERCASE_CHARACTERS
+                ) and (
+                    string[next_index] in _UNNACCENTED_UPPERCASE_CHARACTERS
+                ):
+                    _unexempt_camel_acronym(characters, capitalize=capitalize)
+                elif capitalize or characters:
+                    character = character.upper()
+                else:
+                    character = character.lower()
+            characters.append(character)
             capitalize_next = False
         else:
             capitalize_next = True
