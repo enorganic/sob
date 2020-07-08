@@ -2,12 +2,12 @@ from setuptools import setup
 
 setup(
     name='sob',
-    version='0.5.10',
+    version='0.5.11',
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
     ),
-    url='https://github.com/davebelais/sob.git',
+    url='https://github.com/davebelais/sob',
     author='David Belais',
     author_email='david@belais.me',
     license='MIT',

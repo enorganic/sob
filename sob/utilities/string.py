@@ -8,6 +8,20 @@ from typing import List, Match, Optional, Pattern, Tuple
 from unicodedata import normalize
 
 
+_DIGITS: str = '0123456789'
+# noinspection SpellCheckingInspection
+_LOWERCASE_ALPHABET: str = 'abcdefghijklmnopqrstuvwxyz'
+# noinspection SpellCheckingInspection
+_UPPERCASE_ALPHABET: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+_ALPHANUMERIC_CHARACTERS = (
+    f'{_DIGITS}'
+    f'{_UPPERCASE_ALPHABET}'
+    f'{_LOWERCASE_ALPHABET}'
+)
+_LINE_LENGTH: int = 79
+_URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r'^(.*/)([^/]*)')
+
+
 def property_name(string: str) -> str:
     """
     Converts a "camelCased" attribute/property name, a name which conflicts
@@ -122,41 +136,12 @@ def class_name(string):
     ABCAcronym
 
     >>> print(class_name('AB CD Efg'))
-    AbCDEfg
+    ABCdEfg
     """
     name = camel(string, capitalize=True)
     while iskeyword(name) or (name in builtins.__dict__):
         name += '_'
     return name
-
-_UNNACCENTED_LOWERCASE_CHARACTERS: str = 'abcdefghijklmnopqrstuvwxyz'
-_UNNACCENTED_UPPERCASE_CHARACTERS: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
-_NUMERIC_CHARACTERS: str = '0123456789'
-_UNNACCENTED_ALPHANUMERIC_CHARACTERS = (
-    f'{_UNNACCENTED_LOWERCASE_CHARACTERS}'
-    f'{_UNNACCENTED_UPPERCASE_CHARACTERS}'
-    f'{_NUMERIC_CHARACTERS}'
-)
-
-
-def _unexempt_camel_acronym(
-    characters: List[str],
-    capitalize: bool = False
-) -> None:
-    """
-    For use with `camel`, this function converts all but the first character
-    of a trailing acronym to lowercase, in order to preserve visible
-    distinction in a case of back-to-back acronyms.
-    """
-    # Iterate backwards over the characters, stopping before getting to the
-    # first character
-    index: int
-    for index in range(len(characters) - 1, 0 if capitalize else -1, -1):
-        character: str = characters[index]
-        if character in _UNNACCENTED_UPPERCASE_CHARACTERS:
-            characters[index] = character.lower()
-        else:
-            break
 
 
 def camel(string: str, capitalize: bool = False) -> str:
@@ -200,45 +185,62 @@ def camel(string: str, capitalize: bool = False) -> str:
     in
 
     >>> print(camel('AB CD Efg', capitalize=True))
-    AbCDEfg
+    ABCdEfg
+
+    >>> print(camel('ABC DEF GHI', capitalize=True))
+    AbcDefGhi
+
+    >>> print(camel('ABC_DEF_GHI', capitalize=True))
+    AbcDefGhi
+
+    >>> print(camel('ABC DEF GHI'))
+    abcDefGhi
+
+    >>> print(camel('ABC_DEF_GHI'))
+    abcDefGhi
     """
     index: int
     character: str
     string = normalize('NFKD', string)
     characters: List[str] = []
-    # if not capitalize:
-    #     string = string.lower()
-    capitalize_next: bool = True
-    length: int = len(string)
+    all_uppercase: bool = string.upper() == string
+    capitalize_next: bool = capitalize
+    uncapitalize_next: bool = (
+        not capitalize
+    ) and (
+        len(string) < 2
+        or all_uppercase
+        or not (
+            string[0] in _UPPERCASE_ALPHABET and
+            string[1] in _UPPERCASE_ALPHABET
+        )
+    )
     for index, character in enumerate(string):
-        if character in _UNNACCENTED_ALPHANUMERIC_CHARACTERS:
+        if character in _ALPHANUMERIC_CHARACTERS:
             if capitalize_next:
-                next_index: int = index + 1
-                if (
-                   next_index < length
-                ) and (
-                    character in _UNNACCENTED_UPPERCASE_CHARACTERS
-                ) and (
-                    string[next_index] in _UNNACCENTED_UPPERCASE_CHARACTERS
-                ):
-                    _unexempt_camel_acronym(characters, capitalize=capitalize)
+                if all_uppercase:
+                    uncapitalize_next = True
                 elif capitalize or characters:
                     character = character.upper()
+                    # This prevents two acronyms which are adjacent from
+                    # retaining capitalization (since word separations would
+                    # not be possible to identify if caps were kept for both)
+                    if characters and (
+                        characters[-1] in _UPPERCASE_ALPHABET
+                    ):
+                        uncapitalize_next = True
+            elif uncapitalize_next:
+                if character in _LOWERCASE_ALPHABET:
+                    uncapitalize_next = False
                 else:
                     character = character.lower()
             characters.append(character)
             capitalize_next = False
         else:
             capitalize_next = True
+            uncapitalize_next = False
     character_string = ''.join(characters)
     return character_string
-
-
-_DIGITS: str = '0123456789'
-# noinspection SpellCheckingInspection
-_LOWERCASE_ALPHABET: str = 'abcdefghijklmnopqrstuvwxyz'
-# noinspection SpellCheckingInspection
-_UPPERCASE_ALPHABET: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
 class _CharacterType(enum.Enum):
@@ -362,9 +364,6 @@ def indent(
     return indented_text
 
 
-_URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r'^(.*/)([^/]*)')
-
-
 def url_directory_and_file_name(url: str) -> Tuple[str, str]:
     """
     Split a URL into a directory path and file name
@@ -397,9 +396,6 @@ def url_relative_to(absolute_url: str, base_url: str) -> str:
             base_url = url_directory_and_file_name(base_url[:-1])[0]
         relative_url += absolute_url[len(base_url):]
     return relative_url
-
-
-_LINE_LENGTH: int = 79
 
 
 def split_long_comment_line(
