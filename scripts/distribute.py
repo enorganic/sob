@@ -12,6 +12,7 @@ PACKAGE_NAME = REPOSITORY_DIRECTORY.split('/')[-1].split('\\')[-1]
 
 
 def run(command: str) -> str:
+    print(command)
     status, output = getstatusoutput(command)
     # Create an error if a non-zero exit status is encountered
     if status:
@@ -27,10 +28,10 @@ if __name__ == '__main__':
     )
     try:
         # Build
-        run(
-            f'{sys.executable} setup.py sdist bdist_wheel upload clean --all'
-        )
+        run(f'{sys.executable} setup.py sdist bdist_wheel')
+        run(f'{sys.executable} -m twine upload dist/*')
     finally:
+        run(f'{sys.executable} setup.py clean --all')
         exec(
             open(REPOSITORY_DIRECTORY + '/scripts/clean.py').read(),
             {
