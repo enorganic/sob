@@ -28,26 +28,27 @@ setup(
     install_requires=[
         "pyyaml>=3.10",
         "iso8601~=0.1",
-        "more-itertools~=8.2"
+        "more-itertools~=8.5"
     ],
     setup_requires=['setuptools'],
     extras_require={
         "test": [
-            "mypy~=0.770",
-            "tox~=3.14",
+            "mypy~=0.782",
+            "tox~=3.19",
             "pytest~=5.4",
-            "flake8~=3.7",
-            "setuptools-setup-versions>=1.1.1,<2",
+            "flake8~=3.8",
+            "setuptools-setup-versions>=1.2.3,<2",
             "readme-md-docstrings>=0.1.0,<1"
         ],
         "dev": [
-            "mypy~=0.770",
+            "mypy~=0.782",
             "wheel~=0.34.2",
-            "tox~=3.14",
+            "tox~=3.19",
             "pytest~=5.4",
-            "flake8~=3.7",
-            "setuptools-setup-versions>=1.1.1,<2",
-            "readme-md-docstrings~=0.1.0,<2"
+            "flake8~=3.8",
+            "setuptools-setup-versions>=1.2.3,<2",
+            "readme-md-docstrings~=0.1.0,<2",
+            "twine~=3.2"
         ]
     },
     classifiers=[
