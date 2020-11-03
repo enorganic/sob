@@ -1,12 +1,12 @@
 import os
-from io import IOBase, UnsupportedOperation
-from typing import Callable, Optional, Union
+from io import UnsupportedOperation
+from typing import Callable, IO, Optional, Union
 from urllib.parse import urljoin
 
 from .inspect import get_method
 
 
-def read(file: IOBase) -> Union[str, bytes]:
+def read(file: IO) -> Union[str, bytes]:
     """
     Read a file-like object and return the text or binary data it contains.
 
@@ -37,7 +37,7 @@ def read(file: IOBase) -> Union[str, bytes]:
     )
 
 
-def get_url(file: IOBase) -> Optional[str]:
+def get_url(file: IO) -> Optional[str]:
     """
     Get the URL from which an input-output (file-like) object was sourced.
 

@@ -1,8 +1,7 @@
-import collections
+import collections.abc
 from abc import ABCMeta, abstractmethod
-from collections import OrderedDict
 from io import IOBase
-from typing import Any, Iterable, List, Dict, Optional, Union
+from typing import Any, IO, Iterable, List, Dict, Optional, Union
 
 from . import meta
 from ..utilities.typing import JSONTypes
@@ -69,7 +68,7 @@ class Object(Model, collections.abc.MutableMapping, metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, IOBase]] = None
+        _data: Optional[Union[str, bytes, dict, IO]] = None
     ) -> None:
         pass
 
@@ -114,3 +113,4 @@ class Array(Model, collections.abc.MutableSequence, metaclass=ABCMeta):
     @abstractmethod
     def _marshal(self) -> List[JSONTypes]:
         pass
+

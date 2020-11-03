@@ -3,7 +3,7 @@ This module tests the application of version-specific properties and types to
 model instances
 """
 from io import IOBase
-from typing import Dict, List, Optional, Sequence, Set, Union
+from typing import Dict, IO, List, Optional, Sequence, Set, Union
 
 import sob
 
@@ -16,7 +16,7 @@ class MemberObjectA(sob.model.Object):
     def __init__(
         self,
         _data: Optional[
-            Union[str, bytes, dict, Sequence, IOBase]
+            Union[str, bytes, dict, Sequence, IO]
         ] = None,
         property_a: Optional[
             int
@@ -39,7 +39,7 @@ class MemberObjectB(sob.model.Object):
     def __init__(
         self,
         _data: Optional[
-            Union[str, bytes, dict, Sequence, IOBase]
+            Union[str, bytes, dict, Sequence, IO]
         ] = None,
         property_a: Optional[
             Union[str, int, sob.types.Null]
@@ -62,7 +62,7 @@ class MemberObjectC(sob.model.Object):
     def __init__(
         self,
         _data: Optional[
-            Union[str, bytes, dict, Sequence, IOBase]
+            Union[str, bytes, dict, Sequence, IO]
         ] = None,
         property_a: Optional[
             Union[str, int, sob.types.Null]
@@ -94,7 +94,7 @@ class MemberDictionaryA(sob.model.Dictionary):
                     str,
                     MemberObjectA
                 ],
-                IOBase, str, bytes
+                IO, str, bytes
             ]
         ] = None
     ) -> None:
@@ -114,7 +114,7 @@ class MemberDictionaryB(sob.model.Dictionary):
                         MemberObjectB
                     ]
                 ],
-                IOBase, str, bytes
+                IO, str, bytes
             ]
         ] = None
     ) -> None:
@@ -137,7 +137,7 @@ class MemberDictionaryC(sob.model.Dictionary):
                         ]
                     ]
                 ],
-                IOBase, str, bytes
+                IO, str, bytes
             ]
         ] = None
     ) -> None:
@@ -153,7 +153,7 @@ class MemberArrayA(sob.model.Array):
                 Sequence[MemberObjectA],
                 Set[MemberObjectA],
                 str, bytes,
-                IOBase
+                IO
             ]
         ] = None
     ) -> None:
@@ -169,7 +169,7 @@ class MemberArrayB(sob.model.Array):
                 Sequence[MemberObjectB],
                 Set[MemberObjectB],
                 str, bytes,
-                IOBase
+                IO
             ]
         ] = None
     ) -> None:
@@ -185,7 +185,7 @@ class MemberArrayC(sob.model.Array):
                 Sequence[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
                 Set[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
                 str, bytes,
-                IOBase
+                IO
             ]
         ] = None
     ) -> None:

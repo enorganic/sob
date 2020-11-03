@@ -80,7 +80,7 @@ class Model:
 
     def _init_format(
         self,
-        data: Optional[Union[str, bytes, IOBase]] = None
+        data: Optional[Union[str, bytes, IO]] = None
     ) -> Any:
         """
         This function deserializes raw JSON or YAML and remembers what format
@@ -103,6 +103,7 @@ class Model:
 
 
 # noinspection PyUnresolvedReferences
+@collections.abc.MutableMapping.register
 @abc.model.Model.register
 @abc.model.Object.register
 class Object(Model):
@@ -115,7 +116,7 @@ class Object(Model):
 
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, IOBase]] = None
+        _data: Optional[Union[str, bytes, dict, IO]] = None
     ) -> None:
         self._meta: Optional[meta.Object]
         self._hooks: Optional[hooks.Object]
@@ -542,6 +543,7 @@ class Object(Model):
 
 
 # noinspection PyUnresolvedReferences
+@collections.abc.MutableSequence.register
 @abc.model.Model.register
 @abc.model.Array.register
 class Array(list, Model):
@@ -584,7 +586,7 @@ class Array(list, Model):
             Union[
                 Sequence, Set,
                 str, bytes,
-                IOBase
+                IO
             ]
         ] = None,
         item_types: Optional[
@@ -824,6 +826,7 @@ class Array(list, Model):
 
 
 # noinspection PyUnresolvedReferences
+@collections.abc.MutableMapping.register
 @abc.model.Model.register
 @abc.model.Dictionary.register
 class Dictionary(collections.OrderedDict, Model):
@@ -866,7 +869,7 @@ class Dictionary(collections.OrderedDict, Model):
             Union[
                 Dict[str, Any],
                 Sequence[Tuple[str, Any]],
-                IOBase, str, bytes
+                IO, str, bytes
             ]
         ] = None,
         value_types: Optional[
@@ -1775,7 +1778,7 @@ def serialize(
 
 
 def deserialize(
-    data: Optional[Union[str, IOBase]],
+    data: Optional[Union[str, IO]],
     format_: str = 'json'
 ) -> JSONTypes:
     """
@@ -1817,7 +1820,7 @@ def deserialize(
 
 
 def detect_format(
-    data: Optional[Union[str, IOBase]]
+    data: Optional[Union[str, IO]]
 ) -> Tuple[Any, Optional[str]]:
     """
     This function accepts a string or file-like object and returns a tuple
@@ -2291,7 +2294,7 @@ def _replace_dictionary_nulls(
 
 
 def replace_nulls(
-    model_instance: abc.model.Model,
+    model_instance: Union[Object, Dictionary, Array],
     replacement_value: Any = None
 ) -> None:
     """
@@ -2303,11 +2306,11 @@ def replace_nulls(
     - replacement_value (typing.Any):
       The value with which nulls will be replaced. This defaults to `None`.
     """
-    if isinstance(model_instance, Object):
+    if isinstance(model_instance, abc.model.Object):
         _replace_object_nulls(model_instance, replacement_value)
-    elif isinstance(model_instance, Array):
+    elif isinstance(model_instance, abc.model.Array):
         _replace_array_nulls(model_instance, replacement_value)
-    elif isinstance(model_instance, Dictionary):
+    elif isinstance(model_instance, abc.model.Dictionary):
         _replace_dictionary_nulls(model_instance, replacement_value)
 
 
