@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='sob',
-    version='0.6.0',
+    version='0.6.1',
     description=(
         'A framework for serializing/deserializing JSON/YAML into python '
         'class instances and vice versa'
