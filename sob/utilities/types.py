@@ -3,7 +3,7 @@ from abc import ABCMeta
 from collections import abc
 from datetime import date, datetime
 from types import GeneratorType
-from typing import Any, Optional, Dict, Hashable, Tuple, List
+from typing import Any, Dict, Hashable, Tuple, List
 
 __all__: List[str] = [
     'UNDEFINED',
@@ -15,7 +15,7 @@ __all__: List[str] = [
     'JSON_TYPES'
 ]
 
-UNDEFINED: Optional['Undefined'] = None
+_module_locals: Dict[str, Any] = locals()
 
 
 class Undefined:
@@ -30,7 +30,7 @@ class Undefined:
         Only one instance of `Undefined` is permitted, so initialization
         checks to make sure this is the first use.
         """
-        if UNDEFINED is not None:
+        if 'UNDEFINED' in _module_locals:
             raise RuntimeError(
                 '%s may only be instantiated once.' % repr(self)
             )
@@ -68,7 +68,7 @@ class Undefined:
         return other is self
 
 
-UNDEFINED = Undefined()
+UNDEFINED: Undefined = Undefined()
 
 
 class NoneType(metaclass=ABCMeta):
@@ -78,7 +78,6 @@ class NoneType(metaclass=ABCMeta):
 
 # noinspection PyUnresolvedReferences
 NoneType.register(type(None))
-NULL: Optional['Null'] = None
 
 
 class DefinitionExistsError(Exception):
@@ -98,7 +97,7 @@ class Null:
     """
 
     def __init__(self) -> None:
-        if NULL is not None:
+        if 'NULL' in _module_locals:
             raise DefinitionExistsError(
                 '%s may only be defined once.' % repr(self)
             )
@@ -133,7 +132,7 @@ class Null:
         return self
 
 
-NULL = Null()
+NULL: Null = Null()
 
 
 MARSHALLABLE_TYPES: Tuple[type, ...] = (
