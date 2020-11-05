@@ -11,18 +11,20 @@ import os
 from subprocess import getstatusoutput
 from urllib.parse import urljoin
 
-os.chdir(urljoin(__file__, '../'))
+os.chdir(urljoin(__file__, "../"))
 
-module_name = __file__.split('/')[-3].replace('-', '_')
+module_name = __file__.split("/")[-3].replace("-", "_")
 
 for file_or_directory in (
-    'dist', 'build', '%s.egg-info' % module_name,
-    '.cache', '.pytest_cache', '.mypy_cache', '.tox'
+    "dist",
+    "%s.egg-info" % module_name,
+    ".cache",
+    ".pytest_cache",
+    ".tox",
 ):
     if os.path.exists(file_or_directory):
         command = (
-            'git rm -r -f --cached --ignore-unmatch "%s"' %
-            file_or_directory
+            'git rm -r -f --cached --ignore-unmatch "%s"' % file_or_directory
         )
         print(command)
         status, output = getstatusoutput(command)
