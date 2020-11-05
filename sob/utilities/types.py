@@ -68,7 +68,7 @@ class Undefined:
         return other is self
 
 
-locals()['UNDEFINED'] = Undefined()
+UNDEFINED = Undefined()
 
 
 class NoneType(metaclass=ABCMeta):
@@ -133,7 +133,7 @@ class Null:
         return self
 
 
-locals()['NULL'] = Null()
+NULL = Null()
 
 
 MARSHALLABLE_TYPES: Tuple[type, ...] = (
