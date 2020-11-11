@@ -2,22 +2,22 @@
 This module provides functionality for creating a data model from a
 set of example structures.
 """
+import binascii
 import collections
 import functools
 import os
-from types import ModuleType
 from base64 import b64decode
 from collections import OrderedDict
 from copy import copy, deepcopy
 from datetime import date, datetime
 from io import IOBase
+from types import ModuleType
 from typing import (
     Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 )
 from urllib.parse import quote_plus
 from urllib.response import addbase
 
-import binascii
 from iso8601 import ParseError, parse_date
 
 from . import __name__ as _parent_module_name, abc, meta
@@ -31,13 +31,12 @@ from .utilities.assertion import (
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
 from .utilities.string import class_name, property_name
-from .utilities.types import NULL, Null, MARSHALLABLE_TYPES
+from .utilities.types import MARSHALLABLE_TYPES, NULL, Null
+from .utilities.typing import MarshallableTypes
 
 __all__: List[str] = [
     'Synonyms', 'Thesaurus'
 ]
-
-from .utilities.typing import MarshallableTypes
 
 _READABLE_TYPES: Tuple[type, ...] = (IOBase, addbase)
 
@@ -482,10 +481,10 @@ class Synonyms(set):
         for item in self:
             assert isinstance(item, dict)
             value: MarshallableTypes
-            for property_name, value in item.items():
-                if property_name not in property_names_values:
-                    property_names_values[property_name] = []
-                property_names_values[property_name].append(value)
+            for property_name_, value in item.items():
+                if property_name_ not in property_names_values:
+                    property_names_values[property_name_] = []
+                property_names_values[property_name_].append(value)
         return property_names_values
 
     def _get_object_models(

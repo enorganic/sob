@@ -2,7 +2,6 @@
 This module tests the application of version-specific properties and types to
 model instances
 """
-from io import IOBase
 from typing import Dict, IO, List, Optional, Sequence, Set, Union
 
 import sob

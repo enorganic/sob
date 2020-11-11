@@ -1,7 +1,6 @@
 import collections.abc
 from abc import ABCMeta, abstractmethod
-from io import IOBase
-from typing import Any, IO, Iterable, List, Dict, Optional, Union
+from typing import Any, Dict, IO, Iterable, List, Optional, Union
 
 from . import meta
 from ..utilities.typing import JSONTypes
@@ -113,4 +112,3 @@ class Array(Model, collections.abc.MutableSequence, metaclass=ABCMeta):
     @abstractmethod
     def _marshal(self) -> List[JSONTypes]:
         pass
-

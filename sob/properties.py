@@ -27,7 +27,6 @@ from .utilities.typing import MarshallableTypes
 from .version import Version
 
 __all__: List[str] = [
-    'types',
     'Property',
     'Array',
     'Boolean',
@@ -659,4 +658,3 @@ TYPES_PROPERTIES: Dict[type, type] = {
         )
     )
 }
-

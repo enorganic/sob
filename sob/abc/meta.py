@@ -109,5 +109,3 @@ class Properties(Meta, metaclass=ABCMeta):
     @abstractmethod
     def __getitem__(self, key: str) -> Property:
         pass
-
-

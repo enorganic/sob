@@ -4,7 +4,6 @@ from typing import Callable, List, Optional, Iterable, Union
 from .version import Version
 
 __all__: List[str] = [
-    'types',  # For the backwards-compatibility of `oapi` generated modules
     'Property',
     'Array',
     'Boolean',
