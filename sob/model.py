@@ -2547,7 +2547,7 @@ def _class_definition_from_meta(
             f'                        {repr_value_typing}\n'
             '                    ]\n'
             '                ],\n'
-            '                io.IOBase, str, bytes\n'
+            '                typing.IO, str, bytes\n'
             '            ]\n'
             '        ] = None\n'
             '    ) -> None:\n'
@@ -2570,7 +2570,7 @@ def _class_definition_from_meta(
             '                typing.Sequence[\n'
             f'                    {repr_item_typing}\n'
             '                ],\n'
-            '                io.IOBase, str, bytes\n'
+            '                typing.IO, str, bytes\n'
             '            ]\n'
             '        ] = None\n'
             '    ) -> None:\n'
@@ -2582,7 +2582,7 @@ def _class_definition_from_meta(
             '    def __init__(\n'
             '        self,\n'
             '        _data: typing.Optional[\n'
-            '            typing.Union[dict, str, bytes, io.IOBase]\n'
+            '            typing.Union[dict, str, bytes, typing.IO]\n'
             '        ] = None,'
         )
         metadata_properties_items: Tuple[
