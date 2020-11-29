@@ -1,18 +1,13 @@
-import decimal
 from abc import ABCMeta
-from collections import abc
-from datetime import date, datetime
-from types import GeneratorType
-from typing import Any, Dict, Hashable, Tuple, List
+from typing import Any, Dict, Hashable, List
 
 __all__: List[str] = [
-    'UNDEFINED',
-    'Undefined',
-    'NoneType',
-    'NULL',
-    'DefinitionExistsError',
-    'Null', 'MARSHALLABLE_TYPES',
-    'JSON_TYPES'
+    "UNDEFINED",
+    "Undefined",
+    "NoneType",
+    "NULL",
+    "DefinitionExistsError",
+    "Null",
 ]
 
 _module_locals: Dict[str, Any] = locals()
@@ -30,9 +25,9 @@ class Undefined:
         Only one instance of `Undefined` is permitted, so initialization
         checks to make sure this is the first use.
         """
-        if 'UNDEFINED' in _module_locals:
+        if "UNDEFINED" in _module_locals:
             raise RuntimeError(
-                '%s may only be instantiated once.' % repr(self)
+                "%s may only be instantiated once." % repr(self)
             )
 
     def __repr__(self) -> str:
@@ -40,15 +35,16 @@ class Undefined:
         Represent instances of this class using the qualified name for the
         constant `UNDEFINED`.
         """
-        representation = 'UNDEFINED'
+        representation = "UNDEFINED"
         if self.__module__ not in (
-            '__main__', 'builtins', '__builtin__', __name__
+            "__main__",
+            "builtins",
+            "__builtin__",
+            __name__,
         ):
-            representation = ''.join([
-                type(self).__module__,
-                '.',
-                representation
-            ])
+            representation = "".join(
+                [type(self).__module__, ".", representation]
+            )
         return representation
 
     def __bool__(self) -> bool:
@@ -97,9 +93,9 @@ class Null:
     """
 
     def __init__(self) -> None:
-        if 'NULL' in _module_locals:
+        if "NULL" in _module_locals:
             raise DefinitionExistsError(
-                '%s may only be defined once.' % repr(self)
+                "%s may only be defined once." % repr(self)
             )
 
     def __bool__(self) -> bool:
@@ -112,7 +108,7 @@ class Null:
         return 0
 
     def __str__(self) -> str:
-        return 'null'
+        return "null"
 
     @staticmethod
     def _marshal() -> None:
@@ -120,29 +116,16 @@ class Null:
 
     def __repr__(self) -> str:
         return (
-            'NULL'
-            if self.__module__ in ('__main__', 'builtins', '__builtin__') else
-            '%s.NULL' % self.__module__
+            "NULL"
+            if self.__module__ in ("__main__", "builtins", "__builtin__")
+            else "%s.NULL" % self.__module__
         )
 
-    def __copy__(self) -> 'Null':
+    def __copy__(self) -> "Null":
         return self
 
-    def __deepcopy__(self, memo: Dict[Hashable, Any]) -> 'Null':
+    def __deepcopy__(self, memo: Dict[Hashable, Any]) -> "Null":
         return self
 
 
 NULL: Null = Null()
-
-
-MARSHALLABLE_TYPES: Tuple[type, ...] = (
-    str, bytes, bytearray, bool,
-    abc.MutableMapping,
-    abc.Set, abc.Sequence, GeneratorType,
-    int, float, decimal.Decimal,
-    date, datetime,
-    Null
-)
-JSON_TYPES: Tuple[type, ...] = (
-    str, dict, list, int, float, bool, NoneType
-)

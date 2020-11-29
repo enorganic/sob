@@ -8,18 +8,16 @@ from typing import List, Match, Optional, Pattern, Tuple
 from unicodedata import normalize
 
 
-_DIGITS: str = '0123456789'
+_DIGITS: str = "0123456789"
 # noinspection SpellCheckingInspection
-_LOWERCASE_ALPHABET: str = 'abcdefghijklmnopqrstuvwxyz'
+_LOWERCASE_ALPHABET: str = "abcdefghijklmnopqrstuvwxyz"
 # noinspection SpellCheckingInspection
-_UPPERCASE_ALPHABET: str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+_UPPERCASE_ALPHABET: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _ALPHANUMERIC_CHARACTERS = (
-    f'{_DIGITS}'
-    f'{_UPPERCASE_ALPHABET}'
-    f'{_LOWERCASE_ALPHABET}'
+    f"{_DIGITS}" f"{_UPPERCASE_ALPHABET}" f"{_LOWERCASE_ALPHABET}"
 )
-_LINE_LENGTH: int = 79
-_URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r'^(.*/)([^/]*)')
+_URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r"^(.*/)([^/]*)")
+MAX_LINE_LENGTH: int = 79
 
 
 def property_name(string: str) -> str:
@@ -52,61 +50,33 @@ def property_name(string: str) -> str:
     name: str = string
     # Replace accented and otherwise modified latin characters with their
     # basic latin equivalent
-    name = normalize('NFKD', name)
+    name = normalize("NFKD", name)
     # Replace any remaining non-latin characters with underscores
-    name = re.sub(
-        r'([^\x20-\x7F]|\s)+',
-        '_',
-        name
-    )
+    name = re.sub(r"([^\x20-\x7F]|\s)+", "_", name)
     # Insert underscores between lowercase and uppercase characters
-    name = re.sub(
-        r'([a-z])([A-Z])',
-        r'\1_\2',
-        name
-    )
+    name = re.sub(r"([a-z])([A-Z])", r"\1_\2", name)
     # Insert underscores between uppercase characters and following uppercase
     # characters which are followed by lowercase characters (indicating the
     # latter uppercase character was intended as part of a capitalized word
-    name = re.sub(
-        r'([A-Z])([A-Z])([a-z])',
-        r'\1_\2\3',
-        name
-    )
+    name = re.sub(r"([A-Z])([A-Z])([a-z])", r"\1_\2\3", name)
     # Replace any series of one or more non-alphanumeric characters remaining
     # with a single underscore
-    name = re.sub(
-        r'[^\w_]+',
-        '_',
-        name
-    ).lower()
+    name = re.sub(r"[^\w_]+", "_", name).lower()
     # Only insert underscores between letters and numbers if camelCasing is
     # found in the original string
     if string != string.lower() and string != string.upper():
-        name = re.sub(
-            r'([0-9])([a-zA-Z])',
-            r'\1_\2',
-            name
-        )
-        name = re.sub(
-            r'([a-zA-Z])([0-9])',
-            r'\1_\2',
-            name
-        )
+        name = re.sub(r"([0-9])([a-zA-Z])", r"\1_\2", name)
+        name = re.sub(r"([a-zA-Z])([0-9])", r"\1_\2", name)
     # Replace any two or more adjacent underscores with a single underscore
-    name = re.sub(
-        r'__+',
-        '_',
-        name
-    )
+    name = re.sub(r"__+", "_", name)
     # Append an underscore to the keyword until it does not conflict with any
     # python keywords or built-ins
     while iskeyword(name) or (name in builtins.__dict__):
-        name += '_'
-    return name.lstrip('_')
+        name += "_"
+    return name.lstrip("_")
 
 
-def class_name(string):
+def class_name(string: str) -> str:
     """
     This function accepts a string and returns a variation of that string
     which is a PEP-8 compatible python class name.
@@ -140,7 +110,7 @@ def class_name(string):
     """
     name = camel(string, capitalize=True)
     while iskeyword(name) or (name in builtins.__dict__):
-        name += '_'
+        name += "_"
     return name
 
 
@@ -201,18 +171,16 @@ def camel(string: str, capitalize: bool = False) -> str:
     """
     index: int
     character: str
-    string = normalize('NFKD', string)
+    string = normalize("NFKD", string)
     characters: List[str] = []
     all_uppercase: bool = string.upper() == string
     capitalize_next: bool = capitalize
-    uncapitalize_next: bool = (
-        not capitalize
-    ) and (
+    uncapitalize_next: bool = (not capitalize) and (
         len(string) < 2
         or all_uppercase
         or not (
-            string[0] in _UPPERCASE_ALPHABET and
-            string[1] in _UPPERCASE_ALPHABET
+            string[0] in _UPPERCASE_ALPHABET
+            and string[1] in _UPPERCASE_ALPHABET
         )
     )
     for index, character in enumerate(string):
@@ -225,9 +193,7 @@ def camel(string: str, capitalize: bool = False) -> str:
                     # This prevents two acronyms which are adjacent from
                     # retaining capitalization (since word separations would
                     # not be possible to identify if caps were kept for both)
-                    if characters and (
-                        characters[-1] in _UPPERCASE_ALPHABET
-                    ):
+                    if characters and (characters[-1] in _UPPERCASE_ALPHABET):
                         uncapitalize_next = True
             elif uncapitalize_next:
                 if character in _LOWERCASE_ALPHABET:
@@ -239,7 +205,7 @@ def camel(string: str, capitalize: bool = False) -> str:
         else:
             capitalize_next = True
             uncapitalize_next = False
-    character_string = ''.join(characters)
+    character_string = "".join(characters)
     return character_string
 
 
@@ -295,12 +261,12 @@ def camel_split(string: str) -> Tuple[str, ...]:
     for character in string:
         character_type: _CharacterType = (
             _CharacterType.LOWERCASE
-            if character in _LOWERCASE_ALPHABET else
-            _CharacterType.DIGIT
-            if character in _DIGITS else
-            _CharacterType.UPPERCASE
-            if character in _UPPERCASE_ALPHABET else
-            _CharacterType.OTHER
+            if character in _LOWERCASE_ALPHABET
+            else _CharacterType.DIGIT
+            if character in _DIGITS
+            else _CharacterType.UPPERCASE
+            if character in _UPPERCASE_ALPHABET
+            else _CharacterType.OTHER
         )
         if character_type == _CharacterType.LOWERCASE:
             if preceding_character_type == _CharacterType.LOWERCASE:
@@ -335,32 +301,30 @@ def camel_split(string: str) -> Tuple[str, ...]:
             else:
                 words.append([character])
             preceding_character_type = character_type
-    return tuple(
-        ''.join(word) for word in words
-    )
+    return tuple("".join(word) for word in words)
 
 
 def indent(
     string: str,
     number_of_spaces: int = 4,
     start: int = 1,
-    stop: Optional[int] = None
+    stop: Optional[int] = None,
 ) -> str:
     """
     Indent text by `number_of_spaces` starting at line index `start` and
     stopping at line index `stop`.
     """
     indented_text = string
-    if ('\n' in string) or start == 0:
-        lines = string.split('\n')
+    if ("\n" in string) or start == 0:
+        lines = string.split("\n")
         if stop:
             if stop < 0:
                 stop = len(lines) - stop
         else:
             stop = len(lines)
         for i in range(start, stop):
-            lines[i] = (' ' * number_of_spaces) + lines[i]
-        indented_text = '\n'.join(lines)
+            lines[i] = (" " * number_of_spaces) + lines[i]
+        indented_text = "\n".join(lines)
     return indented_text
 
 
@@ -385,23 +349,22 @@ def url_relative_to(absolute_url: str, base_url: str) -> str:
     relative_url: str = absolute_url
     base_url = url_directory_and_file_name(base_url)[0]
     if base_url:
-        relative_url = ''
+        relative_url = ""
         # URLs are not case-sensitive
         base_url = base_url.lower()
         lowercase_absolute_url = absolute_url.lower()
         while base_url and (
-            base_url.lower() != lowercase_absolute_url[:len(base_url)]
+            base_url.lower() != lowercase_absolute_url[: len(base_url)]
         ):
-            relative_url = '../' + relative_url
+            relative_url = "../" + relative_url
             base_url = url_directory_and_file_name(base_url[:-1])[0]
-        relative_url += absolute_url[len(base_url):]
+        base_url_length: int = len(base_url)
+        relative_url += absolute_url[base_url_length:]
     return relative_url
 
 
 def split_long_comment_line(
-    line: str,
-    max_line_length: int = _LINE_LENGTH,
-    prefix: str = '#'
+    line: str, max_line_length: int = MAX_LINE_LENGTH, prefix: str = "#"
 ) -> str:
     """
     Split a comment (or docstring) line
@@ -415,19 +378,14 @@ def split_long_comment_line(
     """
     if len(line) > max_line_length:
         match: Optional[Match] = re.match(
-            (
-                r'^[ ]*(?:%s[ ]*)?' % prefix
-                if prefix else
-                r'^[ ]*'
-            ),
-            line
+            (r"^[ ]*(?:%s[ ]*)?" % prefix if prefix else r"^[ ]*"), line
         )
         assert match is not None
         indent_: str = match.group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
         lines: List[str] = []
-        wrapped_line: str = ''
+        wrapped_line: str = ""
         for word in words:
             if (
                 len(wrapped_line) + len(word) + indent_length
@@ -435,18 +393,17 @@ def split_long_comment_line(
                 wrapped_line += word
             else:
                 lines.append(indent_ + wrapped_line.rstrip())
-                wrapped_line = '' if not word.strip() else word
+                wrapped_line = "" if not word.strip() else word
         if wrapped_line:
             lines.append(indent_ + wrapped_line.rstrip())
-        wrapped_line = '\n'.join(lines)
+        wrapped_line = "\n".join(lines)
     else:
         wrapped_line = line
     return wrapped_line
 
 
 def split_long_docstring_lines(
-    docstring: str,
-    max_line_length: int = _LINE_LENGTH
+    docstring: str, max_line_length: int = MAX_LINE_LENGTH
 ) -> str:
     """
     Split long docstring lines
@@ -458,13 +415,13 @@ def split_long_docstring_lines(
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
         odio a urna elementum, eu tempor nisl efficitu
     """
-    indent_: str = '    '
-    if '\t' in docstring:
-        docstring = docstring.replace('\t', indent_)
-    lines = docstring.split('\n')
+    indent_: str = "    "
+    if "\t" in docstring:
+        docstring = docstring.replace("\t", indent_)
+    lines = docstring.split("\n")
     indentation_length: int = sys.maxsize
     for line in lines:
-        match = re.match(r'^[ ]+', line)
+        match = re.match(r"^[ ]+", line)
         if match:
             indentation_length = min(indentation_length, len(match.group()))
         else:
@@ -474,9 +431,7 @@ def split_long_docstring_lines(
     for line in lines:
         wrapped_lines.append(
             split_long_comment_line(
-                indent_ + line[indentation_length:],
-                max_line_length,
-                prefix=''
+                indent_ + line[indentation_length:], max_line_length, prefix=""
             )
         )
-    return '\n'.join(wrapped_lines)
+    return "\n".join(wrapped_lines)

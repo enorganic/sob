@@ -11,21 +11,12 @@ import sob
 
 
 class MemberObjectA(sob.model.Object):
-
     def __init__(
         self,
-        _data: Optional[
-            Union[str, bytes, dict, Sequence, IO]
-        ] = None,
-        property_a: Optional[
-            int
-        ] = None,
-        property_b: Optional[
-            str
-        ] = None,
-        property_c: Optional[
-            Union[str, int, sob.types.Null]
-        ] = None
+        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        property_a: Optional[int] = None,
+        property_b: Optional[str] = None,
+        property_c: Optional[Union[str, int, sob.types.Null]] = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -34,21 +25,12 @@ class MemberObjectA(sob.model.Object):
 
 
 class MemberObjectB(sob.model.Object):
-
     def __init__(
         self,
-        _data: Optional[
-            Union[str, bytes, dict, Sequence, IO]
-        ] = None,
-        property_a: Optional[
-            Union[str, int, sob.types.Null]
-        ] = None,
-        property_b: Optional[
-            int
-        ] = None,
-        property_c: Optional[
-            str
-        ] = None
+        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        property_a: Optional[Union[str, int, sob.types.Null]] = None,
+        property_b: Optional[int] = None,
+        property_c: Optional[str] = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -57,24 +39,13 @@ class MemberObjectB(sob.model.Object):
 
 
 class MemberObjectC(sob.model.Object):
-
     def __init__(
         self,
-        _data: Optional[
-            Union[str, bytes, dict, Sequence, IO]
-        ] = None,
-        property_a: Optional[
-            Union[str, int, sob.types.Null]
-        ] = None,
-        property_b: Optional[
-            int
-        ] = None,
-        property_c: Optional[
-            str
-        ] = None,
-        property_d: Optional[
-            str
-        ] = None
+        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
+        property_a: Optional[Union[str, int, sob.types.Null]] = None,
+        property_b: Optional[int] = None,
+        property_c: Optional[str] = None,
+        property_d: Optional[str] = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -84,109 +55,77 @@ class MemberObjectC(sob.model.Object):
 
 
 class MemberDictionaryA(sob.model.Dictionary):
-
     def __init__(
         self,
         items: Optional[
-            Union[
-                Dict[
-                    str,
-                    MemberObjectA
-                ],
-                IO, str, bytes
-            ]
-        ] = None
+            Union[Dict[str, MemberObjectA], IO, str, bytes]
+        ] = None,
     ) -> None:
         super().__init__(items)
 
 
 class MemberDictionaryB(sob.model.Dictionary):
-
     def __init__(
         self,
         items: Optional[
             Union[
-                Dict[
-                    str,
-                    Union[
-                        MemberObjectA,
-                        MemberObjectB
-                    ]
-                ],
-                IO, str, bytes
+                Dict[str, Union[MemberObjectA, MemberObjectB]], IO, str, bytes
             ]
-        ] = None
+        ] = None,
     ) -> None:
         super().__init__(items)
 
 
 class MemberDictionaryC(sob.model.Dictionary):
-
     def __init__(
         self,
         items: Optional[
             Union[
                 Dict[
                     str,
-                    List[
-                        Union[
-                            MemberObjectA,
-                            MemberObjectB,
-                            MemberObjectC
-                        ]
-                    ]
+                    List[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
                 ],
-                IO, str, bytes
+                IO,
+                str,
+                bytes,
             ]
-        ] = None
+        ] = None,
     ) -> None:
         super().__init__(items)
 
 
 class MemberArrayA(sob.model.Array):
-
     def __init__(
         self,
         items: Optional[
-            Union[
-                Sequence[MemberObjectA],
-                Set[MemberObjectA],
-                str, bytes,
-                IO
-            ]
-        ] = None
+            Union[Sequence[MemberObjectA], Set[MemberObjectA], str, bytes, IO]
+        ] = None,
     ) -> None:
         super().__init__(items)
 
 
 class MemberArrayB(sob.model.Array):
-
     def __init__(
         self,
         items: Optional[
-            Union[
-                Sequence[MemberObjectB],
-                Set[MemberObjectB],
-                str, bytes,
-                IO
-            ]
-        ] = None
+            Union[Sequence[MemberObjectB], Set[MemberObjectB], str, bytes, IO]
+        ] = None,
     ) -> None:
         super().__init__(items)
 
 
 class MemberArrayC(sob.model.Array):
-
     def __init__(
         self,
         items: Optional[
             Union[
                 Sequence[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
                 Set[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
-                str, bytes,
-                IO
+                str,
+                bytes,
+                IO,
             ]
-        ] = None
+        ] = None,
     ) -> None:
         super().__init__(items)
 
@@ -201,12 +140,7 @@ class VersionedObject(sob.model.Object):
         self,
         _data: Optional[str] = None,
         version: Optional[Union[str, int, float]] = None,
-        versioned_simple_type: Optional[
-            Union[
-                str,
-                int
-            ]
-        ] = None,
+        versioned_simple_type: Optional[Union[str, int]] = None,
         versioned_container: Optional[
             Union[
                 MemberObjectA,
@@ -217,17 +151,12 @@ class VersionedObject(sob.model.Object):
                 MemberArrayC,
                 MemberDictionaryA,
                 MemberDictionaryB,
-                MemberDictionaryC
+                MemberDictionaryC,
             ]
-        ] = None
+        ] = None,
     ) -> None:
         self.version: Optional[str] = None
-        self.versioned_simple_type: Optional[
-            Union[
-                str,
-                int
-            ]
-        ] = None
+        self.versioned_simple_type: Optional[Union[str, int]] = None
         self.versioned_container: Optional[
             Union[
                 MemberObjectA,
@@ -238,15 +167,11 @@ class VersionedObject(sob.model.Object):
                 MemberArrayC,
                 MemberDictionaryA,
                 MemberDictionaryB,
-                MemberDictionaryC
+                MemberDictionaryC,
             ]
         ] = None
         super().__init__(_data)
-        sob.meta.version(
-            self,
-            'test-specification',
-            version
-        )
+        sob.meta.version(self, "test-specification", version)
         self.version = version
         self.versioned_simple_type = versioned_simple_type
         self.versioned_container = versioned_container
@@ -255,56 +180,34 @@ class VersionedObject(sob.model.Object):
 # endregion
 # region Metadata
 
-sob.meta.writable(
-    VersionedObject
-).properties = [
+sob.meta.writable(VersionedObject).properties = [
     (
-        'version',
+        "version",
         sob.properties.Property(
             types=[
                 # For versions prior to 1.2, the property value *must* be a
                 # string
-                sob.properties.String(
-                    versions=[
-                        'test-specification<1.2'
-                    ]
-                ),
+                sob.properties.String(versions=["test-specification<1.2"]),
                 # For versions greater than or equal to 1.2 and less than 2.0,
                 # the property value can be a string, float, or integer.
-                sob.properties.Number(
-                    versions=[
-                        'test-specification~=1.2'
-                    ]
-                )
+                sob.properties.Number(versions=["test-specification~=1.2"]),
             ]
-        )
+        ),
     ),
     (
-        'versioned_simple_type',
+        "versioned_simple_type",
         # Simple types can be identified with either an instance of
         # `sob.properties.Property`, *or* the `type` itself.
-        sob.properties.Property(
-            name='versionedSimpleType',
-            types=[str, int]
-        )
+        sob.properties.Property(name="versionedSimpleType", types=[str, int]),
     ),
     (
-        'versioned_container',
-        sob.properties.Property(
-            name='versionedContainer'
-        )
-    )
+        "versioned_container",
+        sob.properties.Property(name="versionedContainer"),
+    ),
 ]
 
-sob.meta.writable(
-    MemberObjectA
-).properties = [
-    (
-        'property_a',
-        sob.properties.Integer(
-            name='propertyA'
-        )
-    )
+sob.meta.writable(MemberObjectA).properties = [
+    ("property_a", sob.properties.Integer(name="propertyA"))
 ]
 
 # endregion
@@ -342,5 +245,5 @@ def test_version_5():
     pass
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_version_1()

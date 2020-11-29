@@ -1,12 +1,10 @@
-from traceback import format_exception
-from typing import Any, List, Optional, Sequence, Union
-
 import sys
 
-from .abc.model import Model
-from .abc.properties import Property
-from .types import MARSHALLABLE_TYPES
-from .utilities import indent
+from traceback import format_exception
+from typing import Any, Iterable, List, Optional, Tuple, Union
+
+from . import abc
+from .utilities.string import indent
 from .utilities.inspect import represent
 
 
@@ -29,34 +27,16 @@ class UnmarshalError(Exception):
     def __init__(
         self,
         message: Optional[str] = None,
-        data: Optional[Any] = None,
-        types: Optional[
-            Sequence[
-                Union[
-                    Model,
-                    Property,
-                    type
-                ]
-            ]
+        data: Optional[abc.MarshallableTypes] = None,
+        types: Union[
+            Iterable[Union[abc.Property, type]], abc.Types, None,
         ] = None,
-        item_types: Optional[
-            Sequence[
-                 Union[
-                     Model,
-                     Property,
-                     type
-                 ]
-            ]
+        item_types: Union[
+            Iterable[Union[abc.Property, type]], abc.Types, None,
         ] = None,
-        value_types: Optional[
-            Sequence[
-                Union[
-                    Model,
-                    Property,
-                    type
-                ]
-            ]
-        ] = None
+        value_types: Union[
+            Iterable[Union[abc.Property, type]], abc.Types, None,
+        ] = None,
     ) -> None:
         self._message: Optional[str] = None
         self._parameter: Optional[str] = None
@@ -65,48 +45,46 @@ class UnmarshalError(Exception):
         error_message_lines: List[str] = []
         # Identify which parameter is being used for type validation
         types_label: str = (
-            'item_types'
-            if item_types else
-            'value_types'
-            if value_types else
-            'types'
+            "item_types"
+            if item_types
+            else "value_types"
+            if value_types
+            else "types"
         )
         types = item_types or value_types or types
         if types is None:
             error_message_lines.append(
-                'The data provided is not an instance of an un-marshallable '
-                'type:\n'
+                "The data provided is not an instance of an un-marshallable "
+                "type:\n"
             )
         else:
             error_message_lines.append(
-                'The data provided does not match any of the expected types '
-                'and/or property definitions:\n'
+                "The data provided does not match any of the expected types "
+                "and/or property definitions:\n"
             )
-        error_message_lines.append(
-            f'- data: {indent(represent(data))}'
-        )
+        error_message_lines.append(f"- data: {indent(represent(data))}")
         if types is None:
-            types = MARSHALLABLE_TYPES
-            types_label = 'un-marshallable types'
-        error_message_lines.append(
-            f'- {types_label}: '
-            f'{indent(represent(tuple(types)), number_of_spaces=2)}'
+            types = abc.MARSHALLABLE_TYPES
+            types_label = "un-marshallable types"
+        type_representation: str = indent(
+            represent(tuple(types)), number_of_spaces=2
         )
+        error_message_lines.append(f"- {types_label}: {type_representation}")
         if message:
-            error_message_lines += ['', message]
-        self.message = '\n'.join(error_message_lines)
+            error_message_lines += ["", message]
+        self.message = "\n".join(error_message_lines)
 
-    @property
+    @property  # type: ignore
     def parameter(self) -> Optional[str]:
         return self._parameter
 
-    @parameter.setter
+    @parameter.setter  # type: ignore
     def parameter(self, parameter_name: str) -> None:
         if parameter_name != self.parameter:
             self._parameter = parameter_name
             self.assemble_message()
 
-    @property
+    @property  # type: ignore
     def message(self) -> Optional[str]:
         return self._message
 
@@ -116,7 +94,7 @@ class UnmarshalError(Exception):
             self._message = message_text
             self.assemble_message()
 
-    @property
+    @property  # type: ignore
     def index(self) -> Union[str, int, None]:
         return self._index
 
@@ -133,17 +111,17 @@ class UnmarshalError(Exception):
         messages = []
         if self.parameter:
             messages.append(
-                'Errors encountered in attempting to un-marshal %s:' %
-                self.parameter
+                "Errors encountered in attempting to un-marshal %s:"
+                % self.parameter
             )
         if self.index is not None:
             messages.append(
-                'Errors encountered in attempting to un-marshal the value at '
-                'index %s:' % repr(self.index)
+                "Errors encountered in attempting to un-marshal the value at "
+                "index %s:" % repr(self.index)
             )
         if self.message:
             messages.append(self.message)
-        super().__init__('\n'.join(messages))
+        super().__init__("\n".join(messages))
 
 
 class UnmarshalTypeError(UnmarshalError, TypeError):
@@ -157,11 +135,10 @@ class UnmarshalValueError(UnmarshalError, ValueError):
 
 
 class UnmarshalKeyError(KeyError):
-
     def __init__(self, message: str) -> None:
         self.message = message
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.message
 
 
@@ -177,4 +154,127 @@ def get_exception_text() -> str:
     `traceback.print_exception`, but is returned as a string value rather than
     printing.
     """
-    return ''.join(format_exception(*sys.exc_info()))
+    return "".join(format_exception(*sys.exc_info()))
+
+
+def append_exception_text(error: Exception, message: str) -> None:
+    """
+    Append `message` to an error's exception text.
+    """
+    if hasattr(error, "msg"):
+        setattr(error, "msg", message)
+    else:
+        args: Tuple[Any, ...] = error.args or ("",)
+        error.args = (f"{args[0]}{message}",) + args[1:]
+
+
+def _repr_or_list(values: Iterable[Any], quotes: str = "") -> str:
+    open_quote: str = ""
+    close_quote: str = ""
+    if quotes:
+        open_quote = quotes[0]
+        close_quote = quotes[-1]
+    repr_values: List[str] = [
+        f"{open_quote}{represent(value)}{close_quote}" for value in values
+    ]
+    if len(repr_values) > 1:
+        return " or ".join([", ".join(repr_values[:-1]), repr_values[-1]])
+    else:
+        return ", ".join(repr_values)
+
+
+class IsSubClassAssertionError(AssertionError, TypeError):
+    """
+    TODO
+    """
+
+    def __init__(
+        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+    ) -> None:
+        super().__init__(
+            "`%s` must be a sub-class of %s (not `%s`)."
+            % (
+                name,
+                (
+                    f"`{represent(type_)}`"
+                    if isinstance(type_, type)
+                    else _repr_or_list(type_, quotes="`")
+                ),
+                represent(value),
+            )
+        )
+
+
+class IsInAssertionError(AssertionError, ValueError):
+    """
+    TODO
+    """
+
+    def __init__(
+        self, name: str, value: Any, valid_values: Iterable[Any]
+    ) -> None:
+        super().__init__(
+            f"`{name}` must be "
+            f"{_repr_or_list(valid_values, quotes='`')}--not "
+            f"{represent(value)}."
+        )
+
+
+class IsInstanceAssertionError(AssertionError, TypeError):
+    """
+    TODO
+    """
+
+    def __init__(
+        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+    ) -> None:
+        super().__init__(
+            "`%s` must be an instance of %s (not `%s`)."
+            % (
+                name,
+                (
+                    f"`{type_.__name__}`"
+                    if isinstance(type_, type)
+                    else _repr_or_list(type_, quotes="`")
+                ),
+                represent(value),
+            )
+        )
+
+
+class NotIsInstanceAssertionError(AssertionError, TypeError):
+    """
+    TODO
+    """
+
+    def __init__(
+        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+    ) -> None:
+        super().__init__(
+            "`%s` must not be an instance of %s: %s"
+            % (
+                name,
+                (
+                    f"`{type_.__name__}`"
+                    if isinstance(type_, type)
+                    else _repr_or_list(type_, quotes="`")
+                ),
+                represent(value),
+            )
+        )
+
+
+class EqualsAssertionError(AssertionError, ValueError):
+    """
+    TODO
+    """
+
+    def __init__(self, name: str, value: Any, other: Any) -> None:
+        super().__init__(
+            "Incorrect value for `{}`:\n\n"
+            "    {}\n"
+            "    !=\n"
+            "    {}".format(
+                name, repr(value).replace("\n", r"\n"), repr(other)
+            )
+        )

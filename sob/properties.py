@@ -4,11 +4,19 @@ This module defines classes for describing properties of a model.
 
 import collections
 import collections.abc
-from collections.abc import Callable
 from copy import deepcopy
 from datetime import date, datetime
 from typing import (
-    Dict, Iterable, List, Optional, Sequence, Set, Tuple, Union
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    Any,
+    Callable,
 )
 from decimal import Decimal
 
@@ -16,54 +24,53 @@ from iso8601 import parse_date  # type: ignore
 from itertools import chain
 
 from . import abc
-from .types import ImmutableTypes, Types
+from .types import Types, MutableTypes
 from .utilities import (
-    indent, parameters_defaults, properties_values, qualified_name
+    indent,
+    parameters_defaults,
+    properties_values,
+    qualified_name,
 )
-from .utilities.assertion import assert_argument_is_instance
+from .utilities.assertion import assert_is_instance
 from .utilities.inspect import represent
-from .utilities.types import UNDEFINED, Undefined
-from .utilities.typing import MarshallableTypes
+from .utilities.types import UNDEFINED, Undefined, NoneType
+from .abc import MarshallableTypes
 from .version import Version
 
 __all__: List[str] = [
-    'Property',
-    'Array',
-    'Boolean',
-    'Bytes',
-    'Date',
-    'Dictionary',
-    'Enumerated',
-    'Integer',
-    'Number',
-    'String',
-    'TYPES_PROPERTIES'
+    "Property",
+    "Array",
+    "Boolean",
+    "Bytes",
+    "Date",
+    "Dictionary",
+    "Enumerated",
+    "Integer",
+    "Number",
+    "String",
+    "TYPES_PROPERTIES",
 ]
 
 
 def _repr_keyword_argument_assignment(
     argument: str,
     value: MarshallableTypes,
-    defaults: Optional[Dict[str, MarshallableTypes]] = None
+    defaults: Optional[Dict[str, MarshallableTypes]] = None,
 ) -> Optional[str]:
     """
     Returns a string representation of an argument assignment, or `None`
     if the argument value is equal to the default value for that argument
     """
-    if (
-        defaults is not None
-    ) and (
-        (argument not in defaults) or
-        defaults[argument] == value or
-        value is None
+    if (defaults is not None) and (
+        (argument not in defaults)
+        or defaults[argument] == value
+        or value is None
     ):
         return None
-    return '    %s=%s,' % (argument, indent(represent(value)))
+    return "    %s=%s," % (argument, indent(represent(value)))
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Property.register
-class Property:
+class Property(abc.Property):
     """
     This is the base class for defining a property.
 
@@ -110,71 +117,63 @@ class Property:
           infer an appropriate property name programmatically, use the utility
           function `sob.utilities.string.property_name`.
     """
-    _types: Optional[Types] = None
+
+    _types: Optional[abc.Types] = None
 
     # noinspection PyShadowingNames
     def __init__(
         self,
-        types: Optional[
-            Union[
-                Types,
-                Sequence[Union[type, 'Property']],
-                type,
-                'Property',
-                Undefined
-            ]
+        types: Union[
+            abc.Types,
+            Sequence[Union[type, "Property"]],
+            type,
+            "Property",
+            Undefined,
+            None,
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
-        self._types: Optional[Types] = getattr(
-            type(self), '_types'
-        )
+        self._types: Optional[abc.Types] = getattr(type(self), "_types")
         if types is not UNDEFINED:
-            setattr(self, 'types', types)
+            setattr(self, "types", types)
         self.name: Optional[str] = name
         self.required: bool = required
         self._versions: Optional[Sequence[Version]] = None
         if versions is not None:
-            setattr(self, 'versions', versions)
+            setattr(self, "versions", versions)
 
-    @property
-    def types(self) -> Optional[
-        Sequence[Union[type, 'Property']]
-    ]:
+    @property  # type: ignore
+    def types(self) -> Optional[abc.Types]:
         return self._types
 
     @types.setter
     def types(
         self,
-        types_or_properties: Optional[
-            Union[
-                Types,
-                Sequence[Union[type, 'Property']],
-                type,
-                'Property'
-            ]
-        ]
+        types_or_properties: Union[
+            abc.Types,
+            Sequence[Union[type, abc.Property]],
+            type,
+            abc.Property,
+            None,
+        ],
     ) -> None:
-        types_class: type = (
-            Types
-            if type(self) is Property else ImmutableTypes
-        )
-        if (
-            types_or_properties is not None
-        ) and not isinstance(
-            types_or_properties,
-            types_class
+        # If types are set at the class-level, don't touch them
+        if type(self)._types is not None:
+            raise TypeError(
+                f"`{qualified_name(type(self))}.types` is immutable"
+            )
+        if (types_or_properties is not None) and not isinstance(
+            types_or_properties, abc.Types
         ):
-            types_or_properties = types_class(types_or_properties)
-        assert (
-            (types_or_properties is None) or
-            isinstance(types_or_properties, Types)
+            types_or_properties = MutableTypes(types_or_properties)
+        assert (types_or_properties is None) or isinstance(
+            types_or_properties, abc.Types
         )
         self._types = types_or_properties
 
-    @property
+    @property  # type: ignore
     def versions(self) -> Optional[Sequence[Version]]:
         return self._versions
 
@@ -182,26 +181,13 @@ class Property:
     def versions(
         self,
         versions: Optional[
-            Union[
-                str,
-                Version,
-                Iterable[
-                    Union[
-                        str,
-                        Version
-                    ]
-                ]
-            ]
-        ] = None
+            Union[str, Version, Iterable[Union[str, Version]]]
+        ] = None,
     ) -> None:
         versions_tuple: Optional[Tuple[Version, ...]] = None
         if versions is not None:
-            assert_argument_is_instance(
-                'versions',
-                versions,
-                (
-                    str, Version, collections.abc.Iterable
-                )
+            assert_is_instance(
+                "versions", versions, (str, Version, collections.abc.Iterable)
             )
             version: Union[str, Version]
             if isinstance(versions, str):
@@ -218,65 +204,68 @@ class Property:
                 versions_tuple = tuple(versions_list)
         self._versions = versions_tuple
 
-    def __repr__(self):
-        lines = [qualified_name(type(self)) + '(']
-        defaults = parameters_defaults(self.__init__)
+    def __repr__(self) -> str:
+        lines = [qualified_name(type(self)) + "("]
+        defaults: Dict[str, Any] = parameters_defaults(
+            getattr(self, "__init__")
+        )
         for property_name, value in properties_values(self):
             argument_representation = _repr_keyword_argument_assignment(
-                property_name,
-                value,
-                defaults
+                property_name, value, defaults
             )
             if argument_representation is not None:
                 lines.append(argument_representation)
-        lines[-1] = lines[-1].rstrip(',')
-        lines.append(')')
+        lines[-1] = lines[-1].rstrip(",")
+        lines.append(")")
         if len(lines) > 2:
-            return '\n'.join(lines)
+            return "\n".join(lines)
         else:
-            return ''.join(lines)
+            return "".join(lines)
 
-    def __copy__(self) -> 'Property':
+    def __copy__(self) -> abc.Property:
         new_instance = self.__class__()
         attribute_name: str
         for attribute_name in dir(self):
-            if attribute_name[0] != '_' and attribute_name != 'data':
+            if attribute_name[0] != "_" and attribute_name != "data":
                 value = getattr(self, attribute_name)
                 if not callable(value):
                     setattr(new_instance, attribute_name, value)
         return new_instance
 
-    def __deepcopy__(self, memo: dict) -> 'Property':
-        new_instance = self.__class__()
-        for a, v in properties_values(self):
-            setattr(new_instance, a, deepcopy(v, memo=memo))
+    def __deepcopy__(self, memo: dict) -> abc.Property:
+        new_instance: abc.Property = self.__class__()
+        attribute: str
+        value: Any
+        types_is_mutable: bool = bool(type(self)._types is None)
+        for attribute, value in properties_values(self):
+            if attribute != "types" or types_is_mutable:
+                setattr(new_instance, attribute, deepcopy(value, memo=memo))
         return new_instance
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.String.register
-class String(Property):
+class String(Property, abc.String):
     """
     See `sob.properties.Property`
     """
-    _types: ImmutableTypes = ImmutableTypes((str,))
+
+    _types: abc.Types = Types((str,))  # type: ignore
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Date.register
-class Date(Property):
+def _date2str(value: date) -> str:
+    return value.isoformat()
+
+
+class Date(Property, abc.Date):
     """
     ...See `sob.properties.Property`
 
@@ -291,28 +280,35 @@ class Date(Property):
           date string), and returning a python `date` object. By default,
           this is `iso8601.parse_date`.
     """
-    _types: ImmutableTypes = ImmutableTypes((date,))
+
+    _types: Optional[abc.Types] = Types((date,))
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
         versions: Optional[Sequence[Union[str, Version]]] = None,
-        date2str: Optional[Callable] = date.isoformat,
-        str2date: Callable = parse_date
+        date2str: Callable[[date], str] = _date2str,
+        str2date: Callable[[str], date] = parse_date,
     ) -> None:
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
-        self.date2str = date2str
-        self.str2date = str2date
+        self._date2str = date2str
+        self._str2date = str2date
+
+    def date2str(self, value: date) -> str:
+        return self._date2str(value)
+
+    def str2date(self, value: str) -> date:
+        return self._str2date(value)
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.DateTime.register
-class DateTime(Property):
+def _datetime2str(value: datetime) -> str:
+    return value.isoformat()
+
+
+class DateTime(Property, abc.DateTime):
     """
     (See [`sob.properties.Property`](#Property))
 
@@ -326,34 +322,40 @@ class DateTime(Property):
       (a datetime string), and returning a python `datetime` json_object.
       By default, this is `iso8601.parse_date`.
     """
-    _types: ImmutableTypes = ImmutableTypes((datetime,))
+
+    _types: abc.Types = Types(  # type: ignore
+        (datetime,)
+    )
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
         versions: Optional[Sequence[Union[str, Version]]] = None,
-        datetime2str: Optional[Callable] = datetime.isoformat,
-        str2datetime: Callable = parse_date
+        datetime2str: Callable[[datetime], str] = _datetime2str,
+        str2datetime: Callable[[str], datetime] = parse_date,
     ) -> None:
-        self.datetime2str = datetime2str
-        self.str2datetime = str2datetime
+        self._datetime2str = datetime2str
+        self._str2datetime = str2datetime
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
+    def datetime2str(self, value: datetime) -> str:
+        return self._datetime2str(value)
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Bytes.register
-class Bytes(Property):
+    def str2datetime(self, value: str) -> datetime:
+        return self._str2datetime(value)
+
+
+class Bytes(Property, abc.Bytes):
     """
     (See [`sob.properties.Property`](#Property))
 
     This class represents a property with binary values
     """
-    _types: ImmutableTypes = ImmutableTypes((bytes,))
+
+    _types: abc.Types = Types((bytes,))  # type: ignore
 
     def __init__(
         self,
@@ -362,15 +364,11 @@ class Bytes(Property):
         versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Enumerated.register
-class Enumerated(Property):
+class Enumerated(Property, abc.Enumerated):
     """
     Parameters:
 
@@ -387,30 +385,26 @@ class Enumerated(Property):
     # noinspection PyShadowingNames
     def __init__(
         self,
-        types: Optional[
-            Union[
-                Types,
-                Sequence[Union[type, 'Property']],
-                type,
-                'Property',
-                Undefined
-            ]
+        types: Union[
+            abc.Types,
+            Sequence[Union[type, "Property"]],
+            type,
+            "Property",
+            Undefined,
+            None,
         ] = UNDEFINED,
         values: Optional[Iterable[MarshallableTypes]] = None,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         self._values: Optional[Set[MarshallableTypes]] = None
         super().__init__(
-            types=types,
-            name=name,
-            required=required,
-            versions=versions
+            types=types, name=name, required=required, versions=versions
         )
-        setattr(self, 'values', values)
+        setattr(self, "values", values)
 
-    @property
+    @property  # type: ignore
     def values(self) -> Optional[Set[MarshallableTypes]]:
         return self._values
 
@@ -419,80 +413,65 @@ class Enumerated(Property):
         if values is None:
             self._values = None
         else:
-            assert_argument_is_instance(
-                'values',
-                values,
-                collections.abc.Iterable
-            )
+            assert_is_instance("values", values, collections.abc.Iterable)
             self._values = set(values)
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Number.register
-class Number(Property):
+class Number(Property, abc.Number):
     """
     See `sob.properties.Property`
     """
-    _types: ImmutableTypes = ImmutableTypes((Decimal, float, int))
+
+    _types: abc.Types = Types(  # type: ignore
+        (Decimal, float, int)
+    )
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
-        super().__init__(
-            name=name,
-            required=required,
-            versions=versions
-        )
+        super().__init__(name=name, required=required, versions=versions)
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Integer.register
-class Integer(Property):
+class Integer(Property, abc.Integer):
     """
     See `sob.properties.Property`
     """
-    _types: ImmutableTypes = ImmutableTypes((int,))
+
+    _types: abc.Types = Types((int,))  # type: ignore
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Boolean.register
-class Boolean(Property):
+class Boolean(Property, abc.Boolean):
     """
     See `sob.properties.Property`
     """
-    _types: ImmutableTypes = ImmutableTypes((bool,))
+
+    _types: abc.Types = Types((bool,))  # type: ignore
 
     def __init__(
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Array.register
-class Array(Property):
+class Array(Property, abc.ArrayProperty):
     """
     See `sob.properties.Property`...
 
@@ -503,69 +482,61 @@ class Array(Property):
       `sob.properties.Property().types`, but applied to items in the
       array, not the array itself.
     """
-    _types: ImmutableTypes = ImmutableTypes((abc.model.Array,))
-    _item_types: Optional[Types] = None
+
+    _types: abc.Types = Types(  # type: ignore
+        (abc.Array,)
+    )
+    _item_types: Optional[abc.Types] = None
 
     def __init__(
         self,
-        item_types: Optional[
-            Union[
-                type,
-                Sequence[Union[type, Property]],
-                Undefined
-            ]
+        item_types: Union[
+            type, Sequence[Union[type, Property]], Undefined, abc.Types, None
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
-        self._item_types: Optional[Types] = getattr(
-            type(self),
-            '_item_types'
-        )
+        self._item_types: Optional[Types] = getattr(type(self), "_item_types")
         if item_types is not UNDEFINED:
-            setattr(self, 'item_types', item_types)
+            self.item_types = item_types  # type: ignore
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
-    @property
-    def item_types(self) -> Optional[Types]:
+    @property  # type: ignore
+    def item_types(self) -> Optional[abc.Types]:  # type: ignore
         return self._item_types
 
-    @item_types.setter
+    @item_types.setter  # type: ignore
     def item_types(
         self,
-        item_types: Optional[
-            Union[
-                type,
-                Property,
-                Sequence[Union[type, Property]]
-            ]
-        ]
+        item_types: Union[
+            type,
+            abc.Property,
+            Sequence[Union[type, abc.Property]],
+            abc.Types,
+            None,
+        ],
     ) -> None:
-        if (item_types is not None) and not isinstance(
-            item_types, Types
-        ):
-            item_types_list: List[Union[type, abc.properties.Property]] = []
-            if isinstance(item_types, (type, abc.properties.Property)):
+        if isinstance(item_types, abc.Types):
+            if not isinstance(item_types, abc.MutableTypes):
+                item_types = MutableTypes(item_types)
+        elif item_types is not None:
+            item_types_list: List[Union[type, abc.Property]] = []
+            if isinstance(item_types, (type, abc.Property)):
                 item_types_list.append(item_types)
             else:
-                assert isinstance(item_types, collections.abc.Iterable)
+                assert isinstance(item_types, Sequence)
                 for item_type in item_types:
-                    assert isinstance(
-                        item_type, (type, abc.properties.Property)
-                    )
+                    assert isinstance(item_type, (type, abc.Property))
                     item_types_list.append(item_type)
-            item_types = Types(item_types_list)
+            item_types = MutableTypes(item_types_list)
+        assert isinstance(item_types, (abc.Types, NoneType))
         self._item_types = item_types
 
 
-# noinspection PyUnresolvedReferences
-@abc.properties.Dictionary.register
-class Dictionary(Property):
+class Dictionary(Property, abc.DictionaryProperty):
     """
     See `sob.properties.Property`...
 
@@ -576,50 +547,40 @@ class Dictionary(Property):
       `sob.properties.Property.types`, but applies to *values* in the
       dictionary object, not the dictionary itself.
     """
-    _types: ImmutableTypes = ImmutableTypes((abc.model.Dictionary,))
-    _value_types: Optional[Types] = None
+
+    _types: abc.Types = Types(  # type: ignore
+        (abc.Dictionary,)
+    )
+    _value_types: Optional[abc.Types] = None
 
     def __init__(
         self,
         value_types: Optional[
-            Union[
-                type,
-                Sequence[Union[type, Property]],
-                Undefined
-            ]
+            Union[type, Sequence[Union[type, Property]], Undefined]
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None
+        versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
-        self._value_types: Optional[Types] = getattr(
-            type(self),
-            '_value_types'
+        self._value_types: Optional[abc.Types] = getattr(
+            type(self), "_value_types"
         )
         if value_types is not UNDEFINED:
-            self.value_types = value_types
+            self.value_types = value_types  # type: ignore
         super().__init__(
-            name=name,
-            required=required,
-            versions=versions,
+            name=name, required=required, versions=versions,
         )
 
-    @property
-    def value_types(self):
+    @property  # type: ignore
+    def value_types(self) -> Optional[abc.Types]:
         return self._value_types
 
     @value_types.setter
     def value_types(
         self,
-        value_types: Optional[
-            Sequence[
-                Union[
-                    type,
-                    Property,
-                    abc.model.Object
-                ]
-            ]
-        ]
+        value_types: Union[
+            Sequence[Union[type, abc.Property]], abc.Types, None
+        ],
     ) -> None:
         """
         A sequence of types and/or `sob.properties.Property` instances.
@@ -632,9 +593,10 @@ class Dictionary(Property):
         sequence will be used.
         """
         if (value_types is not None) and not isinstance(
-            value_types, Types
+            value_types, abc.MutableTypes
         ):
-            value_types = Types(value_types)
+            value_types = MutableTypes(value_types)
+        assert isinstance(value_types, (abc.Types, NoneType))
         self._value_types = value_types
 
 
@@ -645,16 +607,17 @@ TYPES_PROPERTIES: Dict[type, type] = {
         *map(
             lambda property_class: (
                 (type_, property_class)
-                for type_ in getattr(property_class, '_types')
+                for type_ in getattr(property_class, "_types")
             ),
             (
-                property_class for property_class in locals().values()
+                property_class
+                for property_class in locals().values()
                 if (
-                    isinstance(property_class, type) and
-                    issubclass(property_class, Property) and
-                    getattr(property_class, '_types')
+                    isinstance(property_class, type)
+                    and issubclass(property_class, Property)
+                    and getattr(property_class, "_types")
                 )
-            )
+            ),
         )
     )
 }
