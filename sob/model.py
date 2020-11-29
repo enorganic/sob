@@ -281,7 +281,9 @@ class Array(Model, abc.Array):
         return self._list.__contains__(value)
 
     def __reversed__(self) -> Iterator[abc.MarshallableTypes]:
-        return self._list.__reversed__()
+        new_instance: abc.Array = copy(self)
+        new_instance.reverse()
+        return new_instance
 
     def index(
         self,
@@ -339,6 +341,13 @@ class Array(Model, abc.Array):
 
     def reverse(self) -> None:
         self._list.reverse()
+
+    def sort(
+        self,
+        key: Optional[Callable[[abc.MarshallableTypes], Any]],
+        reverse: bool = False
+    ) -> None:
+        self._list.sort(key, reverse)
 
     def extend(self, values: Iterable[abc.MarshallableTypes]) -> None:
         for value in values:
