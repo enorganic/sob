@@ -280,7 +280,7 @@ class Array(Model, abc.Array):
     def __contains__(self, value: abc.MarshallableTypes) -> bool:
         return self._list.__contains__(value)
 
-    def __reversed__(self) -> Iterator[abc.MarshallableTypes]:
+    def __reversed__(self) -> abc.Array:
         new_instance: abc.Array = copy(self)
         new_instance.reverse()
         return new_instance
@@ -344,10 +344,10 @@ class Array(Model, abc.Array):
 
     def sort(
         self,
-        key: Optional[Callable[[abc.MarshallableTypes], Any]],
-        reverse: bool = False
+        key: Optional[Callable[[abc.MarshallableTypes], Any]] = None,
+        reverse: bool = False,
     ) -> None:
-        self._list.sort(key, reverse)
+        self._list.sort(key=key, reverse=reverse)
 
     def extend(self, values: Iterable[abc.MarshallableTypes]) -> None:
         for value in values:

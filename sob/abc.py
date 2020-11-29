@@ -872,7 +872,7 @@ class Array(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __reversed__(self) -> Iterator["MarshallableTypes"]:
+    def __reversed__(self) -> "Array":
         pass
 
     @abstractmethod
@@ -910,6 +910,14 @@ class Array(Model, metaclass=ABCMeta):
 
     @abstractmethod
     def reverse(self) -> None:
+        pass
+
+    @abstractmethod
+    def sort(
+        self,
+        key: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        reverse: bool = False,
+    ) -> None:
         pass
 
     @abstractmethod
