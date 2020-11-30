@@ -3,10 +3,10 @@ This module provides functionality for creating a data model from a
 set of example structures.
 """
 import binascii
+import collections
 import functools
 import os
 from base64 import b64decode
-from collections import OrderedDict
 from copy import copy, deepcopy
 from datetime import date, datetime
 from types import ModuleType
@@ -386,7 +386,6 @@ class Synonyms(set):
             # Unmarshal items which appear to not have been part of an
             # unmarshalled container
             item = unmarshal(item)
-        # print(repr(item))
         if item is NULL:
             self._nullable = True
         elif item is not None:
@@ -468,8 +467,10 @@ class Synonyms(set):
 
     def _get_property_names_values(
         self,
-    ) -> Dict[str, List[abc.MarshallableTypes]]:
-        keys_values: Dict[str, List[abc.MarshallableTypes]] = OrderedDict()
+    ) -> abc.OrderedDict[str, List[abc.MarshallableTypes]]:
+        keys_values: abc.OrderedDict[
+            str, List[abc.MarshallableTypes]
+        ] = collections.OrderedDict()
         item: Union[Mapping, abc.Dictionary]
         for item in self:
             try:
@@ -692,7 +693,7 @@ def get_class_meta_attribute_assignment_source(
     )
 
 
-class Thesaurus(OrderedDict):
+class Thesaurus(collections.OrderedDict):
     """
     TODO
     """
@@ -768,9 +769,9 @@ class Thesaurus(OrderedDict):
         module_name: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
     ) -> str:
-        class_names_metadata: Dict[
+        class_names_metadata: abc.OrderedDict[
             str, Union[abc.ObjectMeta, abc.ArrayMeta]
-        ] = OrderedDict()
+        ] = collections.OrderedDict()
         imports: List[str] = []
         classes: List[str] = []
         metadatas: List[str] = []

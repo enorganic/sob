@@ -5,11 +5,11 @@ parameter/property for `urllib.request.Request`, and to support casting
 requests as `str` or `bytes` (typically for debugging purposes and/or to aid in
 producing non-language-specific API documentation).
 """
+import collections
 import collections.abc
 import random
 import re
 import string
-from collections import OrderedDict
 from typing import (
     Dict,
     ItemsView,
@@ -29,11 +29,7 @@ from . import abc
 from .model import Dictionary, serialize
 
 
-class ValueView(object):
-    pass
-
-
-class Headers(OrderedDict):
+class Headers(collections.OrderedDict):
     """
     A dictionary of headers for a `Request`, `Part`, or `MultipartRequest`
     instance.
@@ -47,7 +43,6 @@ class Headers(OrderedDict):
         assert isinstance(request, Data)
         self.request: Data = request
         super().__init__(items)
-        # self.update(items)
 
     def _reset_part(self) -> None:
         if isinstance(self.request, Part):
@@ -77,10 +72,10 @@ class Headers(OrderedDict):
         ],
         **kwargs: str,
     ) -> None:
-        capitalized_dict: Dict[str, str] = OrderedDict()
+        capitalized_dict: abc.OrderedDict[str, str] = collections.OrderedDict()
         key: str
         value: str
-        for key, value in OrderedDict(*args, **kwargs).items():
+        for key, value in collections.OrderedDict(*args, **kwargs).items():
             capitalized_dict[key.capitalize()] = value
         self._reset_part()
         super().update(capitalized_dict)
@@ -142,12 +137,6 @@ class Headers(OrderedDict):
 
     def __contains__(self, key: str) -> bool:  # type: ignore
         return super().__contains__(key.capitalize())
-
-    # def _get_dict_get_dict(self) -> Dict[str, str]:
-    #     return OrderedDict([
-    #         (key, self[key])
-    #         for key in self.__iter__()
-    #     ])
 
     def items(self) -> ItemsView[str, str]:  # type: ignore
         for key in self.__iter__():
@@ -278,6 +267,10 @@ class Data:
 
 
 class Part(Data):
+    """
+    TODO
+    """
+
     def __init__(
         self,
         data: Optional[

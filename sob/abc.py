@@ -1,3 +1,4 @@
+import collections
 import decimal
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
@@ -24,7 +25,51 @@ from typing import (
     ValuesView,
 )
 
+import typing
+
 from .utilities.types import NoneType, Null, UNDEFINED, Undefined
+
+
+__all__: List[str] = [
+    "OrderedDict",
+    "Types",
+    "MutableTypes",
+    "Hooks",
+    "ObjectHooks",
+    "ArrayHooks",
+    "DictionaryHooks",
+    "Readable",
+    "Meta",
+    "ObjectMeta",
+    "DictionaryMeta",
+    "ArrayMeta",
+    "Properties",
+    "Model",
+    "Dictionary",
+    "Object",
+    "Array",
+    "Property",
+    "String",
+    "Date",
+    "DateTime",
+    "Bytes",
+    "Enumerated",
+    "Number",
+    "Integer",
+    "Boolean",
+    "ArrayProperty",
+    "DictionaryProperty",
+    "Version",
+    "MARSHALLABLE_TYPES",
+    "JSON_TYPES",
+    "JSONTypes",
+    "MarshallableTypes",
+]
+
+if typing.TYPE_CHECKING:
+    OrderedDict = collections.OrderedDict
+else:
+    OrderedDict = typing.Dict
 
 
 def _check_methods(class_: type, methods: Iterable[str]) -> Optional[bool]:
@@ -380,9 +425,7 @@ class Readable(metaclass=ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass: type) -> Optional[bool]:
         if cls is Readable:
-            return _check_methods(subclass, ("read",)) or _check_methods(
-                subclass, ("readall",)
-            )
+            return _check_methods(subclass, ("read",))
         return NotImplemented
 
 
@@ -671,7 +714,7 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> Dict[str, "JSONTypes"]:
+    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
         pass
 
     @abstractmethod
@@ -776,7 +819,7 @@ class Object(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> Dict[str, "JSONTypes"]:
+    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
         pass
 
     @abstractmethod
@@ -836,6 +879,9 @@ class Object(Model, metaclass=ABCMeta):
         property_: "Property",
         value: Optional["MarshallableTypes"],
     ) -> Iterable[str]:
+        pass
+
+    def __reversed__(self) -> Iterator[str]:
         pass
 
 
@@ -1164,15 +1210,15 @@ JSON_TYPES: Tuple[type, ...] = (
     NoneType,
 )
 JSONTypes = Union[
-    str, int, float, bool, Mapping[str, Any], Sequence[Any], None
+    str, int, float, bool, Mapping[str, Any], Sequence, None,
 ]
 MarshallableTypes = Union[
     bool,
     AnyStr,
     Model,
     Mapping[str, Any],
-    Collection[Any],
-    Iterator[Any],
+    Collection,
+    Iterator,
     int,
     float,
     Decimal,

@@ -1,9 +1,8 @@
-from collections import OrderedDict
+import collections
 from copy import deepcopy
 from itertools import chain
 from typing import (
     Any,
-    Dict,
     ItemsView,
     Iterable,
     Iterator,
@@ -238,7 +237,9 @@ class Properties(abc.Properties):
             None,
         ] = None,
     ) -> None:
-        self._dict: Dict[str, abc.Property] = OrderedDict()
+        self._dict: abc.OrderedDict[
+            str, abc.Property
+        ] = collections.OrderedDict()
         if items is not None:
             self.update(items)
 
@@ -360,10 +361,14 @@ class Properties(abc.Properties):
                     assert isinstance(other, (Mapping, abc.Properties))
                     items = chain(items, other.items())
                 else:
-                    items = chain(items, sorted(other.items()))
+                    items = chain(
+                        items, sorted(other.items(), key=lambda item: item[0])
+                    )
             else:
                 items = chain(items, other)
-        for key, value in chain(items, kwargs.items()):
+        for key, value in chain(
+            items, sorted(kwargs.items(), key=lambda item: item[0])
+        ):
             self[key] = value
 
     def setdefault(
@@ -589,14 +594,14 @@ def _read_object_properties(
     model: Union[abc.Object, type]
 ) -> Iterable[Tuple[str, abc.Property]]:
     metadata: abc.ObjectMeta = _read_object(model)
-    return (metadata.properties or {}).items()
+    return (metadata.properties or collections.OrderedDict()).items()
 
 
 def _read_object_property_names(
     model: Union[abc.Object, type]
 ) -> Iterable[str]:
     metadata: abc.ObjectMeta = _read_object(model)
-    return (metadata.properties or {}).keys()
+    return (metadata.properties or collections.OrderedDict()).keys()
 
 
 def escape_reference_token(reference_token: str) -> str:

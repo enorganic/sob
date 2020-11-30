@@ -1,12 +1,11 @@
 import collections
 import json as _json
-from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Union
+from typing import Any, List, Optional, Sequence, Set, Tuple
 from warnings import warn
 
 import yaml as yaml_
 
 from . import abc, meta
-from .abc import Array, Dictionary, MarshallableTypes, Object
 from .errors import ObjectDiscrepancyError
 from .model import serialize, validate
 from .utilities import qualified_name
@@ -29,18 +28,25 @@ def _get_object_property_names(object_: abc.Object) -> Set[str]:
 
 def _object_discrepancies(
     object_a: abc.Object, object_b: abc.Object
-) -> Dict[
-    str, Tuple[Optional[MarshallableTypes], Optional[MarshallableTypes]]
+) -> abc.OrderedDict[
+    str,
+    Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]],
 ]:
-    discrepancies: Dict[
-        str, Tuple[Optional[MarshallableTypes], Optional[MarshallableTypes]]
+    discrepancies: abc.OrderedDict[
+        str,
+        Tuple[
+            Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]
+        ],
     ] = collections.OrderedDict()
     for property_ in sorted(
-        _get_object_property_names(object_a)
-        | _get_object_property_names(object_b)
+        (
+            _get_object_property_names(object_a)
+            | _get_object_property_names(object_b)
+        ),
+        key=lambda item: item[0]
     ):
-        a_value: Optional[MarshallableTypes]
-        b_value: Optional[MarshallableTypes]
+        a_value: Optional[abc.MarshallableTypes]
+        b_value: Optional[abc.MarshallableTypes]
         try:
             a_value = getattr(object_a, property_)
         except AttributeError:
@@ -92,7 +98,7 @@ def _get_value_discrepancies_error_message(
 
 
 def _get_object_discrepancies_error_message(
-    object_a: Object, object_b: Object
+    object_a: abc.Object, object_b: abc.Object
 ) -> str:
     a_serialized: str = serialize(object_a)
     b_serialized: str = serialize(object_b)
@@ -124,13 +130,13 @@ def _get_object_discrepancies_error_message(
         )
     property_name: str
     property_values: Tuple[
-        Optional[MarshallableTypes], Optional[MarshallableTypes]
+        Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]
     ]
     for property_name, property_values in _object_discrepancies(
         object_a, object_b
     ).items():
-        property_value_a: Optional[MarshallableTypes]
-        property_value_b: Optional[MarshallableTypes]
+        property_value_a: Optional[abc.MarshallableTypes]
+        property_value_b: Optional[abc.MarshallableTypes]
         property_value_a, property_value_b = property_values
         message.append(
             _get_value_discrepancies_error_message(
@@ -141,7 +147,7 @@ def _get_object_discrepancies_error_message(
 
 
 def _get_object_discrepancies_error(
-    object_instance: Object, reloaded_object_instance: Object
+    object_instance: abc.Object, reloaded_object_instance: abc.Object
 ) -> ObjectDiscrepancyError:
     message: str = _get_object_discrepancies_error_message(
         object_instance, reloaded_object_instance
@@ -150,7 +156,7 @@ def _get_object_discrepancies_error(
 
 
 def _remarshal_object(
-    string_object: str, object_instance: Object, format_: str = "json"
+    string_object: str, object_instance: abc.Object, format_: str = "json"
 ) -> None:
     if format_ == "yaml":
         reloaded_marshalled_data = yaml_.load(string_object)
@@ -174,7 +180,7 @@ def _remarshal_object(
                 )
 
 
-def _reload_object(object_instance: Object, format_: str) -> None:
+def _reload_object(object_instance: abc.Object, format_: str) -> None:
     object_type: type = type(object_instance)
     string_object: str = str(object_instance)
     assert string_object != ""
@@ -193,7 +199,7 @@ def _reload_object(object_instance: Object, format_: str) -> None:
 
 
 def _object(
-    object_instance: Object,
+    object_instance: abc.Object,
     format_: str,
     raise_validation_errors: bool = True,
 ) -> None:
@@ -209,7 +215,7 @@ def _object(
         # Recursively test property values
         for property_name, property_ in instance_meta.properties.items():
             property_value = getattr(object_instance, property_name)
-            if isinstance(property_value, (Dictionary, Array, Object)):
+            if isinstance(property_value, abc.Model):
                 model(
                     property_value,
                     format_=format_,
@@ -265,7 +271,7 @@ def model(
     elif isinstance(model_instance, abc.Dictionary):
         validate(model_instance)
         key: str
-        value: MarshallableTypes
+        value: abc.MarshallableTypes
         for key, value in model_instance.items():
             if isinstance(value, abc.Model):
                 model(
@@ -276,8 +282,7 @@ def model(
 
 
 def json(
-    model_instance: Union[Dictionary, Array, Object],
-    raise_validation_errors: bool = True,
+    model_instance: abc.Model, raise_validation_errors: bool = True,
 ) -> None:
     model(
         model_instance=model_instance,
@@ -287,8 +292,7 @@ def json(
 
 
 def yaml(
-    model_instance: Union[Dictionary, Array, Object],
-    raise_validation_errors: bool = True,
+    model_instance: abc.Model, raise_validation_errors: bool = True,
 ) -> None:
     model(
         model_instance=model_instance,

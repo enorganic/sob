@@ -569,7 +569,7 @@ class Dictionary(Model, abc.Dictionary):
         ] = None,
     ) -> None:
         Model.__init__(self)
-        self._dict: Dict[
+        self._dict: abc.OrderedDict[
             str, abc.MarshallableTypes
         ] = collections.OrderedDict()
         self._meta: Optional[abc.DictionaryMeta]
@@ -599,10 +599,12 @@ class Dictionary(Model, abc.Dictionary):
     ) -> None:
         if data is not None:
             items: Iterable[Tuple[str, abc.MarshallableTypes]]
-            if isinstance(data, (collections.OrderedDict, abc.Dictionary)):
+            if isinstance(data, (collections.OrderedDict, abc.Dictionary)) or (
+                isinstance(data, Mapping) and isinstance(data, Reversible)
+            ):
                 items = data.items()
             elif isinstance(data, Mapping):
-                items = sorted(data.items(), key=lambda key_value: key_value)
+                items = sorted(data.items(), key=lambda item: item[0])
             else:
                 items = data
             key: str
@@ -729,7 +731,7 @@ class Dictionary(Model, abc.Dictionary):
             new_instance[key] = deepcopy(value, memo=memo)
         return new_instance
 
-    def _marshal(self) -> Dict[str, abc.JSONTypes]:
+    def _marshal(self) -> abc.OrderedDict[str, abc.JSONTypes]:
         """
         This method marshals an instance of `Dictionary` as built-in type
         `OrderedDict` which can be serialized into
@@ -756,7 +758,7 @@ class Dictionary(Model, abc.Dictionary):
             instance_meta.value_types if instance_meta else None
         )
         # Recursively convert the data to generic, serializable, data types
-        marshalled_data: Dict[str, abc.JSONTypes] = (
+        marshalled_data: abc.OrderedDict[str, abc.JSONTypes] = (
             collections.OrderedDict(
                 [
                     (key, marshal(value, types=value_types))
@@ -771,8 +773,23 @@ class Dictionary(Model, abc.Dictionary):
             after_marshal_data: abc.JSONTypes = instance_hooks.after_marshal(
                 marshalled_data
             )
-            assert isinstance(after_marshal_data, dict)
-            marshalled_data = after_marshal_data
+            after_marshal_dictionary: abc.OrderedDict[str, abc.JSONTypes]
+            if isinstance(after_marshal_data, collections.OrderedDict):
+                after_marshal_dictionary = after_marshal_data
+            elif isinstance(after_marshal_data, Reversible) and isinstance(
+                after_marshal_data, (Mapping, abc.Dictionary)
+            ):
+                after_marshal_dictionary = collections.OrderedDict(
+                    after_marshal_data.items()
+                )
+            else:
+                assert isinstance(after_marshal_data, Mapping)
+                after_marshal_dictionary = collections.OrderedDict(
+                    sorted(
+                        after_marshal_data.items(), key=lambda item: item[0]
+                    )
+                )
+            marshalled_data = after_marshal_dictionary
         return marshalled_data
 
     def _validate(self, raise_errors: bool = True) -> List[str]:
@@ -974,6 +991,9 @@ class Dictionary(Model, abc.Dictionary):
 
     def __iter__(self) -> Iterator[str]:
         return self._dict.__iter__()
+
+    def __reversed__(self) -> Iterator[str]:
+        return self._dict.__reversed__()
 
 
 class Object(Model, abc.Object):
@@ -1259,7 +1279,7 @@ class Object(Model, abc.Object):
                 self._deepcopy_property(property_name_, new_instance, memo)
         return new_instance
 
-    def _marshal(self) -> Dict[str, abc.JSONTypes]:
+    def _marshal(self) -> abc.OrderedDict[str, abc.JSONTypes]:
         object_: abc.Object = self
         instance_hooks: Optional[abc.ObjectHooks] = hooks.object_read(self)
         if instance_hooks and instance_hooks.before_marshal:
@@ -1268,7 +1288,7 @@ class Object(Model, abc.Object):
             )
             assert isinstance(before_marshal_object, abc.Object)
             object_ = before_marshal_object
-        data: Dict[str, abc.JSONTypes] = collections.OrderedDict()
+        data: abc.OrderedDict[str, abc.JSONTypes] = collections.OrderedDict()
         instance_meta: Optional[abc.ObjectMeta] = meta.object_read(object_)
         if instance_meta and instance_meta.properties is not None:
             property_name_: str
@@ -1283,7 +1303,7 @@ class Object(Model, abc.Object):
             after_marshal_data: abc.JSONTypes = (
                 instance_hooks.after_marshal(data)
             )
-            assert isinstance(after_marshal_data, Dict)
+            assert isinstance(after_marshal_data, collections.OrderedDict)
             data = after_marshal_data
         return data
 
@@ -1477,21 +1497,21 @@ def _marshal_mapping(
     value_types: Union[
         Iterable[Union[type, abc.Property]], abc.Types, None
     ] = None,
-) -> Mapping[str, abc.MarshallableTypes]:
+) -> abc.OrderedDict[str, abc.MarshallableTypes]:
     key: str
     value: abc.MarshallableTypes
-    marshalled_data: MutableMapping[
+    marshalled_data: abc.OrderedDict[
         str, abc.MarshallableTypes
     ] = collections.OrderedDict()
     items: Iterable[Tuple[str, abc.MarshallableTypes]]
-    if isinstance(data, Reversible) and isinstance(
-        data, (Mapping, abc.Dictionary)
+    if isinstance(data, (abc.Dictionary, collections.OrderedDict)) or (
+        isinstance(data, Reversible) and isinstance(data, Mapping)
     ):
         items = data.items()
     else:
         assert isinstance(data, Mapping)
         # This gives consistent sorting for non-ordered mappings
-        items = sorted(data.items())
+        items = sorted(data.items(), key=lambda item: item[0])
     for key, value in items:
         marshalled_data[key] = marshal(value, types=value_types)
     return marshalled_data
@@ -1951,6 +1971,12 @@ def serialize(
 # region deserialize
 
 
+def _object_pairs_hook(
+    pairs: Iterable[Tuple[str, Any]]
+) -> abc.OrderedDict[str, Any]:
+    return collections.OrderedDict(pairs)
+
+
 def deserialize(
     data: Optional[Union[str, bytes, abc.Readable]], format_: str = "json"
 ) -> abc.JSONTypes:
@@ -1971,7 +1997,9 @@ def deserialize(
     if isinstance(data, str):
         if format_ == "json":
             deserialized_data = json.loads(
-                data, object_hook=collections.OrderedDict
+                data,
+                object_hook=collections.OrderedDict,
+                object_pairs_hook=_object_pairs_hook,
             )
         else:
             deserialized_data = yaml.load(data, yaml.FullLoader)
@@ -2475,23 +2503,20 @@ def _type_hint_from_property_types(
 
 def _type_hint_from_type(type_: type, module: str) -> str:
     type_hint: str
-    if type_ in (Union, Dict, Any, Sequence, abc.Readable):
-        type_hint = type_.__name__
-    else:
-        type_hint = qualified_name(type_)
-        # If this class was declared in the same module, we put it in
-        # quotes since it won't necessarily have been declared already
-        if (("." not in type_hint) and not hasattr(builtins, type_hint)) or (
-            type_.__module__ == module
-        ):
-            if len(type_hint) > 60:
-                type_hint_lines: List[str] = ["("]
-                for chunk in chunked(type_hint, 57):
-                    type_hint_lines.append(f"    '{''.join(chunk)}'")
-                type_hint_lines.append(")")
-                type_hint = "\n".join(type_hint_lines)
-            else:
-                type_hint = f"'{type_hint}'"
+    type_hint = qualified_name(type_)
+    # If this class was declared in the same module, we put it in
+    # quotes since it won't necessarily have been declared already
+    if (("." not in type_hint) and not hasattr(builtins, type_hint)) or (
+        type_.__module__ == module
+    ):
+        if len(type_hint) > 60:
+            type_hint_lines: List[str] = ["("]
+            for chunk in chunked(type_hint, 57):
+                type_hint_lines.append(f"    '{''.join(chunk)}'")
+            type_hint_lines.append(")")
+            type_hint = "\n".join(type_hint_lines)
+        else:
+            type_hint = f"'{type_hint}'"
     return type_hint
 
 

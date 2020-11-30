@@ -1,5 +1,4 @@
 import collections
-from collections import OrderedDict
 from inspect import (
     FrameInfo,
     Parameter,
@@ -233,7 +232,7 @@ def get_source(object_: Union[type, Callable, ModuleType]) -> str:
     return object_source
 
 
-def parameters_defaults(function: Callable) -> Dict[str, Any]:
+def parameters_defaults(function: Callable[..., Any]) -> Dict[str, Any]:
     """
     Returns an ordered dictionary mapping a function's argument names to
     default values, or `UNDEFINED` in the case of
@@ -254,7 +253,7 @@ def parameters_defaults(function: Callable) -> Dict[str, Any]:
     ('e', 2)
     ('f', 3)
     """
-    defaults: Dict[str, Any] = OrderedDict()
+    defaults: Dict[str, Any] = collections.OrderedDict()
     parameter_name: str
     parameter: Parameter
     for parameter_name, parameter in signature(function).parameters.items():

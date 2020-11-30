@@ -30,6 +30,3 @@ __all__: List[str] = [
     "request",
     "thesaurus",
 ]
-
-# For the backwards-compatibility of `oapi` generated modules
-setattr(properties, "types", types)

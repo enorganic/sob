@@ -20,3 +20,4 @@ pip-wheel-metadata/**
 !.gitignore
 !.flake8
 !.tox
+!.python-version

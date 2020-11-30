@@ -1,3 +1,4 @@
+import functools
 import os
 import re
 from base64 import b64encode
@@ -5,7 +6,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, Iterable, Optional, Union
+from typing import Dict, Iterable, Optional, Reversible, Union
 from urllib.parse import urljoin
 
 from iso8601 import iso8601  # type: ignore
@@ -405,19 +406,25 @@ def test_object():
     assert testy_deep_copy.string2string2c_b_a is None
 
 
-def test_json_serialization():
+@functools.lru_cache()
+def _get_testy_path() -> str:
+    data_dir: str = urljoin(__file__, "data/")
+    path: str
+    # The following accounts for `dict` being ordered in python 3.8+
+    if isinstance({}, Reversible):
+        path = urljoin(data_dir, "reversible_dict_testy.json")
+    else:
+        path = urljoin(data_dir, "testy.json")
+    return path
 
+
+def test_json_serialization():
     model.validate(testy)
     test.json(testy)
-
-    path = urljoin(urljoin(str(__file__), "data/"), "testy.json")
-
+    path: str = _get_testy_path()
     if not os.path.exists(path):
-
         with open(path, mode="w", encoding="utf-8") as file:
-
             file.write(model.serialize(testy, "json"))
-
     with open(path, mode="r", encoding="utf-8") as file:
         serialized_testy = model.serialize(testy, "json").strip()
         file_testy = file.read().strip()
@@ -441,13 +448,10 @@ def test_json_deserialization():
     TODO
     """
     with open(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "data", "testy.json"
-        ),
+        _get_testy_path(),
         mode="r",
         encoding="utf-8",
     ) as f:
-
         assert Tesstee(f) == testy
         error = None
         try:
@@ -468,9 +472,11 @@ def test_request() -> None:
     """
     This will test `sob.requests`,
     """
+    data_dir: str = urljoin(__file__, "data/")
     with open(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
+        urljoin(
+            data_dir,
+            "rainbow.png"
         ),
         mode="rb",
     ) as rainbow_file:
@@ -492,10 +498,15 @@ def test_request() -> None:
                 )
             ],
         )
-        path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "data",
-            "multi_part_json_request",
+        # This accounts for `dict` becoming ordered (and therefore reversible)
+        # in python 3.8+
+        path = urljoin(
+            data_dir,
+            "{}multi_part_json_request".format(
+                "reversible_dict_"
+                if isinstance({}, Reversible) else
+                ""
+            )
         )
         if os.path.exists(path):
             with open(path, "rb") as multi_part_request_file:
