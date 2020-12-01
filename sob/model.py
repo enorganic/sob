@@ -271,10 +271,10 @@ class Array(Model, abc.Array):
             for item in items:
                 self.append(item)
 
-    def __getitem__(self, index: int) -> abc.MarshallableTypes:
+    def __getitem__(self, index: int) -> Any:
         return self._list.__getitem__(index)
 
-    def __iter__(self) -> Iterator[abc.MarshallableTypes]:
+    def __iter__(self) -> Iterator[Any]:
         return self._list.__iter__()
 
     def __contains__(self, value: abc.MarshallableTypes) -> bool:
@@ -919,14 +919,12 @@ class Dictionary(Model, abc.Dictionary):
     def __delitem__(self, key: str) -> None:
         self._dict.__delitem__(key)
 
-    def pop(
-        self, key: str, default: Undefined = UNDEFINED
-    ) -> abc.MarshallableTypes:
+    def pop(self, key: str, default: Undefined = UNDEFINED) -> Any:
         return self._dict.pop(
             key, *([] if default is UNDEFINED else [default])
         )
 
-    def popitem(self) -> Tuple[str, abc.MarshallableTypes]:
+    def popitem(self) -> Tuple[str, Any]:
         return self._dict.popitem()
 
     def clear(self) -> None:
@@ -959,19 +957,19 @@ class Dictionary(Model, abc.Dictionary):
 
     def setdefault(
         self, key: str, default: Optional[abc.MarshallableTypes] = None
-    ) -> Optional[abc.MarshallableTypes]:
+    ) -> Any:
         try:
             return self[key]
         except KeyError:
             self[key] = default
         return default
 
-    def __getitem__(self, key: str) -> abc.MarshallableTypes:
+    def __getitem__(self, key: str) -> Any:
         return self._dict.__getitem__(key)
 
     def get(
         self, key: str, default: Optional[abc.MarshallableTypes] = None
-    ) -> Optional[abc.MarshallableTypes]:
+    ) -> Optional[Any]:
         return self._dict.get(key, default)
 
     def __contains__(self, key: str) -> bool:
@@ -980,10 +978,10 @@ class Dictionary(Model, abc.Dictionary):
     def keys(self) -> KeysView[str]:
         return self._dict.keys()
 
-    def items(self) -> ItemsView[str, abc.MarshallableTypes]:
+    def items(self) -> ItemsView[str, Any]:
         return self._dict.items()
 
-    def values(self) -> ValuesView[abc.MarshallableTypes]:
+    def values(self) -> ValuesView[Any]:
         return self._dict.values()
 
     def __len__(self) -> int:
@@ -1133,7 +1131,9 @@ class Object(Model, abc.Object):
             % (qualified_name(type(self)), property_name_)
         )
 
-    def _unmarshal_value(self, property_name_: str, value: Any) -> Any:
+    def _unmarshal_value(
+        self, property_name_: str, value: abc.MarshallableTypes
+    ) -> abc.MarshallableTypes:
         """
         Unmarshall a property value
         """
@@ -1170,7 +1170,10 @@ class Object(Model, abc.Object):
                 property_name_, value = instance_hooks.before_setattr(
                     self, property_name_, value
                 )
-            unmarshalled_value = self._unmarshal_value(property_name_, value)
+            if value is not None:
+                unmarshalled_value = self._unmarshal_value(
+                    property_name_, value
+                )
         object.__setattr__(self, property_name_, unmarshalled_value)
         if (
             property_name_[0] != "_"
@@ -1893,7 +1896,7 @@ def unmarshal(
         abc.Types,
         None,
     ] = None,
-) -> abc.MarshallableTypes:
+) -> Any:
     """
     Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
     and recursively does the same for all member data.
@@ -1979,7 +1982,7 @@ def _object_pairs_hook(
 
 def deserialize(
     data: Optional[Union[str, bytes, abc.Readable]], format_: str = "json"
-) -> abc.JSONTypes:
+) -> Any:
     """
     This function deserializes JSON or YAML encoded data.
 
@@ -2016,7 +2019,7 @@ def deserialize(
 
 def detect_format(
     data: Optional[Union[str, bytes, abc.Readable]]
-) -> Tuple[abc.JSONTypes, str]:
+) -> Tuple[Any, str]:
     """
     This function accepts a string or file-like object and returns a tuple
     containing the deserialized information and a string indicating the format
@@ -2312,7 +2315,9 @@ class _UnmarshalProperty:
         return unmarshalled_value
 
 
-def _unmarshal_property_value(property_: abc.Property, value: Any) -> Any:
+def _unmarshal_property_value(
+    property_: abc.Property, value: abc.MarshallableTypes
+) -> abc.MarshallableTypes:
     """
     Un-marshal a property value
     """

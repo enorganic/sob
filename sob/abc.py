@@ -164,34 +164,26 @@ class Hooks(metaclass=ABCMeta):
     TODO
     """
 
-    before_marshal: Optional[Callable[["Model"], "Model"]]
-    after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]]
-    before_unmarshal: Optional[
-        Callable[["MarshallableTypes"], "MarshallableTypes"]
-    ]
-    after_unmarshal: Optional[Callable[["Model"], "Model"]]
-    before_serialize: Optional[Callable[["JSONTypes"], "JSONTypes"]]
+    before_marshal: Optional[Callable[["Model"], Any]]
+    after_marshal: Optional[Callable[["JSONTypes"], Any]]
+    before_unmarshal: Optional[Callable[["MarshallableTypes"], Any]]
+    after_unmarshal: Optional[Callable[["Model"], Any]]
+    before_serialize: Optional[Callable[["JSONTypes"], Any]]
     after_serialize: Optional[Callable[[str], str]]
-    before_validate: Optional[Callable[["Model"], "Model"]]
+    before_validate: Optional[Callable[["Model"], Any]]
     after_validate: Optional[Callable[["Model"], None]]
 
     # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(  # noqa
         self,
-        before_marshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
         before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
+            Callable[["MarshallableTypes"], Any]
         ] = None,
-        after_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        before_serialize: Optional[
-            Callable[["JSONTypes"], "JSONTypes"]
-        ] = None,
+        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
@@ -217,19 +209,13 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
     """
 
     before_setattr: Optional[
-        Callable[
-            ["Object", str, "MarshallableTypes"],
-            Tuple[str, "MarshallableTypes"],
-        ]
+        Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
     ]
     after_setattr: Optional[
         Callable[["Object", str, "MarshallableTypes"], None]
     ]
     before_setitem: Optional[
-        Callable[
-            ["Object", str, "MarshallableTypes"],
-            Tuple[str, "MarshallableTypes"],
-        ]
+        Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
     ]
     after_setitem: Optional[
         Callable[["Object", str, "MarshallableTypes"], None]
@@ -239,36 +225,24 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
     @abstractmethod
     def __init__(  # noqa
         self,
-        before_marshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
         before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
+            Callable[["MarshallableTypes"], Any]
         ] = None,
-        after_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        before_serialize: Optional[
-            Callable[["JSONTypes"], "JSONTypes"]
-        ] = None,
+        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
         before_setattr: Optional[
-            Callable[
-                ["Object", str, "MarshallableTypes"],
-                Tuple[str, "MarshallableTypes"],
-            ]
+            Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
         ] = None,
         after_setattr: Optional[
             Callable[["Object", str, "MarshallableTypes"], None]
         ] = None,
         before_setitem: Optional[
-            Callable[
-                ["Object", str, "MarshallableTypes"],
-                Tuple[str, "MarshallableTypes"],
-            ]
+            Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
         ] = None,
         after_setitem: Optional[
             Callable[["Object", str, "MarshallableTypes"], None]
@@ -283,19 +257,13 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
     """
 
     before_setitem: Optional[
-        Callable[
-            ["Array", int, "MarshallableTypes"],
-            Tuple[int, "MarshallableTypes"],
-        ]
+        Callable[["Array", int, "MarshallableTypes"], Tuple[int, Any]]
     ]
     after_setitem: Optional[
         Callable[["Array", int, "MarshallableTypes"], None]
     ]
     before_append: Optional[
-        Callable[
-            ["Array", Optional["MarshallableTypes"]],
-            Optional["MarshallableTypes"],
-        ]
+        Callable[["Array", Optional["MarshallableTypes"]], Optional[Any]]
     ]
     after_append: Optional[
         Callable[["Array", Optional["MarshallableTypes"]], None]
@@ -305,36 +273,24 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
     @abstractmethod
     def __init__(  # noqa
         self,
-        before_marshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
         before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
+            Callable[["MarshallableTypes"], Any]
         ] = None,
-        after_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        before_serialize: Optional[
-            Callable[["JSONTypes"], "JSONTypes"]
-        ] = None,
+        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
         before_setitem: Optional[
-            Callable[
-                ["Array", int, "MarshallableTypes"],
-                Tuple[int, "MarshallableTypes"],
-            ]
+            Callable[["Array", int, "MarshallableTypes"], Tuple[int, Any]]
         ] = None,
         after_setitem: Optional[
             Callable[["Array", int, "MarshallableTypes"], None]
         ] = None,
         before_append: Optional[
-            Callable[
-                ["Array", Optional["MarshallableTypes"]],
-                Optional["MarshallableTypes"],
-            ]
+            Callable[["Array", Optional["MarshallableTypes"]], Optional[Any]]
         ] = None,
         after_append: Optional[
             Callable[["Array", Optional["MarshallableTypes"]], None]
@@ -349,10 +305,7 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
     """
 
     before_setitem: Optional[
-        Callable[
-            ["Dictionary", str, "MarshallableTypes"],
-            Tuple[str, "MarshallableTypes"],
-        ]
+        Callable[["Dictionary", str, "MarshallableTypes"], Tuple[str, Any]]
     ]
     after_setitem: Optional[
         Callable[["Dictionary", str, "MarshallableTypes"], None]
@@ -361,26 +314,19 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
     # noinspection PyUnusedLocal
     def __init__(  # noqa
         self,
-        before_marshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
         before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
+            Callable[["MarshallableTypes"], Any]
         ] = None,
-        after_unmarshal: Optional[
-            Callable[["MarshallableTypes"], "MarshallableTypes"]
-        ] = None,
-        before_serialize: Optional[
-            Callable[["JSONTypes"], "JSONTypes"]
-        ] = None,
+        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
         before_setitem: Optional[
             Callable[
-                ["Dictionary", str, "MarshallableTypes"],
-                Tuple[str, "MarshallableTypes"],
+                ["Dictionary", str, "MarshallableTypes"], Tuple[str, Any],
             ]
         ] = None,
         after_setitem: Optional[
@@ -726,7 +672,7 @@ class Dictionary(Model, metaclass=ABCMeta):
         raise KeyError
 
     @abstractmethod
-    def __getitem__(self, key: str) -> "MarshallableTypes":
+    def __getitem__(self, key: str) -> Any:
         pass
 
     @abstractmethod
@@ -746,13 +692,11 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def pop(
-        self, key: str, default: Undefined = UNDEFINED
-    ) -> "MarshallableTypes":
+    def pop(self, key: str, default: Undefined = UNDEFINED) -> Any:
         pass
 
     @abstractmethod
-    def popitem(self) -> Tuple[str, "MarshallableTypes"]:
+    def popitem(self) -> Tuple[str, Any]:
         pass
 
     @abstractmethod
@@ -773,13 +717,13 @@ class Dictionary(Model, metaclass=ABCMeta):
     @abstractmethod
     def setdefault(
         self, key: str, default: Optional["MarshallableTypes"] = None
-    ) -> Optional["MarshallableTypes"]:
+    ) -> Any:
         pass
 
     @abstractmethod
     def get(
         self, key: str, default: Optional["MarshallableTypes"] = None
-    ) -> Optional["MarshallableTypes"]:
+    ) -> Any:
         pass
 
     @abstractmethod
@@ -787,11 +731,11 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def items(self) -> ItemsView[str, "MarshallableTypes"]:
+    def items(self) -> ItemsView[str, Any]:
         pass
 
     @abstractmethod
-    def values(self) -> ValuesView["MarshallableTypes"]:
+    def values(self) -> ValuesView[Any]:
         pass
 
 
@@ -906,11 +850,11 @@ class Array(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __getitem__(self, index: int) -> "MarshallableTypes":
+    def __getitem__(self, index: int) -> Any:
         pass
 
     @abstractmethod
-    def __iter__(self) -> Iterator["MarshallableTypes"]:
+    def __iter__(self) -> Iterator[Any]:
         pass
 
     @abstractmethod
@@ -971,7 +915,7 @@ class Array(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def pop(self, index: int = -1) -> "MarshallableTypes":
+    def pop(self, index: int = -1) -> Any:
         pass
 
     @abstractmethod
@@ -1088,7 +1032,7 @@ class Enumerated(Property, metaclass=ABCMeta):
     """
 
     @property  # type: ignore
-    def values(self) -> Optional[Set["MarshallableTypes"]]:
+    def values(self) -> Optional[Set[Any]]:
         pass
 
     @values.setter
