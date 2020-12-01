@@ -905,7 +905,7 @@ class Array(Model, metaclass=ABCMeta):
     @abstractmethod
     def sort(
         self,
-        key: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        key: Optional[Callable[[Any], Any]] = None,
         reverse: bool = False,
     ) -> None:
         pass

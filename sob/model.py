@@ -344,7 +344,7 @@ class Array(Model, abc.Array):
 
     def sort(
         self,
-        key: Optional[Callable[[abc.MarshallableTypes], Any]] = None,
+        key: Optional[Callable[[Any], Any]] = None,
         reverse: bool = False,
     ) -> None:
         self._list.sort(key=key, reverse=reverse)
