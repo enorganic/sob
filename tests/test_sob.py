@@ -447,11 +447,7 @@ def test_json_deserialization():
     """
     TODO
     """
-    with open(
-        _get_testy_path(),
-        mode="r",
-        encoding="utf-8",
-    ) as f:
+    with open(_get_testy_path(), mode="r", encoding="utf-8",) as f:
         assert Tesstee(f) == testy
         error = None
         try:
@@ -473,13 +469,7 @@ def test_request() -> None:
     This will test `sob.requests`,
     """
     data_dir: str = urljoin(__file__, "data/")
-    with open(
-        urljoin(
-            data_dir,
-            "rainbow.png"
-        ),
-        mode="rb",
-    ) as rainbow_file:
+    with open(urljoin(data_dir, "rainbow.png"), mode="rb",) as rainbow_file:
         rainbow_bytes = rainbow_file.read()
         multi_part_json_request = MultipartRequest(
             url="http://localhost",
@@ -503,10 +493,8 @@ def test_request() -> None:
         path = urljoin(
             data_dir,
             "{}multi_part_json_request".format(
-                "reversible_dict_"
-                if isinstance({}, Reversible) else
-                ""
-            )
+                "reversible_dict_" if isinstance({}, Reversible) else ""
+            ),
         )
         if os.path.exists(path):
             with open(path, "rb") as multi_part_request_file:

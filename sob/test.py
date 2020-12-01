@@ -43,7 +43,7 @@ def _object_discrepancies(
             _get_object_property_names(object_a)
             | _get_object_property_names(object_b)
         ),
-        key=lambda item: item[0]
+        key=lambda item: item[0],
     ):
         a_value: Optional[abc.MarshallableTypes]
         b_value: Optional[abc.MarshallableTypes]
