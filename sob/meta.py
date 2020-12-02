@@ -392,9 +392,9 @@ class Properties(abc.Properties):
         return self._dict.__len__()
 
 
-def _read(model: Union[type, abc.Model]) -> Any:
+def read(model: Union[type, abc.Model]) -> Any:
     if isinstance(model, abc.Model):
-        return getattr(model, "_meta") or _read(type(model))
+        return getattr(model, "_meta") or read(type(model))
     elif isinstance(model, type):
         if issubclass(model, abc.Model):
             return getattr(model, "_meta")
@@ -425,29 +425,32 @@ def _read(model: Union[type, abc.Model]) -> Any:
         )
 
 
-def read(model: Union[type, abc.Model]) -> Optional[abc.Meta]:
-    return _read(model)
-
-
 def object_read(model: Union[type, abc.Object]) -> Optional[abc.ObjectMeta]:
-    return _read(model)
+    return read(model)
 
 
 def array_read(model: Union[type, abc.Array]) -> Optional[abc.ArrayMeta]:
-    return _read(model)
+    return read(model)
 
 
 def dictionary_read(
     model: Union[type, abc.Dictionary]
 ) -> Optional[abc.DictionaryMeta]:
-    return _read(model)
+    return read(model)
 
 
-def _writable(model: Union[type, abc.Model]) -> Any:
+def writable(model: Union[type, abc.Model]) -> Any:
+    """
+    This function returns an instance of [sob.meta.Meta](#Meta) which can
+    be safely modified. If the class or model instance inherits its metadata
+    from a class or base class, this function will create and return a
+    duplicate of that metadata assigned directly to the class or instance
+    represented by `model`.
+    """
     assert _is_model(model)
     if isinstance(model, abc.Model):
         if getattr(model, "_meta") is None:
-            model._meta = deepcopy(_writable(type(model)))
+            model._meta = deepcopy(writable(type(model)))
     elif isinstance(model, type) and issubclass(
         model, (abc.Object, abc.Dictionary, abc.Array)
     ):
@@ -496,17 +499,6 @@ def _writable(model: Union[type, abc.Model]) -> Any:
     return getattr(model, "_meta")
 
 
-def writable(model: Union[type, abc.Model]) -> abc.Meta:
-    """
-    This function returns an instance of [sob.meta.Meta](#Meta) which can
-    be safely modified. If the class or model instance inherits its metadata
-    from a class or base class, this function will create and return a
-    duplicate of that metadata assigned directly to the class or instance
-    represented by `model`.
-    """
-    return _writable(model)
-
-
 def object_writable(model: Union[type, abc.Object]) -> abc.ObjectMeta:
     """
     This function returns an instance of [sob.meta.Object](#meta-Object) which
@@ -515,7 +507,7 @@ def object_writable(model: Union[type, abc.Object]) -> abc.ObjectMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def array_writable(model: Union[type, abc.Array]) -> abc.ArrayMeta:
@@ -526,7 +518,7 @@ def array_writable(model: Union[type, abc.Array]) -> abc.ArrayMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def dictionary_writable(
@@ -539,7 +531,7 @@ def dictionary_writable(
     class, this function will create and return a duplicate of that metadata
     assigned directly to the class or instance represented by `model`.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def write(model: Union[type, abc.Model], meta: Optional[abc.Meta]) -> None:

@@ -118,7 +118,7 @@ class Headers(collections.OrderedDict):
             return super().__getitem__("Content-type")
 
     def __len__(self) -> int:
-        return len(tuple(self))
+        return super().__len__()
 
     def __iter__(self) -> Iterator[str]:
         keys: Set[str] = set()

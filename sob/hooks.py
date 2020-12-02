@@ -194,19 +194,15 @@ class Dictionary(Hooks, abc.DictionaryHooks):
         self.after_setitem = after_setitem
 
 
-def _read(model: Union[type, abc.Model]) -> Optional[abc.Any]:
-    hooks: Optional[abc.Hooks] = getattr(model, "_hooks")
-    if isinstance(model, abc.Model) and (hooks is None):
-        hooks = _read(type(model))
-    return hooks
-
-
-def read(model: Union[type, abc.Model]) -> Optional[abc.Hooks]:
+def read(model: Union[type, abc.Model]) -> Any:
     """
     Read metadata from a model class or instance (the returned metadata may be
     inherited, and therefore should not be written to)
     """
-    return _read(model)
+    hooks: Optional[abc.Hooks] = getattr(model, "_hooks")
+    if isinstance(model, abc.Model) and (hooks is None):
+        hooks = read(type(model))
+    return hooks
 
 
 def object_read(model: Union[type, abc.Object]) -> Optional[abc.ObjectHooks]:
@@ -215,7 +211,7 @@ def object_read(model: Union[type, abc.Object]) -> Optional[abc.ObjectHooks]:
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return _read(model)
+    return read(model)
 
 
 def array_read(model: Union[type, abc.Array]) -> Optional[abc.ArrayHooks]:
@@ -224,7 +220,7 @@ def array_read(model: Union[type, abc.Array]) -> Optional[abc.ArrayHooks]:
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return _read(model)
+    return read(model)
 
 
 def dictionary_read(
@@ -235,10 +231,15 @@ def dictionary_read(
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return _read(model)
+    return read(model)
 
 
-def _writable(model: Union[type, abc.Model]) -> Any:
+def writable(model: Union[type, abc.Model]) -> Any:
+    """
+    Retrieve a metadata instance. If the instance currently inherits its
+    metadata from a class or superclass, this function will copy that
+    metadata and assign it directly to the model instance.
+    """
     hooks: Optional[abc.Hooks] = getattr(model, "_hooks")
     writable_hooks: Optional[abc.Hooks] = None
     if isinstance(model, type):
@@ -266,7 +267,7 @@ def _writable(model: Union[type, abc.Model]) -> Any:
                     break
     elif isinstance(model, abc.Model):
         if hooks is None:
-            writable_hooks = deepcopy(_writable(type(model)))
+            writable_hooks = deepcopy(writable(type(model)))
     if writable_hooks:
         setattr(model, "_hooks", writable_hooks)
     else:
@@ -275,22 +276,13 @@ def _writable(model: Union[type, abc.Model]) -> Any:
     return writable_hooks
 
 
-def writable(model: Union[type, abc.Model]) -> abc.Hooks:
-    """
-    Retrieve a metadata instance. If the instance currently inherits its
-    metadata from a class or superclass, this function will copy that
-    metadata and assign it directly to the model instance.
-    """
-    return _writable(model)
-
-
 def object_writable(model: Union[type, abc.Object]) -> abc.ObjectHooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def array_writable(model: Union[type, abc.Array]) -> abc.ArrayHooks:
@@ -299,7 +291,7 @@ def array_writable(model: Union[type, abc.Array]) -> abc.ArrayHooks:
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def dictionary_writable(
@@ -310,7 +302,7 @@ def dictionary_writable(
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return _writable(model)
+    return writable(model)
 
 
 def type_(model: Union[type, abc.Model]) -> type:

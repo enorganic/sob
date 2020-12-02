@@ -342,6 +342,8 @@ class Readable(metaclass=ABCMeta):
     necessarily writable.=
     """
 
+    register: Callable[[type], None]
+
     @abstractmethod
     def read(self, n: int = -1) -> AnyStr:
         pass
