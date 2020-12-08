@@ -161,8 +161,9 @@ def append_exception_text(error: Exception, message: str) -> None:
     """
     Append `message` to an error's exception text.
     """
-    if hasattr(error, "msg"):
-        setattr(error, "msg", message)
+    msg: str = getattr(error, 'msg', '')
+    if msg:
+        setattr(error, "msg", f"{msg}{message}")
     else:
         args: Tuple[Any, ...] = error.args or ("",)
         error.args = (f"{args[0]}{message}",) + args[1:]
