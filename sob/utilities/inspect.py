@@ -40,7 +40,7 @@ def properties_values(
     """
     for attribute in dir(object_):
         if include_private or attribute[0] != "_":
-            value = getattr(object_, attribute)
+            value = getattr(object_, attribute, lambda: None)
             if not callable(value):
                 yield attribute, value
 
