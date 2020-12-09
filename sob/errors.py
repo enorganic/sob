@@ -161,12 +161,20 @@ def append_exception_text(error: Exception, message: str) -> None:
     """
     Append `message` to an error's exception text.
     """
-    msg: str = getattr(error, 'msg', '')
-    if msg:
-        setattr(error, "msg", f"{msg}{message}")
-    else:
+    last_attribute_name: str
+    repr_last_attribute_value: str
+    for last_attribute_name in ("filename2", "filename", "strerror", "msg"):
+        repr_last_attribute_value = getattr(error, last_attribute_name, "")
+        if repr_last_attribute_value:
+            setattr(
+                error,
+                last_attribute_name,
+                f"{repr_last_attribute_value}{message}",
+            )
+            break
+    if not repr_last_attribute_value:
         args: Tuple[Any, ...] = error.args or ("",)
-        error.args = (f"{args[0]}{message}",) + args[1:]
+        error.args = args[:-1] + (f"{args[-1]}{message}",)
 
 
 def _repr_or_list(values: Iterable[Any], quotes: str = "") -> str:
