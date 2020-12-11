@@ -176,7 +176,7 @@ def append_exception_text(error: Exception, message: str) -> None:
     if not last_attribute_value:
         index: int
         arg: Any
-        reversed_args: List[Any] = list(reversed(error.args)) or ("",)
+        reversed_args: List[Any] = list(reversed(error.args)) or [""]
         for index, value in enumerate(reversed_args):
             if isinstance(value, str):
                 reversed_args[index] = f"{value}{message}"

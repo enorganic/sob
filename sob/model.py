@@ -581,8 +581,8 @@ class Dictionary(Model, abc.Dictionary):
             abc.Model,
             None,
         ] = self._init_format(items)
-        self._init_value_types(deserialized_items, value_types)
-        self._init_items(deserialized_items)
+        self._init_value_types(deserialized_items, value_types)  # type: ignore
+        self._init_items(deserialized_items)  # type: ignore
         self._init_pointer()
 
     def _init_format(
@@ -610,8 +610,13 @@ class Dictionary(Model, abc.Dictionary):
         ] = super()._init_format(data)
         if not isinstance(
             deserialized_items, (abc.Dictionary, Mapping, NoneType)
+        ) and isinstance(
+            deserialized_items,
+            Iterable
         ):
-            deserialized_items = collections.OrderedDict(deserialized_items)
+            deserialized_items = collections.OrderedDict(
+                deserialized_items  # type: ignore
+            )
         assert_is_instance(
             'deserialized_items',
             deserialized_items,
