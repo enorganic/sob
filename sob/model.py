@@ -610,17 +610,14 @@ class Dictionary(Model, abc.Dictionary):
         ] = super()._init_format(data)
         if not isinstance(
             deserialized_items, (abc.Dictionary, Mapping, NoneType)
-        ) and isinstance(
-            deserialized_items,
-            Iterable
-        ):
+        ) and isinstance(deserialized_items, Iterable):
             deserialized_items = collections.OrderedDict(
                 deserialized_items  # type: ignore
             )
         assert_is_instance(
-            'deserialized_items',
+            "deserialized_items",
             deserialized_items,
-            (abc.Dictionary, Mapping, NoneType)
+            (abc.Dictionary, Mapping, NoneType),
         )
         return deserialized_items
 

@@ -1,12 +1,10 @@
 import sys
-from inspect import getsource
-
 from traceback import format_exception
-from typing import Any, Callable, Iterable, List, Optional, Tuple, Union
+from typing import Any, Iterable, List, Optional, Tuple, Union
 
 from . import abc
+from .utilities.inspect import represent
 from .utilities.string import indent
-from .utilities.inspect import properties_values, represent
 
 
 class ValidationError(Exception):
@@ -164,13 +162,11 @@ def append_exception_text(error: Exception, message: str) -> None:
     """
     last_attribute_name: str
     repr_last_attribute_value: str
-    for last_attribute_name in ('strerror', 'msg'):
-        last_attribute_value = getattr(error, last_attribute_name, '')
+    for last_attribute_name in ("strerror", "msg"):
+        last_attribute_value = getattr(error, last_attribute_name, "")
         if last_attribute_value:
             setattr(
-                error,
-                last_attribute_name,
-                f"{last_attribute_value}{message}"
+                error, last_attribute_name, f"{last_attribute_value}{message}"
             )
             break
     if not last_attribute_value:
