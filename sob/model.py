@@ -581,12 +581,43 @@ class Dictionary(Model, abc.Dictionary):
             abc.Model,
             None,
         ] = self._init_format(items)
-        assert isinstance(
-            deserialized_items, (abc.Dictionary, Mapping, NoneType)
-        )
         self._init_value_types(deserialized_items, value_types)
         self._init_items(deserialized_items)
         self._init_pointer()
+
+    def _init_format(
+        self,
+        data: Union[
+            str,
+            bytes,
+            abc.Readable,
+            Mapping[str, abc.MarshallableTypes],
+            Iterable[abc.MarshallableTypes],
+            abc.Model,
+            None,
+        ] = None,
+    ) -> Union[
+        Iterable[abc.MarshallableTypes],
+        Mapping[str, abc.MarshallableTypes],
+        abc.Model,
+        None,
+    ]:
+        deserialized_items: Union[
+            Iterable[abc.MarshallableTypes],
+            Mapping[str, abc.MarshallableTypes],
+            abc.Model,
+            None,
+        ] = super()._init_format(data)
+        if not isinstance(
+            deserialized_items, (abc.Dictionary, Mapping, NoneType)
+        ):
+            deserialized_items = collections.OrderedDict(deserialized_items)
+        assert_is_instance(
+            'deserialized_items',
+            deserialized_items,
+            (abc.Dictionary, Mapping, NoneType)
+        )
+        return deserialized_items
 
     def _init_items(
         self,
