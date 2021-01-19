@@ -321,9 +321,9 @@ def _str_date_or_datetime(value: str) -> type:
             or timestamp.second
             or timestamp.microsecond
         ):
-            return date
-        else:
             return datetime
+        else:
+            return date
     except ParseError:
         return str
 
