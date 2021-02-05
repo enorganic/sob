@@ -35,7 +35,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="sob",
-    version="1.6.1",
+    version="1.7.0",
     description=(
         "A framework for serializing/deserializing JSON/YAML into python "
         "class instances and vice versa"
@@ -50,7 +50,11 @@ setup(
     keywords="rest api serialization serialize",
     packages=["sob", "sob.utilities"],
     package_data={"sob": ["py.typed"], "sob.utilities": ["py.typed"]},
-    install_requires=["pyyaml>=3.10", "iso8601~=0.1", "more-itertools~=8.5"],
+    install_requires=[
+        "pyyaml>=3.10",
+        "iso8601~=0.1",
+        "more-itertools~=8.6"
+    ],
     setup_requires=["setuptools"],
     extras_require={
         "test": [
@@ -58,8 +62,8 @@ setup(
             "tox~=3.20",
             "pytest~=5.4",
             "flake8~=3.8",
-            "setuptools-setup-versions>=1.4.1,<2",
-            "readme-md-docstrings>=0.1.0,<1",
+            "setuptools-setup-versions>=1.6.0,<2",
+            "readme-md-docstrings>=0.1.0,<1"
         ],
         "dev": [
             "mypy~=0.790",
@@ -67,11 +71,11 @@ setup(
             "tox~=3.20",
             "pytest~=5.4",
             "flake8~=3.8",
-            "setuptools-setup-versions>=1.4.1,<2",
+            "setuptools-setup-versions>=1.6.0,<2",
             "readme-md-docstrings~=0.1.0,<2",
             "twine~=3.2",
-            "daves-dev-tools~=0.0",
-        ],
+            "daves-dev-tools~=0.1"
+        ]
     },
     classifiers=[
         "Programming Language :: Python :: 3",

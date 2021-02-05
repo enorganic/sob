@@ -353,7 +353,7 @@ class Properties(abc.Properties):
             Iterable[Tuple[str, abc.Property]],
         ]
         key: str
-        value: MarshallableTypes
+        value: abc.Property
         items: Union[Iterable[Tuple[str, abc.Property]]] = ()
         for other in args:
             if isinstance(other, (Mapping, abc.Properties)):

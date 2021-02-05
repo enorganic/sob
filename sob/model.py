@@ -321,7 +321,7 @@ class Array(Model, abc.Array):
         self._list.insert(index, NULL)
         self.__setitem__(index, value)
 
-    def append(self, value: Optional[abc.MarshallableTypes]) -> None:
+    def append(self, value: abc.MarshallableTypes) -> None:
         if not isinstance(value, abc.MARSHALLABLE_TYPES + (NoneType,)):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: Optional[abc.ArrayHooks] = hooks.array_read(self)
@@ -679,9 +679,7 @@ class Dictionary(Model, abc.Dictionary):
     def __hash__(self) -> int:
         return id(self)
 
-    def __setitem__(
-        self, key: str, value: Optional[abc.MarshallableTypes]
-    ) -> None:
+    def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
         instance_hooks: Optional[abc.DictionaryHooks] = hooks.dictionary_read(
             self
         )
@@ -731,7 +729,7 @@ class Dictionary(Model, abc.Dictionary):
         if instance_hooks is not class_hooks:
             hooks.write(new_instance, instance_hooks)
         key: str
-        value: Optional[abc.MarshallableTypes]
+        value: abc.MarshallableTypes
         for key, value in self.items():
             new_instance[key] = value
         return new_instance
@@ -759,7 +757,7 @@ class Dictionary(Model, abc.Dictionary):
                 new_instance, deepcopy(instance_hooks, memo=memo)  # noqa
             )
         key: str
-        value: Optional[abc.MarshallableTypes]
+        value: abc.MarshallableTypes
         for key, value in self.items():
             new_instance[key] = deepcopy(value, memo=memo)
         return new_instance
@@ -989,7 +987,7 @@ class Dictionary(Model, abc.Dictionary):
             self[key] = value
 
     def setdefault(
-        self, key: str, default: Optional[abc.MarshallableTypes] = None
+        self, key: str, default: abc.MarshallableTypes = None
     ) -> Any:
         try:
             return self[key]
@@ -1001,7 +999,7 @@ class Dictionary(Model, abc.Dictionary):
         return self._dict.__getitem__(key)
 
     def get(
-        self, key: str, default: Optional[abc.MarshallableTypes] = None
+        self, key: str, default: abc.MarshallableTypes = None
     ) -> Optional[Any]:
         return self._dict.get(key, default)
 
@@ -1024,7 +1022,7 @@ class Dictionary(Model, abc.Dictionary):
         return self._dict.__iter__()
 
     def __reversed__(self) -> Iterator[str]:
-        return self._dict.__reversed__()
+        return reversed(self._dict)  # type: ignore
 
 
 class Object(Model, abc.Object):
@@ -1072,7 +1070,7 @@ class Object(Model, abc.Object):
     def _data_init(
         self,
         data: Union[
-            Mapping[str, Optional[abc.MarshallableTypes]],
+            Mapping[str, abc.MarshallableTypes],
             abc.Object,
             abc.Dictionary,
             None,
@@ -1086,15 +1084,13 @@ class Object(Model, abc.Object):
 
     def _dict_init(
         self,
-        dictionary: Union[
-            Mapping[str, Optional[abc.MarshallableTypes]], abc.Dictionary
-        ],
+        dictionary: Union[Mapping[str, abc.MarshallableTypes], abc.Dictionary],
     ) -> None:
         """
         Initialize this object from a dictionary
         """
         key: str
-        value: Optional[abc.MarshallableTypes]
+        value: abc.MarshallableTypes
         for key, value in dictionary.items():
             if value is None:
                 value = NULL
@@ -1194,9 +1190,9 @@ class Object(Model, abc.Object):
         return value
 
     def __setattr__(
-        self, property_name_: str, value: Optional[abc.MarshallableTypes]
+        self, property_name_: str, value: abc.MarshallableTypes
     ) -> None:
-        unmarshalled_value: Optional[abc.MarshallableTypes] = value
+        unmarshalled_value: abc.MarshallableTypes = value
         instance_hooks: Optional[abc.ObjectHooks] = hooks.object_read(self)
         if property_name_[0] != "_":
             if instance_hooks and instance_hooks.before_setattr:
@@ -1238,9 +1234,7 @@ class Object(Model, abc.Object):
             )
         return property_name_
 
-    def __setitem__(
-        self, key: str, value: Optional[abc.MarshallableTypes]
-    ) -> None:
+    def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
         # Before set-item hooks
         hooks_: Optional[abc.ObjectHooks] = hooks.object_read(self)
         if hooks_ and hooks_.before_setitem:
@@ -1348,9 +1342,11 @@ class Object(Model, abc.Object):
 
     @staticmethod
     def _repr_argument(parameter: str, value: abc.MarshallableTypes) -> str:
-        value_representation = (
-            qualified_name(value) if isinstance(value, type) else repr(value)
-        )
+        value_representation: str
+        if isinstance(value, type):
+            value_representation = qualified_name(value)
+        else:
+            value_representation = repr(value)
         lines = value_representation.split("\n")
         if len(lines) > 1:
             indented_lines = [lines[0]]
@@ -1364,7 +1360,7 @@ class Object(Model, abc.Object):
         instance_meta: Optional[abc.ObjectMeta] = meta.object_read(self)
         if instance_meta and instance_meta.properties:
             property_name_: str
-            value: Optional[abc.MarshallableTypes]
+            value: abc.MarshallableTypes
             for property_name_ in instance_meta.properties.keys():
                 value = getattr(self, property_name_)
                 if value is not None:
@@ -1397,8 +1393,8 @@ class Object(Model, abc.Object):
         )
         if self_properties != other_properties:
             return False
-        value: Optional[abc.MarshallableTypes]
-        other_value: Optional[abc.MarshallableTypes]
+        value: abc.MarshallableTypes
+        other_value: abc.MarshallableTypes
         for property_name_ in self_properties & other_properties:
             value = getattr(self, property_name_)
             other_value = getattr(other, property_name_)
@@ -1424,7 +1420,7 @@ class Object(Model, abc.Object):
         self,
         property_name_: str,
         property_: abc.Property,
-        value: Optional[abc.MarshallableTypes],
+        value: abc.MarshallableTypes,
     ) -> Iterable[str]:
         error_messages: List[str] = []
         if value is None:
@@ -1655,7 +1651,7 @@ class _Unmarshal:
 
     def __init__(
         self,
-        data: Optional[abc.MarshallableTypes],
+        data: abc.MarshallableTypes,
         types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
@@ -1693,7 +1689,7 @@ class _Unmarshal:
             if isinstance(item_types, (type, abc.Property)):
                 item_types = (item_types,)
         # Instance Attributes
-        self.data: Optional[abc.MarshallableTypes] = data
+        self.data: abc.MarshallableTypes = data
         self.types: Union[
             Iterable[Union[type, abc.Property]], abc.Types, None,
         ] = types
@@ -1709,7 +1705,7 @@ class _Unmarshal:
         """
         Return `self.data` unmarshalled
         """
-        unmarshalled_data: Optional[abc.MarshallableTypes] = self.data
+        unmarshalled_data: abc.MarshallableTypes = self.data
         if self.data is not NULL:
             # If the data is a sob `Model`, get it's metadata
             if isinstance(self.data, abc.Model):
@@ -1788,7 +1784,7 @@ class _Unmarshal:
                 if first_error is None:
                     first_error = error
                 error_messages.append(errors.get_exception_text())
-        if unmarshalled_data is UNDEFINED:
+        if isinstance(unmarshalled_data, Undefined):
             if (first_error is None) or isinstance(first_error, TypeError):
                 raise errors.UnmarshalTypeError(
                     "\n".join(error_messages),
@@ -1886,7 +1882,7 @@ class _Unmarshal:
     def as_type(
         self, type_: Union[type, abc.Property],
     ) -> abc.MarshallableTypes:
-        unmarshalled_data: Optional[abc.MarshallableTypes] = None
+        unmarshalled_data: abc.MarshallableTypes = None
         if isinstance(type_, abc.Property):
             unmarshalled_data = _unmarshal_property_value(type_, self.data)
         elif isinstance(type_, type):
@@ -1900,14 +1896,14 @@ class _Unmarshal:
                 if isinstance(self.data, Decimal):
                     unmarshalled_data = float(self.data)
                 else:
-                    unmarshalled_data = self.data
+                    unmarshalled_data = self.data  # type: ignore
             else:
                 raise TypeError(self.data)
         return unmarshalled_data
 
 
 def unmarshal(
-    data: Optional[abc.MarshallableTypes],
+    data: abc.MarshallableTypes,
     types: Union[
         Iterable[Union[type, abc.Property]],
         type,
@@ -1929,7 +1925,7 @@ def unmarshal(
         abc.Types,
         None,
     ] = None,
-) -> Any:
+) -> abc.MarshallableTypes:
     """
     Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
     and recursively does the same for all member data.
@@ -2409,9 +2405,7 @@ class _MarshalProperty:
                 % qualified_name(type(value))
             )
 
-    def __call__(
-        self, value: Optional[abc.MarshallableTypes]
-    ) -> abc.JSONTypes:
+    def __call__(self, value: abc.MarshallableTypes) -> abc.JSONTypes:
         if value is not None:
             if isinstance(self.property, abc.Date):
                 assert isinstance(value, date)
@@ -2440,7 +2434,7 @@ class _MarshalProperty:
 
 
 def _marshal_property_value(
-    property_: abc.Property, value: Optional[abc.MarshallableTypes]
+    property_: abc.Property, value: abc.MarshallableTypes
 ) -> abc.JSONTypes:
     """
     Marshal a property value
@@ -2454,10 +2448,10 @@ def _marshal_property_value(
 
 def _replace_object_nulls(
     object_instance: abc.Object,
-    replacement_value: Optional[abc.MarshallableTypes] = None,
+    replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     property_name_: str
-    value: Optional[abc.MarshallableTypes]
+    value: abc.MarshallableTypes
     for property_name_, value in utilities.inspect.properties_values(
         object_instance
     ):
@@ -2468,11 +2462,10 @@ def _replace_object_nulls(
 
 
 def _replace_array_nulls(
-    array_instance: abc.Array,
-    replacement_value: Optional[abc.MarshallableTypes] = None,
+    array_instance: abc.Array, replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     index: int
-    value: Optional[abc.MarshallableTypes]
+    value: abc.MarshallableTypes
     for index, value in enumerate(array_instance):
         if value is NULL:
             array_instance[index] = replacement_value
@@ -2482,10 +2475,10 @@ def _replace_array_nulls(
 
 def _replace_dictionary_nulls(
     dictionary_instance: abc.Dictionary,
-    replacement_value: Optional[abc.MarshallableTypes] = None,
+    replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     key: str
-    value: Optional[abc.MarshallableTypes]
+    value: abc.MarshallableTypes
     for key, value in dictionary_instance.items():
         if value is NULL:
             dictionary_instance[key] = replacement_value
@@ -2494,8 +2487,7 @@ def _replace_dictionary_nulls(
 
 
 def replace_nulls(
-    model_instance: abc.Model,
-    replacement_value: Optional[abc.MarshallableTypes] = None,
+    model_instance: abc.Model, replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     """
     This function replaces all instances of `sob.properties.types.NULL`.

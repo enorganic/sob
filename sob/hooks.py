@@ -128,13 +128,10 @@ class Array(Hooks, abc.ArrayHooks):
             Callable[[abc.Array, int, MarshallableTypes], None]
         ] = None,
         before_append: Optional[
-            Callable[
-                [abc.Array, Optional[MarshallableTypes]],
-                Optional[MarshallableTypes],
-            ]
+            Callable[[abc.Array, MarshallableTypes], MarshallableTypes]
         ] = None,
         after_append: Optional[
-            Callable[[abc.Array, Optional[MarshallableTypes]], None]
+            Callable[[abc.Array, MarshallableTypes], None]
         ] = None,
     ) -> None:
         super().__init__(

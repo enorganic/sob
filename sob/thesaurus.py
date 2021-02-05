@@ -4,6 +4,7 @@ set of example structures.
 """
 import binascii
 import collections
+import collections.abc
 import functools
 import os
 from base64 import b64decode
@@ -11,23 +12,15 @@ from copy import copy, deepcopy
 from datetime import date, datetime
 from types import ModuleType
 from typing import (
-    Callable,
-    Collection,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
+    Any, Callable, Collection, Dict, ItemsView, Iterable, Iterator, KeysView,
+    List, Mapping, Optional, Sequence, Set, Tuple, Union, ValuesView,
 )
 from urllib.parse import quote_plus
 
 from iso8601 import ParseError, parse_date  # type: ignore
 
 from . import __name__ as _parent_module_name, abc, meta
+from .abc import MARSHALLABLE_TYPES
 from .errors import IsInstanceAssertionError
 from .meta import escape_reference_token
 from .model import detect_format, from_meta, unmarshal
@@ -42,7 +35,7 @@ from .utilities.assertion import (
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
 from .utilities.string import MAX_LINE_LENGTH, class_name, property_name
-from .utilities.types import NULL, NoneType, Null
+from .utilities.types import NULL, NoneType, Null, UNDEFINED, Undefined
 
 __all__: List[str] = ["Synonyms", "Thesaurus"]
 
@@ -296,15 +289,17 @@ def _get_models_from_meta(
     return new_models
 
 
-def _is_base64(value: str) -> bool:
+def _is_base64(value: Any) -> bool:
     """
     Test to see if `value` can be interpreted as base-64 encoded binary data.
     """
-    try:
-        b64decode(bytes(value, encoding="utf-8"), validate=True)
-        return True
-    except binascii.Error:
-        return False
+    if isinstance(value, str):
+        try:
+            b64decode(bytes(value, encoding="utf-8"), validate=True)
+            return True
+        except binascii.Error:
+            pass
+    return False
 
 
 @functools.lru_cache(maxsize=128)
@@ -320,6 +315,9 @@ def _str_date_or_datetime(value: str) -> type:
             or timestamp.minute
             or timestamp.second
             or timestamp.microsecond
+            or "T" in value
+            or " " in value
+            or "Z" in value
         ):
             return datetime
         else:
@@ -328,34 +326,43 @@ def _str_date_or_datetime(value: str) -> type:
         return str
 
 
-def _is_datetime_str(value: str) -> bool:
+def _is_datetime_str(value: Any) -> bool:
     """
     Test to see if `value` can be interpreted as an ISO-8601 encoded
     `datetime`.
+
+    >>> _is_datetime_str("1999-12-31T00:00:00.000")
     """
-    return _str_date_or_datetime(value) is datetime
+    return isinstance(value, str) and _str_date_or_datetime(value) is datetime
 
 
-def _is_date_str(value: str) -> bool:
+def _is_date_str(value: Any) -> bool:
     """
     Test to see if `value` can be interpreted as an ISO-8601 encoded
     `date`.
     """
-    return _str_date_or_datetime(value) is date
+    return isinstance(value, str) and _str_date_or_datetime(value) is date
 
 
-class Synonyms(set):
+def _is_not_null_or_none(item: Any) -> bool:
+    return item not in (None, NULL)
+
+
+@collections.abc.MutableSet.register
+class Synonyms:
     """
     This class contains deserialized data, implied to represent variations of
     one type of entity, and is used to infer a model for that entity.
     """
+
+    __slots__ = ("_data_type", "_nullable", "_set")
 
     def __init__(
         self, items: Iterable[Union[abc.Readable, abc.MarshallableTypes]] = ()
     ) -> None:
         self._data_type: Optional[type] = None
         self._nullable: bool = False
-        super().__init__()
+        self._set: Set[abc.MarshallableTypes] = set()
         if items:
             self.__ior__(items)
 
@@ -386,7 +393,7 @@ class Synonyms(set):
             # Unmarshal items which appear to not have been part of an
             # unmarshalled container
             item = unmarshal(item)
-        if item is NULL:
+        if isinstance(item, Null):
             self._nullable = True
         elif item is not None:
             if self._data_type is None:
@@ -402,9 +409,34 @@ class Synonyms(set):
                     self._data_type = float
                 else:
                     assert isinstance(item, self._data_type)
-            super().add(item)
+            assert isinstance(item, MARSHALLABLE_TYPES)
+            self._set.add(item)  # type: ignore
 
-    def union(  # type: ignore
+    def discard(self, item: abc.MarshallableTypes) -> None:
+        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self_set.discard(item)
+        self.clear()
+        self.__ior__(self_set)
+
+    def remove(self, item: abc.MarshallableTypes) -> None:
+        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self_set.remove(item)
+        self.clear()
+        self.__ior__(self_set)
+
+    def pop(self) -> abc.MarshallableTypes:
+        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        item: abc.MarshallableTypes = self_set.pop()
+        self.clear()
+        self.__ior__(self_set)
+        return item
+
+    def clear(self) -> None:
+        self._data_type = None
+        self._nullable = False
+        self._set.clear()
+
+    def union(
         self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
     ) -> "Synonyms":
         """
@@ -430,11 +462,83 @@ class Synonyms(set):
     ) -> "Synonyms":
         return copy(self).__ior__(other)
 
+    @staticmethod
+    def _get_set(
+        other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> Set[abc.MarshallableTypes]:
+        return (
+            other._set
+            if isinstance(other, Synonyms)
+            else other
+            if isinstance(other, Set)
+            else Synonyms(other)._set
+        )
+
+    def __iand__(
+        self,
+        other: Union[
+            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        ],
+    ) -> "Synonyms":
+        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self.clear()
+        return self.__ior__(self_set & other_set)
+
+    def __ixor__(
+        self,
+        other: Union[
+            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        ],
+    ) -> "Synonyms":
+        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        self.clear()
+        if self_set is not other_set:
+            self.__ior__(self_set ^ other_set)
+        return self
+
+    def __isub__(
+        self,
+        other: Union[
+            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        ],
+    ) -> "Synonyms":
+        self_set: Set[abc.MarshallableTypes] = self._set
+        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        self.clear()
+        if self_set is not other_set:
+            self.__ior__(self_set.__isub__(other_set))
+        return self
+
+    def __sub__(
+        self, other: Union["Synonyms", Iterable[abc.MarshallableTypes]]
+    ) -> "Synonyms":
+        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        return self.__class__(self._set.__sub__(other_set))
+
+    def __xor__(
+        self,
+        other: Union[
+            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        ],
+    ) -> "Synonyms":
+        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        return self.__class__(self._set.__xor__(other_set))
+
     def __copy__(self) -> "Synonyms":
-        return type(self)(self)
+        new_synonyms: Synonyms = self.__class__()
+        new_synonyms._set = copy(self._set)
+        new_synonyms._data_type = self._data_type
+        new_synonyms._nullable = self._nullable
+        return new_synonyms
 
     def __deepcopy__(self, memo: Optional[dict] = None) -> "Synonyms":
-        return type(self)(deepcopy(item) for item in self)
+        new_synonyms: Synonyms = self.__class__()
+        new_synonyms._set = deepcopy(self._set, memo=memo)
+        new_synonyms._data_type = self._data_type
+        new_synonyms._nullable = self._nullable
+        return new_synonyms
 
     def _get_type(self) -> type:
         assert self._data_type is not None
@@ -443,17 +547,33 @@ class Synonyms(set):
         # `datetime`, or base-64 encoded `bytes`.
         if issubclass(self._data_type, str):
             if all(
-                _is_base64(item) for item in self if item not in (None, NULL)
+                map(
+                    _is_base64,
+                    filter(
+                        _is_not_null_or_none,
+                        self
+                    )
+                )
             ):
                 data_type = bytes
             elif all(
-                _is_datetime_str(item)
-                for item in self
-                if item not in (None, NULL)
+                map(
+                    _is_datetime_str,
+                    filter(
+                        _is_not_null_or_none,
+                        self
+                    )
+                )
             ):
                 data_type = datetime
             elif all(
-                _is_date_str(item) for item in self if item not in (None, NULL)
+                map(
+                    _is_date_str,
+                    filter(
+                        _is_not_null_or_none,
+                        self
+                    )
+                )
             ):
                 data_type = date
         else:
@@ -471,7 +591,7 @@ class Synonyms(set):
         keys_values: abc.OrderedDict[
             str, List[abc.MarshallableTypes]
         ] = collections.OrderedDict()
-        item: Union[Mapping, abc.Dictionary]
+        item: abc.MarshallableTypes
         for item in self:
             try:
                 assert isinstance(item, (Mapping, abc.Dictionary))
@@ -545,8 +665,9 @@ class Synonyms(set):
         memo: Optional[Dict[str, type]] = None,
     ) -> Iterable[type]:
         unified_items: Synonyms = type(self)()
-        items: List[abc.MarshallableTypes]
+        items: abc.MarshallableTypes
         for items in self:
+            assert isinstance(items, Iterable)
             unified_items |= items
         item_type: Optional[type] = None
         for item_type in unified_items._get_types(
@@ -643,6 +764,52 @@ class Synonyms(set):
             assert_is_subclass("model_class", model_class, abc.Model)
             yield model_class
 
+    def __len__(self) -> int:
+        return self._set.__len__()
+
+    def __iter__(self) -> Iterator[abc.MarshallableTypes]:
+        return self._set.__iter__()
+
+    def __contains__(self, item: abc.MarshallableTypes) -> bool:
+        return self._set.__contains__(item)
+
+    def __le__(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> bool:
+        return self._set.__le__(self._get_set(other))
+
+    def __lt__(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> bool:
+        return self._set.__lt__(self._get_set(other))
+
+    def __gt__(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> bool:
+        return self._set.__gt__(self._get_set(other))
+
+    def __ge__(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> bool:
+        return self._set.__ge__(self._get_set(other))
+
+    def __eq__(
+        self, other: Any
+    ) -> bool:
+        return type(other) is type(self) and self._set.__eq__(
+            self._get_set(other)
+        )
+
+    def __and__(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> "Synonyms":
+        return copy(self).__iand__(other)
+
+    def isdisjoint(
+        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+    ) -> bool:
+        return self._set.isdisjoint(self._get_set(other))
+
 
 def get_class_meta_attribute_assignment_source(
     class_name_: str, attribute_name: str, metadata: abc.Meta,
@@ -693,29 +860,45 @@ def get_class_meta_attribute_assignment_source(
     )
 
 
-class Thesaurus(collections.OrderedDict):
+@collections.abc.MutableMapping.register
+class Thesaurus:
     """
     TODO
     """
 
+    __slots__ = ("_dict",)
+
     def __init__(
         self,
-        items: Optional[
-            Union[
-                Dict[
-                    str, Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-                ],
-                Iterable[
-                    Tuple[
-                        str,
+        _items: Union[
+            Mapping[
+                str,
+                Union[
+                    Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+                    Synonyms
+                ]
+            ],
+            Iterable[
+                Tuple[
+                    str,
+                    Union[
                         Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+                        Synonyms
                     ]
-                ],
-            ]
+                ]
+            ],
+            "Thesaurus",
+            None
         ] = None,
         **kwargs: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
     ) -> None:
-        super().__init__(*((items,) if items else ()), **kwargs)
+        self._dict: abc.OrderedDict[str, Synonyms] = collections.OrderedDict()
+        key: str
+        value: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        for key, value in collections.OrderedDict(
+            *((_items,) if _items else ()), **kwargs
+        ).items():
+            self[key] = value
 
     def __setitem__(
         self,
@@ -724,20 +907,82 @@ class Thesaurus(collections.OrderedDict):
     ) -> None:
         if not isinstance(value, Synonyms):
             value = Synonyms(value)
-        return super().__setitem__(key, value)
+        return self._dict.__setitem__(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        self._dict.__delitem__(key)
+
+    def pop(
+        self, key: str, default: Union[Synonyms, Undefined] = UNDEFINED
+    ) -> Synonyms:
+        return self._dict.pop(
+            key, **(
+                {} if isinstance(default, Undefined) else dict(default=default)
+            )
+        )
+
+    def popitem(self) -> Tuple[str, Synonyms]:
+        return self._dict.popitem()
+
+    def clear(self) -> None:
+        self._dict.clear()
+
+    def update(self, **kwargs: Synonyms) -> None:
+        key: str
+        value: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        for key, value in kwargs.items():
+            self[key] = value
+
+    def setdefault(
+        self,
+        key: str,
+        default: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+    ) -> Synonyms:
+        if not isinstance(default, Synonyms):
+            default = Synonyms(default)
+        return self._dict.setdefault(key, default)
 
     def __getitem__(self, key: str) -> Synonyms:
         try:
-            return super().__getitem__(key)
+            return self._dict.__getitem__(key)
         except KeyError:
             self[key] = Synonyms()
             return self[key]
 
+    def get(
+        self, key: str, default: Union[Undefined, Synonyms] = UNDEFINED
+    ) -> Synonyms:
+        return self._dict.get(
+            key, **(
+                {} if isinstance(default, Undefined) else dict(default=default)
+            )
+        )
+
+    def __contains__(self, key: str) -> bool:
+        return self._dict.__contains__(key)
+
+    def keys(self) -> KeysView[str]:
+        return self._dict.keys()
+
+    def items(self) -> ItemsView[str, Synonyms]:
+        return self._dict.items()
+
+    def values(self) -> ValuesView[Synonyms]:
+        return self._dict.values()
+
+    def __eq__(self, other: Any) -> bool:
+        if isinstance(other, self.__class__):
+            return self._dict == other._dict
+        return False
+
     def __copy__(self) -> "Thesaurus":
-        return type(self)(self.items())
+        return self.__class__(copy(self._dict))
+
+    def __reversed__(self) -> Iterator[str]:
+        return reversed(self._dict)
 
     def __deepcopy__(self, memo: Optional[dict] = None) -> "Thesaurus":
-        return type(self)(deepcopy(item) for item in self.items())
+        return self.__class__(deepcopy(self._dict, memo=memo))
 
     def __iadd__(self, other: "Thesaurus") -> "Thesaurus":
         assert isinstance(other, Thesaurus)

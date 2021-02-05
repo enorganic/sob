@@ -27,7 +27,6 @@ import sys
 
 from .string import indent
 from .types import UNDEFINED, Undefined
-from ..abc import MarshallableTypes
 
 
 def properties_values(
@@ -300,7 +299,7 @@ def _repr_set(set_instance: set) -> str:
     )
 
 
-def represent(value: Optional[MarshallableTypes]) -> str:
+def represent(value: Any) -> str:
     """
     Returns a string representation of a value.
     """

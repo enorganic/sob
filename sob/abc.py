@@ -6,7 +6,6 @@ from decimal import Decimal
 from inspect import Traceback
 from typing import (
     Any,
-    AnyStr,
     Callable,
     Collection,
     Dict,
@@ -177,13 +176,19 @@ class Hooks(metaclass=ABCMeta):
     @abstractmethod
     def __init__(  # noqa
         self,
-        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
-        before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], Any]
+        before_marshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
         ] = None,
-        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
-        before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_unmarshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
+        ] = None,
+        after_unmarshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
+        ] = None,
+        before_serialize: Optional[
+            Callable[["JSONTypes"], "JSONTypes"]
+        ] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
@@ -209,7 +214,10 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
     """
 
     before_setattr: Optional[
-        Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
+        Callable[
+            ["Object", str, "MarshallableTypes"],
+            Tuple[str, "MarshallableTypes"],
+        ]
     ]
     after_setattr: Optional[
         Callable[["Object", str, "MarshallableTypes"], None]
@@ -236,13 +244,19 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
         after_validate: Optional[Callable[["Model"], None]] = None,
         before_setattr: Optional[
-            Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
+            Callable[
+                ["Object", str, "MarshallableTypes"],
+                Tuple[str, "MarshallableTypes"],
+            ]
         ] = None,
         after_setattr: Optional[
             Callable[["Object", str, "MarshallableTypes"], None]
         ] = None,
         before_setitem: Optional[
-            Callable[["Object", str, "MarshallableTypes"], Tuple[str, Any]]
+            Callable[
+                ["Object", str, "MarshallableTypes"],
+                Tuple[str, "MarshallableTypes"],
+            ]
         ] = None,
         after_setitem: Optional[
             Callable[["Object", str, "MarshallableTypes"], None]
@@ -263,11 +277,9 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
         Callable[["Array", int, "MarshallableTypes"], None]
     ]
     before_append: Optional[
-        Callable[["Array", Optional["MarshallableTypes"]], Optional[Any]]
+        Callable[["Array", "MarshallableTypes"], "MarshallableTypes"]
     ]
-    after_append: Optional[
-        Callable[["Array", Optional["MarshallableTypes"]], None]
-    ]
+    after_append: Optional[Callable[["Array", "MarshallableTypes"], None]]
 
     # noinspection PyUnusedLocal
     @abstractmethod
@@ -290,10 +302,10 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
             Callable[["Array", int, "MarshallableTypes"], None]
         ] = None,
         before_append: Optional[
-            Callable[["Array", Optional["MarshallableTypes"]], Optional[Any]]
+            Callable[["Array", "MarshallableTypes"], Optional[Any]]
         ] = None,
         after_append: Optional[
-            Callable[["Array", Optional["MarshallableTypes"]], None]
+            Callable[["Array", "MarshallableTypes"], None]
         ] = None,
     ) -> None:
         pass
@@ -314,12 +326,16 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
     # noinspection PyUnusedLocal
     def __init__(  # noqa
         self,
-        before_marshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
-        after_marshal: Optional[Callable[["JSONTypes"], Any]] = None,
-        before_unmarshal: Optional[
-            Callable[["MarshallableTypes"], Any]
+        before_marshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
         ] = None,
-        after_unmarshal: Optional[Callable[["MarshallableTypes"], Any]] = None,
+        after_marshal: Optional[Callable[["JSONTypes"], "JSONTypes"]] = None,
+        before_unmarshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
+        ] = None,
+        after_unmarshal: Optional[
+            Callable[["MarshallableTypes"], "MarshallableTypes"]
+        ] = None,
         before_serialize: Optional[Callable[["JSONTypes"], Any]] = None,
         after_serialize: Optional[Callable[[str], str]] = None,
         before_validate: Optional[Callable[["Model"], "Model"]] = None,
@@ -345,15 +361,15 @@ class Readable(metaclass=ABCMeta):
     register: Callable[[type], None]
 
     @abstractmethod
-    def read(self, n: int = -1) -> AnyStr:
+    def read(self, n: int = -1) -> Union[str, bytes]:
         pass
 
     @abstractmethod
-    def readline(self, limit: int = -1) -> AnyStr:
+    def readline(self, limit: int = -1) -> Union[str, bytes]:
         pass
 
     @abstractmethod
-    def readlines(self, hint: int = -1) -> List[AnyStr]:
+    def readlines(self, hint: int = -1) -> List[Union[str, bytes]]:
         pass
 
     @abstractmethod
@@ -361,7 +377,7 @@ class Readable(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __enter__(self) -> "IO[AnyStr]":
+    def __enter__(self) -> IO:
         pass
 
     @abstractmethod
@@ -717,15 +733,11 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def setdefault(
-        self, key: str, default: Optional["MarshallableTypes"] = None
-    ) -> Any:
+    def setdefault(self, key: str, default: "MarshallableTypes" = None) -> Any:
         pass
 
     @abstractmethod
-    def get(
-        self, key: str, default: Optional["MarshallableTypes"] = None
-    ) -> Any:
+    def get(self, key: str, default: "MarshallableTypes" = None) -> Any:
         pass
 
     @abstractmethod
@@ -806,7 +818,7 @@ class Object(Model, metaclass=ABCMeta):
 
     @abstractmethod
     def __setattr__(
-        self, property_name: str, value: Optional["MarshallableTypes"]
+        self, property_name: str, value: "MarshallableTypes"
     ) -> None:
         pass
 
@@ -823,7 +835,7 @@ class Object(Model, metaclass=ABCMeta):
         self,
         property_name_: str,
         property_: "Property",
-        value: Optional["MarshallableTypes"],
+        value: "MarshallableTypes",
     ) -> Iterable[str]:
         pass
 
@@ -1160,7 +1172,8 @@ JSONTypes = Union[
 ]
 MarshallableTypes = Union[
     bool,
-    AnyStr,
+    str,
+    bytes,
     Model,
     Mapping[str, Any],
     Collection,
@@ -1171,4 +1184,5 @@ MarshallableTypes = Union[
     date,
     datetime,
     Null,
+    None,
 ]
