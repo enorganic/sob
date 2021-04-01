@@ -221,7 +221,7 @@ def test_version_1():
     # when the version is < 1.2
     try:
         VersionedObject(version=1.0)
-    except TypeError as caught_error:
+    except TypeError as caught_error:  # noqa
         error = caught_error
     assert isinstance(error, TypeError)
     # Verify that setting the version to a non-string raises no error

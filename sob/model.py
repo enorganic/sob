@@ -2857,7 +2857,7 @@ def from_meta(
     error: Exception
     try:
         exec(source, namespace)
-    except Exception as error:
+    except Exception as error:  # noqa
         append_exception_text(error, f"\n\n{source}")
         raise
     model_class: type = namespace[name]
