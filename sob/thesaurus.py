@@ -12,8 +12,22 @@ from copy import copy, deepcopy
 from datetime import date, datetime
 from types import ModuleType
 from typing import (
-    Any, Callable, Collection, Dict, ItemsView, Iterable, Iterator, KeysView,
-    List, Mapping, Optional, Sequence, Set, Tuple, Union, ValuesView,
+    Any,
+    Callable,
+    Collection,
+    Dict,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+    ValuesView,
 )
 from urllib.parse import quote_plus
 
@@ -546,35 +560,13 @@ class Synonyms:
         # Determine if this is a string encoded to represent a `date`,
         # `datetime`, or base-64 encoded `bytes`.
         if issubclass(self._data_type, str):
-            if all(
-                map(
-                    _is_base64,
-                    filter(
-                        _is_not_null_or_none,
-                        self
-                    )
-                )
-            ):
+            if all(map(_is_base64, filter(_is_not_null_or_none, self))):
                 data_type = bytes
             elif all(
-                map(
-                    _is_datetime_str,
-                    filter(
-                        _is_not_null_or_none,
-                        self
-                    )
-                )
+                map(_is_datetime_str, filter(_is_not_null_or_none, self))
             ):
                 data_type = datetime
-            elif all(
-                map(
-                    _is_date_str,
-                    filter(
-                        _is_not_null_or_none,
-                        self
-                    )
-                )
-            ):
+            elif all(map(_is_date_str, filter(_is_not_null_or_none, self))):
                 data_type = date
         else:
             # This function should only be invoked for simple types, so we
@@ -793,9 +785,7 @@ class Synonyms:
     ) -> bool:
         return self._set.__ge__(self._get_set(other))
 
-    def __eq__(
-        self, other: Any
-    ) -> bool:
+    def __eq__(self, other: Any) -> bool:
         return type(other) is type(self) and self._set.__eq__(
             self._get_set(other)
         )
@@ -875,20 +865,20 @@ class Thesaurus:
                 str,
                 Union[
                     Iterable[Union[abc.Readable, abc.MarshallableTypes]],
-                    Synonyms
-                ]
+                    Synonyms,
+                ],
             ],
             Iterable[
                 Tuple[
                     str,
                     Union[
                         Iterable[Union[abc.Readable, abc.MarshallableTypes]],
-                        Synonyms
-                    ]
+                        Synonyms,
+                    ],
                 ]
             ],
             "Thesaurus",
-            None
+            None,
         ] = None,
         **kwargs: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
     ) -> None:
@@ -916,9 +906,10 @@ class Thesaurus:
         self, key: str, default: Union[Synonyms, Undefined] = UNDEFINED
     ) -> Synonyms:
         return self._dict.pop(
-            key, **(
+            key,
+            **(
                 {} if isinstance(default, Undefined) else dict(default=default)
-            )
+            ),
         )
 
     def popitem(self) -> Tuple[str, Synonyms]:
@@ -953,9 +944,10 @@ class Thesaurus:
         self, key: str, default: Union[Undefined, Synonyms] = UNDEFINED
     ) -> Synonyms:
         return self._dict.get(
-            key, **(
+            key,
+            **(
                 {} if isinstance(default, Undefined) else dict(default=default)
-            )
+            ),
         )
 
     def __contains__(self, key: str) -> bool:

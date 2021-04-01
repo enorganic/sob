@@ -71,7 +71,7 @@ def property_name(string: str) -> str:
     name = re.sub(r"__+", "_", name)
     # Append an underscore to the keyword until it does not conflict with any
     # python keywords or built-ins
-    while iskeyword(name) or (name in builtins.__dict__):
+    while iskeyword(name) or (name in builtins.__dict__) or name == "self":
         name += "_"
     return name.lstrip("_")
 
