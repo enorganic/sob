@@ -607,7 +607,10 @@ def set_pointer(model: abc.Model, pointer_: str) -> None:
     model._pointer = pointer_
     if isinstance(model, abc.Dictionary):
         for key, value in model.items():
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 pointer(
                     value,
                     "{}/{}".format(
@@ -625,7 +628,10 @@ def set_pointer(model: abc.Model, pointer_: str) -> None:
         for property_name, property_ in _read_object_properties(model):
             key = property_.name or property_name
             value = getattr(model, property_name)
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 pointer(
                     value,
                     "{}/{}".format(
@@ -641,7 +647,10 @@ def set_pointer(model: abc.Model, pointer_: str) -> None:
         index: int
         for index in range(len(model)):
             value = model[index]
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 pointer(value, "%s/%s" % (pointer_, str(index)))
 
 
@@ -650,37 +659,52 @@ def pointer(model: abc.Model, pointer_: Optional[str] = None) -> Optional[str]:
     Get or set a model's pointer
     """
     assert_is_instance(
-        "model", model, (abc.Object, abc.Dictionary, abc.Array),
+        "model",
+        model,
+        (abc.Object, abc.Dictionary, abc.Array),
     )
     if pointer_ is not None:
         set_pointer(model, pointer_)
     return get_pointer(model)
 
 
-def _traverse_models(model_instance: abc.Model,) -> Iterable[abc.Model]:
+def _traverse_models(
+    model_instance: abc.Model,
+) -> Iterable[abc.Model]:
     """
     Iterate over all child model instances
     """
     if isinstance(model_instance, abc.Dictionary):
         for value in model_instance.values():
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 yield value
     elif isinstance(model_instance, abc.Object):
         property_name: str
         for property_name in _read_object_property_names(model_instance):
             value = getattr(model_instance, property_name)
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 yield value
     elif isinstance(model_instance, abc.Array):
         for value in model_instance:
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 yield value
 
 
 # noinspection PyShadowingNames
 def set_url(model_instance: abc.Model, source_url: Optional[str]) -> None:
     assert_is_instance(
-        "model", model_instance, (abc.Object, abc.Dictionary, abc.Array),
+        "model",
+        model_instance,
+        (abc.Object, abc.Dictionary, abc.Array),
     )
     if source_url is not None:
         assert_is_instance("url_", source_url, str)
@@ -704,22 +728,33 @@ def set_format(
     model: abc.Model, serialization_format: Optional[str] = None
 ) -> None:
     assert_is_instance(
-        "model", model, (abc.Object, abc.Dictionary, abc.Array),
+        "model",
+        model,
+        (abc.Object, abc.Dictionary, abc.Array),
     )
     assert_is_instance("serialization_format", serialization_format, str)
     model._format = serialization_format
     if isinstance(model, abc.Dictionary):
         for value in model.values():
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 set_format(value, serialization_format)
     elif isinstance(model, abc.Object):
         for property_name in _read_object_property_names(model):
             value = getattr(model, property_name)
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 set_format(value, serialization_format)
     elif isinstance(model, abc.Array):
         for value in model:
-            if isinstance(value, (abc.Object, abc.Dictionary, abc.Array),):
+            if isinstance(
+                value,
+                (abc.Object, abc.Dictionary, abc.Array),
+            ):
                 set_format(value, serialization_format)
 
 
@@ -952,7 +987,10 @@ def version(
         _version_array(data, specification, version_number)
 
 
-def _copy_object_to(source: abc.Object, target: abc.Object,) -> None:
+def _copy_object_to(
+    source: abc.Object,
+    target: abc.Object,
+) -> None:
     source_meta: Optional[abc.Meta] = read(source)
     assert isinstance(source_meta, (NoneType, abc.ObjectMeta))
     if (source_meta is not None) and (source_meta.properties is not None):

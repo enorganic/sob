@@ -67,6 +67,7 @@ from .utilities.string import (
     MAX_LINE_LENGTH,
     indent as indent_,
     split_long_docstring_lines,
+    suffix_long_lines,
 )
 from .utilities.types import (
     NULL,
@@ -156,7 +157,14 @@ class Model(abc.Model):
                 meta.set_format(self, format_)
         else:
             assert_is_instance(
-                "data", data, (Iterable, Mapping, abc.Model, NoneType,)
+                "data",
+                data,
+                (
+                    Iterable,
+                    Mapping,
+                    abc.Model,
+                    NoneType,
+                ),
             )
             deserialized_data = data
         return deserialized_data
@@ -789,13 +797,13 @@ class Dictionary(Model, abc.Dictionary):
             instance_meta.value_types if instance_meta else None
         )
         # Recursively convert the data to generic, serializable, data types
-        marshalled_data: abc.OrderedDict[str, abc.JSONTypes] = (
-            collections.OrderedDict(
-                [
-                    (key, marshal(value, types=value_types))
-                    for key, value in data.items()
-                ]
-            )
+        marshalled_data: abc.OrderedDict[
+            str, abc.JSONTypes
+        ] = collections.OrderedDict(
+            [
+                (key, marshal(value, types=value_types))
+                for key, value in data.items()
+            ]
         )
         # Execute after-marshal hooks, if applicable
         if (instance_hooks is not None) and (
@@ -834,9 +842,7 @@ class Dictionary(Model, abc.Dictionary):
             data = hooks_.before_validate(data)
         assert isinstance(data, (NoneType, abc.Dictionary))
         meta_: Optional[abc.DictionaryMeta] = meta.dictionary_read(data)
-        value_types: Optional[abc.Types] = (
-            meta_.value_types if meta_ else None
-        )
+        value_types: Optional[abc.Types] = meta_.value_types if meta_ else None
         if value_types is not None:
             assert isinstance(data, abc.Dictionary)
             key: str
@@ -1275,7 +1281,10 @@ class Object(Model, abc.Object):
         return self.__class__(self)
 
     def _deepcopy_property(
-        self, property_name_: str, other: abc.Object, memo: Optional[dict],
+        self,
+        property_name_: str,
+        other: abc.Object,
+        memo: Optional[dict],
     ) -> None:
         """
         Deep-copy a property from this object to another
@@ -1313,8 +1322,8 @@ class Object(Model, abc.Object):
         object_: abc.Object = self
         instance_hooks: Optional[abc.ObjectHooks] = hooks.object_read(self)
         if instance_hooks and instance_hooks.before_marshal:
-            before_marshal_object: abc.Model = (
-                instance_hooks.before_marshal(self)
+            before_marshal_object: abc.Model = instance_hooks.before_marshal(
+                self
             )
             assert isinstance(before_marshal_object, abc.Object)
             object_ = before_marshal_object
@@ -1330,8 +1339,8 @@ class Object(Model, abc.Object):
                         property_.name or property_name_
                     ] = _marshal_property_value(property_, value)
         if instance_hooks and instance_hooks.after_marshal:
-            after_marshal_data: abc.JSONTypes = (
-                instance_hooks.after_marshal(data)
+            after_marshal_data: abc.JSONTypes = instance_hooks.after_marshal(
+                data
             )
             assert isinstance(after_marshal_data, collections.OrderedDict)
             data = after_marshal_data
@@ -1691,13 +1700,19 @@ class _Unmarshal:
         # Instance Attributes
         self.data: abc.MarshallableTypes = data
         self.types: Union[
-            Iterable[Union[type, abc.Property]], abc.Types, None,
+            Iterable[Union[type, abc.Property]],
+            abc.Types,
+            None,
         ] = types
         self.value_types: Union[
-            Iterable[Union[type, abc.Property]], abc.Types, None,
+            Iterable[Union[type, abc.Property]],
+            abc.Types,
+            None,
         ] = value_types
         self.item_types: Union[
-            Iterable[Union[type, abc.Property]], abc.Types, None,
+            Iterable[Union[type, abc.Property]],
+            abc.Types,
+            None,
         ] = item_types
         self.meta: Optional[abc.Meta] = None
 
@@ -1880,7 +1895,8 @@ class _Unmarshal:
         return unmarshalled_data
 
     def as_type(
-        self, type_: Union[type, abc.Property],
+        self,
+        type_: Union[type, abc.Property],
     ) -> abc.MarshallableTypes:
         unmarshalled_data: abc.MarshallableTypes = None
         if isinstance(type_, abc.Property):
@@ -2462,7 +2478,8 @@ def _replace_object_nulls(
 
 
 def _replace_array_nulls(
-    array_instance: abc.Array, replacement_value: abc.MarshallableTypes = None,
+    array_instance: abc.Array,
+    replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     index: int
     value: abc.MarshallableTypes
@@ -2487,7 +2504,8 @@ def _replace_dictionary_nulls(
 
 
 def replace_nulls(
-    model_instance: abc.Model, replacement_value: abc.MarshallableTypes = None,
+    model_instance: abc.Model,
+    replacement_value: abc.MarshallableTypes = None,
 ) -> None:
     """
     This function replaces all instances of `sob.properties.types.NULL`.
@@ -2620,7 +2638,7 @@ def _get_class_declaration(name: str, superclass_: type) -> str:
         # prevent linters from getting hung up
         noqa: str = "  # noqa" if len(name) + 7 > MAX_LINE_LENGTH else ""
         class_declaration = (
-            f"class {name}({noqa}\n" f"    {qualified_superclass_name}\n" "):"
+            f"class {name}({noqa}\n    {qualified_superclass_name}\n):"
         )
     return class_declaration
 
@@ -2631,9 +2649,9 @@ def _repr_class_docstring(docstring: str = "") -> str:
     """
     repr_docstring: str = ""
     if docstring:
-        repr_docstring = (
-            '    """\n' "%s\n" '    """'
-        ) % split_long_docstring_lines(docstring)
+        repr_docstring = '    """\n{}\n    """'.format(
+            split_long_docstring_lines(docstring)
+        )
     return repr_docstring
 
 
@@ -2655,8 +2673,14 @@ _REPR_MARSHALLABLE_TYPING: str = f"{_parent_module_name}.abc.MarshallableTypes"
 def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
     out: List[str] = []
     if isinstance(metadata, abc.DictionaryMeta):
-        repr_value_typing: str = indent_(
-            _type_hint_from_property_types(metadata.value_types, module), 20
+        repr_value_typing: str = _type_hint_from_property_types(
+            metadata.value_types, module
+        )
+        mapping_repr_value_typing: str = suffix_long_lines(
+            indent_(repr_value_typing, 16)
+        )
+        iterable_repr_value_typing: str = suffix_long_lines(
+            indent_(repr_value_typing, 20)
         )
         out.append(
             "\n"
@@ -2666,12 +2690,12 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             f"            {_parent_module_name}.abc.Dictionary,\n"
             "            typing.Mapping[\n"
             "                str,\n"
-            f"                {repr_value_typing}\n"
+            f"                {mapping_repr_value_typing}\n"
             "            ],\n"
             "            typing.Iterable[\n"
             "                typing.Tuple[\n"
             "                    str,\n"
-            f"                    {repr_value_typing}\n"
+            f"                    {iterable_repr_value_typing}\n"
             "                ]\n"
             "            ],\n"
             f"            {_parent_module_name}.abc.Readable,\n"
@@ -2683,8 +2707,10 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "        super().__init__(items)\n\n"
         )
     elif isinstance(metadata, abc.ArrayMeta):
-        repr_item_typing: str = indent_(
-            _type_hint_from_property_types(metadata.item_types, module), 20
+        repr_item_typing: str = suffix_long_lines(
+            indent_(
+                _type_hint_from_property_types(metadata.item_types, module), 20
+            )
         )
         out.append(
             "\n"
@@ -2744,8 +2770,8 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
                 if (property_index + 1 == metadata_properties_items_length)
                 else ","
             )
-            repr_property_typing: str = indent_(
-                _type_hint_from_property(property_, module), 12
+            repr_property_typing: str = suffix_long_lines(
+                indent_(_type_hint_from_property(property_, module), 12)
             )
             parameter_declaration: str = (
                 f"        {property_name_}: typing.Optional[\n"
@@ -2756,8 +2782,9 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
         out.append("    ) -> None:")
         if metadata.properties is not None:
             for property_name_ in metadata.properties.keys():
-                property_assignment: str = (
-                    "        self.%s = %s" % (property_name_, property_name_)
+                property_assignment: str = "        self.%s = %s" % (
+                    property_name_,
+                    property_name_,
                 )
                 # Ensure line-length aligns with PEP-8
                 if len(property_assignment) > MAX_LINE_LENGTH:

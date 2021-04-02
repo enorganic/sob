@@ -102,8 +102,8 @@ def _get_object_discrepancies_error_message(
 ) -> str:
     a_serialized: str = serialize(object_a)
     b_serialized: str = serialize(object_b)
-    a_representation: str = (
-        "".join(line.strip() for line in repr(object_a).split("\n"))
+    a_representation: str = "".join(
+        line.strip() for line in repr(object_a).split("\n")
     )
     b_representation = "".join(
         line.strip() for line in repr(object_b).split("\n")
@@ -282,7 +282,8 @@ def model(
 
 
 def json(
-    model_instance: abc.Model, raise_validation_errors: bool = True,
+    model_instance: abc.Model,
+    raise_validation_errors: bool = True,
 ) -> None:
     model(
         model_instance=model_instance,
@@ -292,7 +293,8 @@ def json(
 
 
 def yaml(
-    model_instance: abc.Model, raise_validation_errors: bool = True,
+    model_instance: abc.Model,
+    raise_validation_errors: bool = True,
 ) -> None:
     model(
         model_instance=model_instance,

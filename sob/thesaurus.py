@@ -48,7 +48,11 @@ from .utilities.assertion import (
 )
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
-from .utilities.string import MAX_LINE_LENGTH, class_name, property_name
+from .utilities.string import (
+    class_name,
+    suffix_long_lines,
+    property_name,
+)
 from .utilities.types import NULL, NoneType, Null, UNDEFINED, Undefined
 
 __all__: List[str] = ["Synonyms", "Thesaurus"]
@@ -161,7 +165,9 @@ def _update_object_meta(
                 else MutableTypes(types_)
             )
             _update_types(
-                mutable_types, new_types, memo=memo,
+                mutable_types,
+                new_types,
+                memo=memo,
             )
             types_ = mutable_types
         metadata.properties[key].types = types_  # type: ignore
@@ -802,7 +808,9 @@ class Synonyms:
 
 
 def get_class_meta_attribute_assignment_source(
-    class_name_: str, attribute_name: str, metadata: abc.Meta,
+    class_name_: str,
+    attribute_name: str,
+    metadata: abc.Meta,
 ) -> str:
     """
     This function generates source code for setting a metadata attribute on
@@ -826,27 +834,15 @@ def get_class_meta_attribute_assignment_source(
             else "dictionary"
         ),
     )
-
-    def noqa_line_if_long(line: str) -> str:
-        # We want to add "  # noqa" at the end of any line
-        # which is within 4 spaces of the maximum line length, since
-        # reformatting with `black` will add an additional 4 spaces.
-        if len(line) > (MAX_LINE_LENGTH - 4):
-            line = f"{line}  # noqa"
-        return line
-
     # We insert "  # type: ignore" at the end of the first line where the value
     # is assigned due to mypy issues with properties having getters and setters
-    represent_metadata_attribute: str = "\n".join(
-        map(
-            noqa_line_if_long,
-            repr(getattr(metadata, attribute_name)).split("\n"),
-        )
-    )
-    return (
-        f"{writable_function_name}(  # type: ignore\n"
-        f"    {class_name_}\n"
-        f").{attribute_name} = {represent_metadata_attribute}"
+    return suffix_long_lines(
+        (
+            f"{writable_function_name}(  # type: ignore\n"
+            f"    {suffix_long_lines(class_name_, -4)}\n"
+            f").{attribute_name} = {repr(getattr(metadata, attribute_name))}"
+        ),
+        -4,
     )
 
 
@@ -1102,7 +1098,9 @@ class Thesaurus:
         return module
 
     def save_module(
-        self, path: str, name: Callable[[str], str] = class_name_from_pointer,
+        self,
+        path: str,
+        name: Callable[[str], str] = class_name_from_pointer,
     ) -> None:
         """
         This method generates and saves the source code for a module

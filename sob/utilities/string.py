@@ -316,14 +316,17 @@ def indent(
     """
     indented_text = string
     if ("\n" in string) or start == 0:
-        lines = string.split("\n")
+        lines: List[str] = string.split("\n")
         if stop:
             if stop < 0:
                 stop = len(lines) - stop
         else:
             stop = len(lines)
-        for i in range(start, stop):
-            lines[i] = (" " * number_of_spaces) + lines[i]
+        index: int
+        for index in range(start, stop):
+            line: str = lines[index]
+            line_indent: str = " " * number_of_spaces
+            lines[index] = f"{line_indent}{line}".rstrip()
         indented_text = "\n".join(lines)
     return indented_text
 
@@ -395,7 +398,7 @@ def split_long_comment_line(
                 lines.append(indent_ + wrapped_line.rstrip())
                 wrapped_line = "" if not word.strip() else word
         if wrapped_line:
-            lines.append(indent_ + wrapped_line.rstrip())
+            lines.append(f"{indent_}{wrapped_line}".rstrip())
         wrapped_line = "\n".join(lines)
     else:
         wrapped_line = line
@@ -415,23 +418,57 @@ def split_long_docstring_lines(
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
         odio a urna elementum, eu tempor nisl efficitu
     """
+    line: str
     indent_: str = "    "
     if "\t" in docstring:
         docstring = docstring.replace("\t", indent_)
-    lines = docstring.split("\n")
+    lines: List[str] = docstring.split("\n")
     indentation_length: int = sys.maxsize
-    for line in lines:
+    for line in filter(lambda line: line, lines):
         match = re.match(r"^[ ]+", line)
         if match:
             indentation_length = min(indentation_length, len(match.group()))
         else:
             indentation_length = 0
             break
-    wrapped_lines = []
-    for line in lines:
-        wrapped_lines.append(
-            split_long_comment_line(
-                indent_ + line[indentation_length:], max_line_length, prefix=""
+    if indentation_length < sys.maxsize:
+        wrapped_lines: List[str] = []
+        for line in lines:
+            wrapped_lines.append(
+                split_long_comment_line(
+                    indent_ + line[indentation_length:],
+                    max_line_length,
+                    prefix="",
+                )
             )
-        )
-    return "\n".join(wrapped_lines)
+        docstring = "\n".join(wrapped_lines)
+    # Strip trailing whitespace and empty lines
+    return re.sub(r"[ ]+(\n|$)", r"\1", docstring)
+
+
+def suffix_long_lines(
+    text: str, max_line_length: int = MAX_LINE_LENGTH, suffix: str = "  # noqa"
+) -> str:
+    """
+    This function adds a suffix to the end of any line of code longer than
+    `max_line_length`.
+
+    Parameters:
+
+    - text (str): Text representing python code
+    - max_line_length (int) = 79:
+      The length at which a line should have the `suffix` appended. If
+      this is a *negative* integer (or zero), the sum of this integer +
+      `MAX_LINE_LENGTH` is used
+    - suffix (str) = "  # noqa": The default suffix indicates to linters that
+      a long line should be permitted
+    """
+    if max_line_length <= 0:
+        max_line_length += MAX_LINE_LENGTH
+
+    def suffix_line_if_long(line: str) -> str:
+        if len(line) > max_line_length and not line.endswith(suffix):
+            line = f"{line}{suffix}"
+        return line
+
+    return "\n".join(map(suffix_line_if_long, text.split("\n")))

@@ -257,7 +257,9 @@ class String(Property, abc.String):
         versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
 
@@ -292,7 +294,9 @@ class Date(Property, abc.Date):
         str2date: Callable[[str], date] = parse_date,
     ) -> None:
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
         self._date2str = date2str
         self._str2date = str2date
@@ -323,9 +327,7 @@ class DateTime(Property, abc.DateTime):
       By default, this is `iso8601.parse_date`.
     """
 
-    _types: abc.Types = Types(  # type: ignore
-        (datetime,)
-    )
+    _types: abc.Types = Types((datetime,))  # type: ignore
 
     def __init__(
         self,
@@ -338,7 +340,9 @@ class DateTime(Property, abc.DateTime):
         self._datetime2str = datetime2str
         self._str2datetime = str2datetime
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
     def datetime2str(self, value: datetime) -> str:
@@ -364,7 +368,9 @@ class Bytes(Property, abc.Bytes):
         versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
 
@@ -422,9 +428,7 @@ class Number(Property, abc.Number):
     See `sob.properties.Property`
     """
 
-    _types: abc.Types = Types(  # type: ignore
-        (Decimal, float, int)
-    )
+    _types: abc.Types = Types((Decimal, float, int))  # type: ignore
 
     def __init__(
         self,
@@ -449,7 +453,9 @@ class Integer(Property, abc.Integer):
         versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
 
@@ -467,7 +473,9 @@ class Boolean(Property, abc.Boolean):
         versions: Optional[Sequence[Union[str, Version]]] = None,
     ) -> None:
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
 
@@ -483,9 +491,7 @@ class Array(Property, abc.ArrayProperty):
       array, not the array itself.
     """
 
-    _types: abc.Types = Types(  # type: ignore
-        (abc.Array,)
-    )
+    _types: abc.Types = Types((abc.Array,))  # type: ignore
     _item_types: Optional[abc.Types] = None
 
     def __init__(
@@ -501,7 +507,9 @@ class Array(Property, abc.ArrayProperty):
         if item_types is not UNDEFINED:
             self.item_types = item_types  # type: ignore
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
     @property  # type: ignore
@@ -548,9 +556,7 @@ class Dictionary(Property, abc.DictionaryProperty):
       dictionary object, not the dictionary itself.
     """
 
-    _types: abc.Types = Types(  # type: ignore
-        (abc.Dictionary,)
-    )
+    _types: abc.Types = Types((abc.Dictionary,))  # type: ignore
     _value_types: Optional[abc.Types] = None
 
     def __init__(
@@ -568,7 +574,9 @@ class Dictionary(Property, abc.DictionaryProperty):
         if value_types is not UNDEFINED:
             self.value_types = value_types  # type: ignore
         super().__init__(
-            name=name, required=required, versions=versions,
+            name=name,
+            required=required,
+            versions=versions,
         )
 
     @property  # type: ignore

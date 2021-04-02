@@ -86,7 +86,8 @@ class Types(abc.Types):
         self._list.append(value)
 
     def _extend(
-        self, values: Union[Iterable[Union[type, abc.Property]], abc.Types],
+        self,
+        values: Union[Iterable[Union[type, abc.Property]], abc.Types],
     ) -> None:
         value: Union[type, abc.Property]
         for value in values:

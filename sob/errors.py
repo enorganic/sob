@@ -28,13 +28,19 @@ class UnmarshalError(Exception):
         message: Optional[str] = None,
         data: Optional[abc.MarshallableTypes] = None,
         types: Union[
-            Iterable[Union[abc.Property, type]], abc.Types, None,
+            Iterable[Union[abc.Property, type]],
+            abc.Types,
+            None,
         ] = None,
         item_types: Union[
-            Iterable[Union[abc.Property, type]], abc.Types, None,
+            Iterable[Union[abc.Property, type]],
+            abc.Types,
+            None,
         ] = None,
         value_types: Union[
-            Iterable[Union[abc.Property, type]], abc.Types, None,
+            Iterable[Union[abc.Property, type]],
+            abc.Types,
+            None,
         ] = None,
     ) -> None:
         self._message: Optional[str] = None

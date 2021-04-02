@@ -245,9 +245,15 @@ meta.object_writable(Tesstee).properties = {  # type: ignore
     "string_number_boolean": properties.Property(
         types=(str, properties.Number(), bool), name="stringNumberBoolean"
     ),
-    "a": properties.Property(types=(A,),),
-    "b": properties.Property(types=(B,),),
-    "c": properties.Property(types=(C,),),
+    "a": properties.Property(
+        types=(A,),
+    ),
+    "b": properties.Property(
+        types=(B,),
+    ),
+    "c": properties.Property(
+        types=(C,),
+    ),
     "a_b_c": properties.Property(types=(A, B, C), name="ABC"),
     "c_b_a": properties.Property(types=(C, B, A), name="CBA"),
     "string2testy": properties.Dictionary(value_types=(Tesstee,)),
@@ -261,11 +267,19 @@ meta.object_writable(Tesstee).properties = {  # type: ignore
         value_types=(C, B, A), name="string2CBA"
     ),
     "string2string2a_b_c": properties.Dictionary(
-        value_types=(properties.Dictionary(value_types=(A, B, C),),),
+        value_types=(
+            properties.Dictionary(
+                value_types=(A, B, C),
+            ),
+        ),
         name="string2string2ABC",
     ),
     "string2string2c_b_a": properties.Dictionary(
-        value_types=(properties.Dictionary(value_types=(C, B, A),),),
+        value_types=(
+            properties.Dictionary(
+                value_types=(C, B, A),
+            ),
+        ),
         name="string2String2CBA",
     ),
     "version_switch": properties.Property(
@@ -447,7 +461,11 @@ def test_json_deserialization():
     """
     TODO
     """
-    with open(_get_testy_path(), mode="r", encoding="utf-8",) as f:
+    with open(
+        _get_testy_path(),
+        mode="r",
+        encoding="utf-8",
+    ) as f:
         assert Tesstee(f) == testy
         error = None
         try:
@@ -469,7 +487,10 @@ def test_request() -> None:
     This will test `sob.requests`,
     """
     data_dir: str = urljoin(__file__, "data/")
-    with open(urljoin(data_dir, "rainbow.png"), mode="rb",) as rainbow_file:
+    with open(
+        urljoin(data_dir, "rainbow.png"),
+        mode="rb",
+    ) as rainbow_file:
         rainbow_bytes = rainbow_file.read()
         multi_part_json_request = MultipartRequest(
             url="http://localhost",

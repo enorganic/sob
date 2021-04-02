@@ -308,7 +308,9 @@ def type_(model: Union[type, abc.Model]) -> type:
     """
     hooks_type: type
     assert_is_instance(
-        "model", model, (type, abc.Object, abc.Dictionary, abc.Array),
+        "model",
+        model,
+        (type, abc.Object, abc.Dictionary, abc.Array),
     )
     if isinstance(model, type):
         hooks_type = (

@@ -148,9 +148,7 @@ class MutableTypes(Types, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __delitem__(  # type: ignore
-        self, index: int
-    ) -> None:
+    def __delitem__(self, index: int) -> None:  # type: ignore
         pass
 
     @abstractmethod
@@ -342,7 +340,8 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
         after_validate: Optional[Callable[["Model"], None]] = None,
         before_setitem: Optional[
             Callable[
-                ["Dictionary", str, "MarshallableTypes"], Tuple[str, Any],
+                ["Dictionary", str, "MarshallableTypes"],
+                Tuple[str, Any],
             ]
         ] = None,
         after_setitem: Optional[
@@ -854,7 +853,11 @@ class Array(Model, metaclass=ABCMeta):
             "Array", Iterable["MarshallableTypes"], str, bytes, Readable
         ] = None,
         item_types: Union[
-            Iterable[Union[type, "Property"]], type, "Property", Types, None,
+            Iterable[Union[type, "Property"]],
+            type,
+            "Property",
+            Types,
+            None,
         ] = None,
     ) -> None:
         pass
@@ -1168,7 +1171,13 @@ JSON_TYPES: Tuple[type, ...] = (
     NoneType,
 )
 JSONTypes = Union[
-    str, int, float, bool, Mapping[str, Any], Sequence, None,
+    str,
+    int,
+    float,
+    bool,
+    Mapping[str, Any],
+    Sequence,
+    None,
 ]
 MarshallableTypes = Union[
     bool,
