@@ -26,4 +26,4 @@ if __name__ == "__main__":
     requirements.update_setup(
         default_operator="~=", ignore=("pyyaml", "setuptools")
     )
-    run("black .")
+    run("black setup.py")
