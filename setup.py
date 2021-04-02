@@ -70,7 +70,7 @@ setup(
             "setuptools-setup-versions>=1.8.0,<2",
             "readme-md-docstrings~=0.1.0,<2",
             "twine~=3.2",
-            "black~=19.10b0",
+            "black~=20.8b1",
             "daves-dev-tools~=0.1",
         ],
     },

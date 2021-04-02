@@ -3,7 +3,21 @@
 This script updates installation requirements in ../setup.py
 """
 import os
+from subprocess import getstatusoutput
+
 from setuptools_setup_versions import requirements  # type: ignore
+
+
+def run(command: str) -> str:
+    print(command)
+    status, output = getstatusoutput(command)
+    # Create an error if a non-zero exit status is encountered
+    if status:
+        raise OSError(output)
+    else:
+        print(output)
+    return output
+
 
 if __name__ == "__main__":
     # `cd` into the repository's root directory
@@ -12,3 +26,4 @@ if __name__ == "__main__":
     requirements.update_setup(
         default_operator="~=", ignore=("pyyaml", "setuptools")
     )
+    run("black .")
