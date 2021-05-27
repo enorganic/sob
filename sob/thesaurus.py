@@ -38,7 +38,7 @@ from .abc import MARSHALLABLE_TYPES
 from .errors import IsInstanceAssertionError
 from .meta import escape_reference_token
 from .model import detect_format, from_meta, unmarshal
-from .properties import Property, TYPES_PROPERTIES
+from .properties import Property, TYPES_PROPERTIES, has_mutable_types
 from .types import MutableTypes
 from .utilities import get_source, qualified_name
 from .utilities.assertion import (
@@ -170,7 +170,18 @@ def _update_object_meta(
                 memo=memo,
             )
             types_ = mutable_types
-        metadata.properties[key].types = types_  # type: ignore
+        property: abc.Property = metadata.properties[key]
+        if has_mutable_types(property):
+            metadata.properties[key].types = types_  # type: ignore
+        else:
+            # If a property's types are immutable, we need to replace
+            # it with a generic property
+            metadata.properties[key] = Property(
+                types=types_,
+                name=property.name,
+                required=property.required,
+                versions=property.versions,
+            )
 
 
 def _update_object_class_from_meta(
@@ -427,8 +438,12 @@ class Synonyms:
                     and (type(item) is not self._data_type)
                 ):
                     self._data_type = float
-                else:
-                    assert isinstance(item, self._data_type)
+                elif not isinstance(item, self._data_type):
+                    # If there is a discrepancy where a data type can
+                    # be either simple of a container, we infer
+                    # unrestricted polymorphism, and indicate this by
+                    # setting `._data_type` to `object`
+                    self._data_type = object
             assert isinstance(item, MARSHALLABLE_TYPES)
             self._set.add(item)  # type: ignore
 
@@ -710,7 +725,8 @@ class Synonyms:
                 pointer, module=module, memo=memo, name=name
             )
         else:
-            type_iterator = [self._get_type()]
+            data_type: type = self._get_type()
+            type_iterator = [] if data_type is object else [data_type]
         # If this was the call which initialized our `_memo`, we want to
         # force the iterator to run, in order to fully update all models before
         # returning them to the user (as some will be updated over the course
@@ -749,11 +765,12 @@ class Synonyms:
         assert self._data_type and not issubclass(
             self._data_type, (str, bytes, bytearray)
         )
-        assert_is_subclass(
-            f"{qualified_name(type(self))}._data_type",
-            self._data_type,
-            (Mapping, abc.Dictionary, Iterable),
-        )
+        if self._data_type is not object:
+            assert_is_subclass(
+                f"{qualified_name(type(self))}._data_type",
+                self._data_type,
+                (Mapping, abc.Dictionary, Iterable),
+            )
         for model_class in self._get_types(
             pointer="{}#".format(quote_plus(pointer, safe="/+")),
             module=module,

@@ -35,7 +35,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="sob",
-    version="1.9.0",
+    version="1.10.0",
     description=(
         "A framework for serializing/deserializing JSON/YAML into python "
         "class instances and vice versa"
@@ -58,7 +58,7 @@ setup(
             "tox~=3.20",
             "pytest~=5.4",
             "flake8~=3.9",
-            "setuptools-setup-versions>=1.8.0,<2",
+            "setuptools-setup-versions>=1.15.0,<2",
             "readme-md-docstrings>=0.1.0,<1",
         ],
         "dev": [
@@ -67,7 +67,7 @@ setup(
             "tox~=3.20",
             "pytest~=5.4",
             "flake8~=3.9",
-            "setuptools-setup-versions>=1.8.0,<2",
+            "setuptools-setup-versions>=1.15.0,<2",
             "readme-md-docstrings~=0.1.0,<2",
             "twine~=3.2",
             "black~=20.8b1",

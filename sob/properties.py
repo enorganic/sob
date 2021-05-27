@@ -49,6 +49,7 @@ __all__: List[str] = [
     "Number",
     "String",
     "TYPES_PROPERTIES",
+    "has_mutable_types",
 ]
 
 
@@ -68,6 +69,24 @@ def _repr_keyword_argument_assignment(
     ):
         return None
     return "    %s=%s," % (argument, indent(represent(value)))
+
+
+def has_mutable_types(property: Union[abc.Property, type]) -> bool:
+    """
+    This function returns `True` if modification of the `.types` member of a
+    property class or instance is permitted.
+
+    Parameters:
+
+    - property (sob.properties.Property|type)
+    """
+    property_type: type
+    if isinstance(property, abc.Property):
+        property_type = type(property)
+    else:
+        assert issubclass(property, abc.Property)
+        property_type = property
+    return getattr(property_type, "_types") is None
 
 
 class Property(abc.Property):
@@ -133,14 +152,16 @@ class Property(abc.Property):
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         self._types: Optional[abc.Types] = getattr(type(self), "_types")
         if types is not UNDEFINED:
             setattr(self, "types", types)
         self.name: Optional[str] = name
         self.required: bool = required
-        self._versions: Optional[Sequence[Version]] = None
+        self._versions: Optional[Sequence[abc.Version]] = None
         if versions is not None:
             setattr(self, "versions", versions)
 
@@ -174,31 +195,33 @@ class Property(abc.Property):
         self._types = types_or_properties
 
     @property  # type: ignore
-    def versions(self) -> Optional[Sequence[Version]]:
+    def versions(self) -> Optional[Sequence[abc.Version]]:
         return self._versions
 
     @versions.setter
     def versions(
         self,
         versions: Optional[
-            Union[str, Version, Iterable[Union[str, Version]]]
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
     ) -> None:
-        versions_tuple: Optional[Tuple[Version, ...]] = None
+        versions_tuple: Optional[Tuple[abc.Version, ...]] = None
         if versions is not None:
             assert_is_instance(
-                "versions", versions, (str, Version, collections.abc.Iterable)
+                "versions",
+                versions,
+                (str, abc.Version, collections.abc.Iterable),
             )
-            version: Union[str, Version]
+            version: Union[str, abc.Version]
             if isinstance(versions, str):
                 version = Version(versions)
                 versions_tuple = (version,)
-            elif isinstance(versions, Version):
+            elif isinstance(versions, abc.Version):
                 versions_tuple = (versions,)
             else:
-                versions_list: List[Version] = []
+                versions_list: List[abc.Version] = []
                 for version in versions:
-                    if not isinstance(version, Version):
+                    if not isinstance(version, abc.Version):
                         version = Version(version)
                     versions_list.append(version)
                 versions_tuple = tuple(versions_list)
@@ -254,7 +277,9 @@ class String(Property, abc.String):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -289,7 +314,9 @@ class Date(Property, abc.Date):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
         date2str: Callable[[date], str] = _date2str,
         str2date: Callable[[str], date] = parse_date,
     ) -> None:
@@ -333,7 +360,9 @@ class DateTime(Property, abc.DateTime):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
         datetime2str: Callable[[datetime], str] = _datetime2str,
         str2datetime: Callable[[str], datetime] = parse_date,
     ) -> None:
@@ -365,7 +394,9 @@ class Bytes(Property, abc.Bytes):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -402,7 +433,9 @@ class Enumerated(Property, abc.Enumerated):
         values: Optional[Iterable[MarshallableTypes]] = None,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         self._values: Optional[Set[MarshallableTypes]] = None
         super().__init__(
@@ -434,7 +467,9 @@ class Number(Property, abc.Number):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         super().__init__(name=name, required=required, versions=versions)
 
@@ -450,7 +485,9 @@ class Integer(Property, abc.Integer):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -470,7 +507,9 @@ class Boolean(Property, abc.Boolean):
         self,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         super().__init__(
             name=name,
@@ -501,7 +540,9 @@ class Array(Property, abc.ArrayProperty):
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         self._item_types: Optional[Types] = getattr(type(self), "_item_types")
         if item_types is not UNDEFINED:
@@ -566,7 +607,9 @@ class Dictionary(Property, abc.DictionaryProperty):
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
-        versions: Optional[Sequence[Union[str, Version]]] = None,
+        versions: Optional[
+            Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
+        ] = None,
     ) -> None:
         self._value_types: Optional[abc.Types] = getattr(
             type(self), "_value_types"
