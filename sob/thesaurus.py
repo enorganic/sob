@@ -88,7 +88,8 @@ def _update_types(
                 existing_type: type = memo[type.__name__]
                 new_type_meta: Optional[abc.Meta] = meta.read(new_type)
                 assert isinstance(
-                    new_type_meta, (abc.ObjectMeta, abc.ArrayMeta)
+                    new_type_meta,
+                    (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
                 )
                 _update_model_class_from_meta(
                     existing_type, new_type_meta, memo=memo
@@ -125,6 +126,35 @@ def _update_array_meta(
         )
         _update_types(item_types, new_item_types, memo)
         metadata.item_types = item_types  # type: ignore
+
+
+def _update_dictionary_meta(
+    metadata: abc.DictionaryMeta,
+    new_metadata: abc.DictionaryMeta,
+    memo: Optional[Dict[str, type]] = None,
+) -> None:
+    """
+    This function updates `metadata` by adding/updating `metadata.value_types`
+    to include types from `new_metadata.value_types`.
+
+    Parameters:
+
+    - metadata (sob.meta.Dictionary)
+    - new_metadata (sob.meta.Dictionary)
+    - memo (dict)
+    """
+    assert memo is not None
+    new_value_types: Optional[abc.Types] = new_metadata.value_types
+    if new_value_types is not None:
+        value_types: abc.MutableTypes = (
+            MutableTypes()
+            if metadata.value_types is None
+            else metadata.value_types
+            if isinstance(metadata.value_types, abc.MutableTypes)
+            else MutableTypes(metadata.value_types)
+        )
+        _update_types(value_types, new_value_types, memo)
+        metadata.value_types = value_types  # type: ignore
 
 
 def _update_object_meta(
@@ -240,9 +270,35 @@ def _update_array_class_from_meta(
     # is necessary
 
 
+def _update_dictionary_class_from_meta(
+    dictionary_class: type,
+    new_dictionary_metadata: abc.DictionaryMeta,
+    memo: Optional[Dict[str, type]] = None,
+) -> None:
+    """
+    This function merges new metadata into an existing array model's metadata.
+
+    Parameters:
+
+    - dictionary_class (type)
+    - new_array_metadata (sob.meta.Array)
+    - memo (dict)
+    """
+    assert memo is not None
+    assert isinstance(new_dictionary_metadata, abc.ArrayMeta)
+    dictionary_metadata: abc.Meta = meta.writable(dictionary_class)
+    assert isinstance(dictionary_metadata, abc.DictionaryMeta)
+    _update_dictionary_meta(
+        dictionary_metadata, new_dictionary_metadata, memo=memo
+    )
+    # Since the two dictionary classes have the same name--the class
+    # definition/declaration won't change, so updating the metadata is all that
+    # is necessary
+
+
 def _update_model_class_from_meta(
     model_class: type,
-    new_metadata: Union[abc.ArrayMeta, abc.ObjectMeta],
+    new_metadata: Union[abc.ArrayMeta, abc.ObjectMeta, abc.DictionaryMeta],
     memo: Optional[Dict[str, type]] = None,
 ) -> None:
     """
@@ -255,15 +311,21 @@ def _update_model_class_from_meta(
     - memo (dict)
     """
     assert memo is not None
-    assert issubclass(model_class, (abc.Array, abc.Object))
+    assert issubclass(model_class, (abc.Array, abc.Object, abc.Dictionary))
     # Update the model metadata in-place
     if issubclass(model_class, abc.Array):
         assert isinstance(new_metadata, abc.ArrayMeta)
         _update_array_class_from_meta(model_class, new_metadata, memo=memo)
-    else:
+    elif issubclass(model_class, abc.Object):
         assert issubclass(model_class, abc.Object)
         assert isinstance(new_metadata, abc.ObjectMeta)
         _update_object_class_from_meta(model_class, new_metadata, memo=memo)
+    else:
+        assert issubclass(model_class, abc.Dictionary)
+        assert isinstance(new_metadata, abc.DictionaryMeta)
+        _update_dictionary_class_from_meta(
+            model_class, new_metadata, memo=memo
+        )
 
 
 def class_name_from_pointer(pointer: str) -> str:
@@ -292,7 +354,7 @@ def class_name_from_pointer(pointer: str) -> str:
 
 def _get_models_from_meta(
     pointer: str,
-    metadata: Union[abc.ArrayMeta, abc.ObjectMeta],
+    metadata: Union[abc.ArrayMeta, abc.ObjectMeta, abc.DictionaryMeta],
     module: str = "__main__",
     memo: Optional[Dict[str, type]] = None,
     name: Callable[[str], str] = class_name_from_pointer,
@@ -309,6 +371,9 @@ def _get_models_from_meta(
     """
     assert memo is not None
     new_models: List[type] = []
+    # If the object has no attributes, interpret it an an empty dictionary
+    if isinstance(metadata, abc.ObjectMeta) and not metadata.properties:
+        metadata = meta.Dictionary()
     # If a model of the same pointer already exists, we update it to
     # reflect our metadata, otherwise--we create a new model
     if pointer in memo:
@@ -442,7 +507,7 @@ class Synonyms:
                     # If there is a discrepancy where a data type can
                     # be either simple of a container, we infer
                     # unrestricted polymorphism, and indicate this by
-                    # setting `._data_type` to `object`
+                    # setting `._type` to `object`
                     self._type = object
             assert isinstance(item, MARSHALLABLE_TYPES)
             self._set.add(item)  # type: ignore
@@ -617,6 +682,24 @@ class Synonyms:
                 keys_values[key].append(value)
         return keys_values
 
+    def _get_dictionary_models(
+        self,
+        pointer: str,
+        module: str = "__main__",
+        name: Callable[[str], str] = class_name_from_pointer,
+        memo: Optional[Dict[str, type]] = None,
+    ) -> Iterable[type]:
+        metadata: abc.DictionaryMeta = meta.Dictionary()
+        metadata.value_types: abc.Types = meta.MutableTypes()  # type: ignore
+        key: str
+        property_name_: str
+        values: List[abc.MarshallableTypes]
+        model_class: type
+        for model_class in _get_models_from_meta(
+            pointer, metadata, module=module, memo=memo, name=name
+        ):
+            yield model_class
+
     def _get_object_models(
         self,
         pointer: str,
@@ -763,7 +846,7 @@ class Synonyms:
         )
         if self._type is not object:
             assert_is_subclass(
-                f"{qualified_name(type(self))}._data_type",
+                f"{qualified_name(type(self))}._type",
                 self._type,
                 (Mapping, abc.Dictionary, Iterable),
             )
@@ -1016,7 +1099,7 @@ class Thesaurus:
         name: Callable[[str], str] = class_name_from_pointer,
     ) -> str:
         class_names_metadata: abc.OrderedDict[
-            str, Union[abc.ObjectMeta, abc.ArrayMeta]
+            str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
         ] = collections.OrderedDict()
         imports: List[str] = []
         classes: List[str] = []
@@ -1034,26 +1117,37 @@ class Thesaurus:
                     imports.append(import_line)
             classes.append(source)
             meta_instance: Optional[abc.Meta] = meta.read(model_class)
-            assert isinstance(meta_instance, (abc.ObjectMeta, abc.ArrayMeta))
+            assert isinstance(
+                meta_instance,
+                (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
+            )
             class_names_metadata[model_class.__name__] = meta_instance
         for negative_index, class_name_metadata in enumerate(
             class_names_metadata.items(), -(len(class_names_metadata) - 1)
         ):
             separator: str
             class_name_: str
-            metadata: Union[abc.ObjectMeta, abc.ArrayMeta]
+            metadata: Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
             class_name_, metadata = class_name_metadata
-            assert isinstance(metadata, (abc.ObjectMeta, abc.ArrayMeta))
+            assert isinstance(
+                metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)
+            )
             if isinstance(metadata, abc.ObjectMeta):
                 metadatas.append(
                     get_class_meta_attribute_assignment_source(
                         class_name_, "properties", metadata
                     )
                 )
-            else:
+            elif isinstance(metadata, abc.ArrayMeta):
                 metadatas.append(
                     get_class_meta_attribute_assignment_source(
                         class_name_, "item_types", metadata
+                    )
+                )
+            else:
+                metadatas.append(
+                    get_class_meta_attribute_assignment_source(
+                        class_name_, "value_types", metadata
                     )
                 )
         return "\n".join(
