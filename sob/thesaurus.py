@@ -386,12 +386,12 @@ class Synonyms:
     one type of entity, and is used to infer a model for that entity.
     """
 
-    __slots__ = ("_data_type", "_nullable", "_set")
+    __slots__ = ("_type", "_nullable", "_set")
 
     def __init__(
         self, items: Iterable[Union[abc.Readable, abc.MarshallableTypes]] = ()
     ) -> None:
-        self._data_type: Optional[type] = None
+        self._type: Optional[type] = None
         self._nullable: bool = False
         self._set: Set[abc.MarshallableTypes] = set()
         if items:
@@ -427,23 +427,23 @@ class Synonyms:
         if isinstance(item, Null):
             self._nullable = True
         elif item is not None:
-            if self._data_type is None:
-                self._data_type = type(item)
+            if self._type is None:
+                self._type = type(item)
             else:
                 # If there is a data type discrepancy between `float` and
                 # `int`, use `float`.
                 if (
-                    issubclass(self._data_type, (int, float))
+                    issubclass(self._type, (int, float))
                     and isinstance(item, (int, float))
-                    and (type(item) is not self._data_type)
+                    and (type(item) is not self._type)
                 ):
-                    self._data_type = float
-                elif not isinstance(item, self._data_type):
+                    self._type = float
+                elif not isinstance(item, self._type):
                     # If there is a discrepancy where a data type can
                     # be either simple of a container, we infer
                     # unrestricted polymorphism, and indicate this by
                     # setting `._data_type` to `object`
-                    self._data_type = object
+                    self._type = object
             assert isinstance(item, MARSHALLABLE_TYPES)
             self._set.add(item)  # type: ignore
 
@@ -467,7 +467,7 @@ class Synonyms:
         return item
 
     def clear(self) -> None:
-        self._data_type = None
+        self._type = None
         self._nullable = False
         self._set.clear()
 
@@ -564,23 +564,23 @@ class Synonyms:
     def __copy__(self) -> "Synonyms":
         new_synonyms: Synonyms = self.__class__()
         new_synonyms._set = copy(self._set)
-        new_synonyms._data_type = self._data_type
+        new_synonyms._type = self._type
         new_synonyms._nullable = self._nullable
         return new_synonyms
 
     def __deepcopy__(self, memo: Optional[dict] = None) -> "Synonyms":
         new_synonyms: Synonyms = self.__class__()
         new_synonyms._set = deepcopy(self._set, memo=memo)
-        new_synonyms._data_type = self._data_type
+        new_synonyms._type = self._type
         new_synonyms._nullable = self._nullable
         return new_synonyms
 
     def _get_type(self) -> type:
-        assert self._data_type is not None
-        data_type: type = self._data_type
+        assert self._type is not None
+        data_type: type = self._type
         # Determine if this is a string encoded to represent a `date`,
         # `datetime`, or base-64 encoded `bytes`.
-        if issubclass(self._data_type, str):
+        if issubclass(self._type, str):
             if all(map(_is_base64, filter(_is_not_null_or_none, self))):
                 data_type = bytes
             elif all(
@@ -592,9 +592,7 @@ class Synonyms:
         else:
             # This function should only be invoked for simple types, so we
             # first verify the data type is not a container
-            assert not issubclass(
-                self._data_type, (abc.Model, Mapping, Collection)
-            )
+            assert not issubclass(self._type, (abc.Model, Mapping, Collection))
         assert data_type is not None
         return data_type
 
@@ -710,17 +708,15 @@ class Synonyms:
             memo = {}
             memo_is_new = True
         type_iterator: Iterable[type]
-        if self._data_type is None:
+        if self._type is None:
             type_iterator = []
-        elif issubclass(
-            self._data_type, (Mapping, abc.Object, abc.Dictionary)
-        ):
+        elif issubclass(self._type, (Mapping, abc.Object, abc.Dictionary)):
             type_iterator = self._get_object_models(
                 pointer, module=module, memo=memo, name=name
             )
-        elif issubclass(
-            self._data_type, (Iterable, abc.Array)
-        ) and not issubclass(self._data_type, str):
+        elif issubclass(self._type, (Iterable, abc.Array)) and not issubclass(
+            self._type, str
+        ):
             type_iterator = self._get_array_models(
                 pointer, module=module, memo=memo, name=name
             )
@@ -762,13 +758,13 @@ class Synonyms:
         assert callable(name)
         # This assertion ensures `self` contains data which can be described by
         # a model class.
-        assert self._data_type and not issubclass(
-            self._data_type, (str, bytes, bytearray)
+        assert self._type and not issubclass(
+            self._type, (str, bytes, bytearray)
         )
-        if self._data_type is not object:
+        if self._type is not object:
             assert_is_subclass(
                 f"{qualified_name(type(self))}._data_type",
-                self._data_type,
+                self._type,
                 (Mapping, abc.Dictionary, Iterable),
             )
         for model_class in self._get_types(
