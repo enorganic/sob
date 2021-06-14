@@ -57,6 +57,8 @@ from .utilities.types import NULL, NoneType, Null, UNDEFINED, Undefined
 
 __all__: List[str] = ["Synonyms", "Thesaurus"]
 
+lru_cache: Callable[..., Any] = functools.lru_cache
+
 
 def _read(data: abc.Readable) -> str:
     string_data: str
@@ -398,7 +400,7 @@ def _is_base64(value: Any) -> bool:
     return False
 
 
-@functools.lru_cache(maxsize=128)
+@lru_cache(maxsize=128)
 def _str_date_or_datetime(value: str) -> type:
     """
     Test to see if `value` can be interpreted as an ISO-8601 encoded `date` or
@@ -1226,4 +1228,4 @@ class Thesaurus:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         module_source: str = self.get_module_source(name=name)
         with open(path, "w") as module_io:
-            module_io.write(module_source)
+            module_io.write(f"{module_source}\n")

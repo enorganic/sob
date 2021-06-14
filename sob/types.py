@@ -68,8 +68,8 @@ class Types(abc.Types):
             else "".join(representation)
         )
 
-    def __contains__(  # type: ignore
-        self, item: Union[type, abc.Property]
+    def __contains__(
+        self, item: Union[type, abc.Property]  # type: ignore
     ) -> bool:
         return self._list.__contains__(item)
 

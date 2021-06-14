@@ -385,8 +385,8 @@ class Array(Model, abc.Array):
         class_meta: Optional[abc.ArrayMeta] = meta.array_read(type(self))
         if instance_meta is not class_meta:
             meta.write(
-                new_instance, deepcopy(instance_meta, memo=memo)  # noqa
-            )
+                new_instance, deepcopy(instance_meta, memo=memo)
+            )  # noqa
         instance_hooks: Optional[abc.ArrayHooks] = hooks.array_read(self)
         class_hooks: Optional[abc.ArrayHooks] = hooks.array_read(type(self))
         if instance_hooks is not class_hooks:
@@ -752,8 +752,8 @@ class Dictionary(Model, abc.Dictionary):
         )
         if instance_meta is not class_meta:
             meta.write(
-                new_instance, deepcopy(instance_meta, memo=memo)  # noqa
-            )
+                new_instance, deepcopy(instance_meta, memo=memo)
+            )  # noqa
         instance_hooks: Optional[abc.DictionaryHooks] = hooks.dictionary_read(
             self
         )
@@ -762,8 +762,8 @@ class Dictionary(Model, abc.Dictionary):
         )
         if instance_hooks is not class_hooks:
             hooks.write(
-                new_instance, deepcopy(instance_hooks, memo=memo)  # noqa
-            )
+                new_instance, deepcopy(instance_hooks, memo=memo)
+            )  # noqa
         key: str
         value: abc.MarshallableTypes
         for key, value in self.items():

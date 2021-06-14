@@ -119,8 +119,8 @@ class Types(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __contains__(  # type: ignore
-        self, item: Union[type, "Property"]
+    def __contains__(
+        self, item: Union[type, "Property"]  # type: ignore
     ) -> bool:
         pass
 
