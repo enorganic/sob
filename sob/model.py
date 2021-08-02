@@ -6,6 +6,7 @@ import collections
 import collections.abc
 import json
 import re
+import sys
 from abc import abstractmethod
 from base64 import b64decode, b64encode
 from copy import copy, deepcopy
@@ -1104,8 +1105,7 @@ class Object(Model, abc.Object):
                 self.__setitem__(key, value)
             except KeyError as error:
                 raise errors.UnmarshalKeyError(
-                    "%s\n\n%s.%s: %s"
-                    % (
+                    "{}\n\n{}.{}: {}".format(
                         errors.get_exception_text(),
                         qualified_name(type(self)),
                         error.args[0],
@@ -1234,9 +1234,18 @@ class Object(Model, abc.Object):
                         property_name_ = potential_property_name
                         break
         if property_name_ is None:
+            found_in: str = ""
+            type_module_name: str = getattr(type(self), "__module__", "")
+            if type_module_name:
+                type_module: Any = sys.modules.get(type_module_name, None)
+                if type_module:
+                    type_module_file: str = getattr(
+                        type_module, "__file__", ""
+                    )
+                    found_in = f"found in {type_module_file}, "
             raise KeyError(
-                f"`{qualified_name(type(self))}` has no property mapped to "
-                f'the name "{key}"'
+                f"`{qualified_name(type(self))}`, {found_in}"
+                f'has no property mapped to the name "{key}"'
             )
         return property_name_
 
