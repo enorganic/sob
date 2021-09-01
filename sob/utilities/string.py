@@ -337,9 +337,9 @@ def url_directory_and_file_name(url: str) -> Tuple[str, str]:
     """
     directory: str
     file_name: str
-    match: Optional[Match] = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
-    assert match is not None
-    directory, file_name = match.groups()
+    matched: Optional[Match] = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
+    assert matched is not None
+    directory, file_name = matched.groups()
     return directory, file_name
 
 
@@ -380,11 +380,11 @@ def split_long_comment_line(
         odio a urna elementum, eu tempor nisl efficitur.
     """
     if len(line) > max_line_length:
-        match: Optional[Match] = re.match(
+        matched: Optional[Match] = re.match(
             (r"^[ ]*(?:%s[ ]*)?" % prefix if prefix else r"^[ ]*"), line
         )
-        assert match is not None
-        indent_: str = match.group()
+        assert matched is not None
+        indent_: str = matched.group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
         lines: List[str] = []
@@ -425,9 +425,9 @@ def split_long_docstring_lines(
     lines: List[str] = docstring.split("\n")
     indentation_length: int = sys.maxsize
     for line in filter(lambda line: line, lines):
-        match = re.match(r"^[ ]+", line)
-        if match:
-            indentation_length = min(indentation_length, len(match.group()))
+        matched = re.match(r"^[ ]+", line)
+        if matched:
+            indentation_length = min(indentation_length, len(matched.group()))
         else:
             indentation_length = 0
             break

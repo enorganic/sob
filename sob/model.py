@@ -455,7 +455,7 @@ class Array(Model, abc.Array):
         item_lines = item_representation.split("\n")
         if len(item_lines) > 1:
             item_representation = "\n        ".join(item_lines)
-        return "        " + item_representation + ","
+        return f"        {item_representation},"
 
     def __repr__(self) -> str:
         """
@@ -868,13 +868,13 @@ class Dictionary(Model, abc.Dictionary):
         if len(value_representation_lines) > 1:
             indented_lines = [value_representation_lines[0]]
             for line in value_representation_lines[1:]:
-                indented_lines.append("            " + line)
+                indented_lines.append(f"            {line}")
             value_representation = "\n".join(indented_lines)
             representation = "\n".join(
                 [
                     "        (",
-                    "            %s," % repr(key),
-                    "            %s" % value_representation,
+                    f"            {repr(key)},",
+                    f"            {repr(value_representation)}",
                     "        ),",
                 ]
             )
@@ -1371,7 +1371,7 @@ class Object(Model, abc.Object):
             for line in lines[1:]:
                 indented_lines.append("    " + line)
             value_representation = "\n".join(indented_lines)
-        return "    %s=%s," % (parameter, value_representation)
+        return f"    {parameter}={value_representation},"
 
     def __repr__(self) -> str:
         representation = ["%s(" % qualified_name(type(self))]
@@ -1592,8 +1592,8 @@ def _marshal_typed(
     # information about the data and `types` to debug
     if marshalled_data is UNDEFINED:
         raise TypeError(
-            "%s cannot be interpreted as any of the designated types: %s"
-            % (repr(data), repr(types))
+            f"{repr(data)} cannot be interpreted as any of the designated "
+            f"types: {repr(types)}"
         )
     return marshalled_data
 
@@ -1786,7 +1786,7 @@ class _Unmarshal:
             unmarshalled_data = Array(items, item_types=self.item_types)
         elif not isinstance(self.data, abc.MARSHALLABLE_TYPES):
             raise errors.UnmarshalValueError(
-                "%s cannot be un-marshalled" % repr(self.data)
+                f"{repr(self.data)} cannot be un-marshalled"
             )
         return unmarshalled_data
 
@@ -1891,7 +1891,7 @@ class _Unmarshal:
             type_ = Array
         else:
             raise TypeError(
-                "%s is not of type `%s`" % (repr(self.data), repr(type_))
+                f"{repr(self.data)} is not of type `{repr(type_)}`"
             )
         return type_
 
@@ -2643,11 +2643,8 @@ def _get_class_declaration(name: str, superclass_: type) -> str:
     if 9 + len(name) + len(qualified_superclass_name) <= MAX_LINE_LENGTH:
         class_declaration = f"class {name}({qualified_superclass_name}):"
     else:
-        # If the first line is still too long for PEP8--add a comment to
-        # prevent linters from getting hung up
-        noqa: str = "  # noqa" if len(name) + 7 > MAX_LINE_LENGTH else ""
         class_declaration = (
-            f"class {name}({noqa}\n    {qualified_superclass_name}\n):"
+            f"class {name}(\n    {qualified_superclass_name}\n):"
         )
     return class_declaration
 
@@ -2685,12 +2682,8 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
         repr_value_typing: str = _type_hint_from_property_types(
             metadata.value_types, module
         )
-        mapping_repr_value_typing: str = suffix_long_lines(
-            indent_(repr_value_typing, 16)
-        )
-        iterable_repr_value_typing: str = suffix_long_lines(
-            indent_(repr_value_typing, 20)
-        )
+        mapping_repr_value_typing: str = indent_(repr_value_typing, 16)
+        iterable_repr_value_typing: str = indent_(repr_value_typing, 20)
         out.append(
             "\n"
             "    def __init__(\n"
@@ -2716,10 +2709,8 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "        super().__init__(items)\n\n"
         )
     elif isinstance(metadata, abc.ArrayMeta):
-        repr_item_typing: str = suffix_long_lines(
-            indent_(
-                _type_hint_from_property_types(metadata.item_types, module), 20
-            )
+        repr_item_typing: str = indent_(
+            _type_hint_from_property_types(metadata.item_types, module), 16
         )
         out.append(
             "\n"
@@ -2779,8 +2770,8 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
                 if (property_index + 1 == metadata_properties_items_length)
                 else ","
             )
-            repr_property_typing: str = suffix_long_lines(
-                indent_(_type_hint_from_property(property_, module), 12)
+            repr_property_typing: str = indent_(
+                _type_hint_from_property(property_, module), 12
             )
             parameter_declaration: str = (
                 f"        {property_name_}: typing.Optional[\n"
@@ -2889,7 +2880,9 @@ def from_meta(
     if re.search(r"\bdatetime\b", class_definition):
         imports.append("import datetime")
     imports.append(f"import {_parent_module_name}")
-    source: str = "%s\n\n\n%s" % ("\n".join(imports), class_definition)
+    source: str = suffix_long_lines(
+        "%s\n\n\n%s" % ("\n".join(imports), class_definition)
+    )
     error: Exception
     try:
         exec(source, namespace)
