@@ -50,7 +50,7 @@ class DeserializeError(ValueError):
     def __repr__(self) -> str:
         return "\n".join(
             ((self.message,) if self.message else ())
-            + (f"Could not parse:\n{repr(self.data)}",)
+            + (f"Could not parse:\n{self.data}",)
         )
 
     def __str__(self) -> str:
