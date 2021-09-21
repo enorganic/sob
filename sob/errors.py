@@ -7,6 +7,25 @@ from .utilities.inspect import represent
 from .utilities.string import indent
 
 
+__all__: List[str] = [
+    "ValidationError",
+    "VersionError",
+    "DeserializeError",
+    "UnmarshalError",
+    "UnmarshalTypeError",
+    "UnmarshalValueError",
+    "UnmarshalKeyError",
+    "ObjectDiscrepancyError",
+    "get_exception_text",
+    "append_exception_text",
+    "IsSubClassAssertionError",
+    "IsInstanceAssertionError",
+    "IsInAssertionError",
+    "NotIsInstanceAssertionError",
+    "EqualsAssertionError",
+]
+
+
 class ValidationError(Exception):
 
     pass
@@ -15,6 +34,27 @@ class ValidationError(Exception):
 class VersionError(AttributeError):
 
     pass
+
+
+class DeserializeError(ValueError):
+    """
+    This error is raised when data is encountered during deserialization which
+    cannot be parsed.
+    """
+
+    def __init__(self, data: str, message: str = "") -> None:
+        self.data: str = data
+        self.message: str = message
+        super().__init__(*((data,) + ((message,) if message else ())))
+
+    def __repr__(self) -> str:
+        return "\n\n".join(
+            ((self.message,) if self.message else ())
+            + (f"Could not parse:\n{repr(self.data)}",)
+        )
+
+    def __str__(self) -> str:
+        return repr(self)
 
 
 class UnmarshalError(Exception):

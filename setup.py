@@ -35,7 +35,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="sob",
-    version="1.15.0",
+    version="1.16.0",
     description=(
         "A framework for serializing/deserializing JSON/YAML into python "
         "class instances and vice versa"
@@ -50,21 +50,21 @@ setup(
     keywords="rest api serialization serialize",
     packages=["sob", "sob.utilities"],
     package_data={"sob": ["py.typed"], "sob.utilities": ["py.typed"]},
-    install_requires=["pyyaml>=3.10", "iso8601~=0.1", "more-itertools~=8.6"],
+    install_requires=["pyyaml>=3.10", "iso8601~=0.1", "more-itertools~=8.10"],
     setup_requires=["setuptools"],
     extras_require={
         "test": [
-            "black~=21.6b0",
+            "black~=21.9b0",
             "wheel~=0.36.2",
-            "mypy~=0.902",
+            "mypy~=0.910",
             "tox~=3.20",
             "pytest~=5.4",
             "flake8~=3.9",
             "types-PyYAML~=5.4",
-            "setuptools-setup-versions>=1.16.0,<2",
+            "setuptools-setup-versions>=1.18.0,<2",
             "readme-md-docstrings>=0.1.0,<1",
             "twine~=3.2",
-            "daves-dev-tools~=0.7",
+            "daves-dev-tools~=0.9",
         ],
         "dev": ["readme-md-docstrings~=0.1.0,<2"],
     },

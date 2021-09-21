@@ -49,6 +49,7 @@ from . import hooks
 from . import meta
 from . import utilities
 from .errors import (
+    DeserializeError,
     IsInstanceAssertionError,
     append_exception_text,
     get_exception_text,
@@ -2113,16 +2114,13 @@ def detect_format(
                 (potential_format, get_exception_text())
             )
     if format_ is None:
-        raise ValueError(
-            "The data provided could not be parsed:\n\n"
-            "{}\n\n"
-            "{}".format(
-                indent_(repr(data), start=0),
-                "\n\n".join(
-                    "{}:\n\n{}".format(format_, error_message)
-                    for format_, error_message in formats_error_messages
-                ),
-            )
+        assert isinstance(data, str)
+        raise DeserializeError(
+            data=data,
+            message="\n\n".join(
+                f"{format_}:\n{error_message}"
+                for format_, error_message in formats_error_messages
+            ),
         )
     return deserialized_data, format_
 
