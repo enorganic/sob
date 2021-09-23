@@ -35,7 +35,7 @@ def setup(**kwargs: Any) -> None:
 
 setup(
     name="sob",
-    version="1.18.0",
+    version="1.19.0",
     description=(
         "A framework for serializing/deserializing JSON/YAML into python "
         "class instances and vice versa"

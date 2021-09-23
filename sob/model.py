@@ -2060,7 +2060,7 @@ def deserialize(
                 object_pairs_hook=_object_pairs_hook,
             )
         else:
-            deserialized_data = yaml.load(data, yaml.FullLoader)
+            deserialized_data = yaml.load(data)
     elif isinstance(data, bytes):
         deserialized_data = deserialize(str(data, encoding="utf-8"), format_)
     else:
