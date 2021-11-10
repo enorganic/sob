@@ -2059,6 +2059,7 @@ def deserialize(
                     data,
                     object_hook=collections.OrderedDict,
                     object_pairs_hook=_object_pairs_hook,
+                    strict=False,
                 )
             else:
                 deserialized_data = yaml.safe_load(data)
