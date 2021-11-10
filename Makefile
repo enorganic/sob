@@ -5,9 +5,6 @@ install:
 clean:
 	venv/bin/daves-dev-tools clean
 
-gcp:
-	venv/bin/python3 scripts/update_gcp_prefix_format_list.py
-
 requirements:
 	venv/bin/daves-dev-tools requirements update\
 	 -v\
@@ -23,7 +20,6 @@ requirements:
 	mv .requirements.txt requirements.txt
 
 distribute:
-	venv/bin/python3 scripts/update_gcp_prefix_format_list.py
 	venv/bin/daves-dev-tools distribute --skip-existing
 
 test:
