@@ -2053,14 +2053,22 @@ def deserialize(
     deserialized_data: abc.JSONTypes
     assert_in("format_", format_, ("json", "yaml"))
     if isinstance(data, str):
-        if format_ == "json":
-            deserialized_data = json.loads(
-                data,
-                object_hook=collections.OrderedDict,
-                object_pairs_hook=_object_pairs_hook,
+        try:
+            if format_ == "json":
+                deserialized_data = json.loads(
+                    data,
+                    object_hook=collections.OrderedDict,
+                    object_pairs_hook=_object_pairs_hook,
+                )
+            else:
+                deserialized_data = yaml.safe_load(data)
+        except Exception as error:
+            # Append the data which couldn't be deserialized to the exception
+            append_exception_text(
+                error,
+                "Errors occurred while attempting to deserialize:\n" f"{data}",
             )
-        else:
-            deserialized_data = yaml.load(data)
+            raise error
     elif isinstance(data, bytes):
         deserialized_data = deserialize(str(data, encoding="utf-8"), format_)
     else:
