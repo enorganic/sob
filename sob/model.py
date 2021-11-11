@@ -1652,8 +1652,8 @@ def marshal(
 
 
 def _is_non_string_iterable(value: abc.MarshallableTypes) -> bool:
-    return (isinstance(value, Iterable)) and (
-        not isinstance(value, (str, bytes, bytearray, Mapping, abc.Dictionary))
+    return (not isinstance(value, (str, bytes))) and isinstance(
+        value, Iterable
     )
 
 
