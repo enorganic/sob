@@ -1652,7 +1652,6 @@ def marshal(
 
 
 def _is_non_string_iterable(value: abc.MarshallableTypes) -> bool:
-    Iterable
     if not isinstance(value, (str, bytes)):
         # Note: Testing to see if a value is an instance of typing.Iterable
         # produces recursion errors in some circumstances, so we check
