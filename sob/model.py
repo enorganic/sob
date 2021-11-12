@@ -1652,9 +1652,18 @@ def marshal(
 
 
 def _is_non_string_iterable(value: abc.MarshallableTypes) -> bool:
-    return (not isinstance(value, (str, bytes))) and isinstance(
-        value, Iterable
-    )
+    Iterable
+    if not isinstance(value, (str, bytes)):
+        # Note: Testing to see if a value is an instance of typing.Iterable
+        # produces recursion errors in some circumstances, so we check
+        # the old-fashioned way
+        try:
+            iter_method: Any = getattr(value, "__iter__")
+            if callable(iter_method):
+                return True
+        except AttributeError:
+            pass
+    return False
 
 
 def _is_non_string_sequence_or_set_subclass(type_: type) -> bool:
