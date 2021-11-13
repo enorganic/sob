@@ -237,9 +237,9 @@ class Properties(abc.Properties):
             None,
         ] = None,
     ) -> None:
-        self._dict: abc.OrderedDict[
-            str, abc.Property
-        ] = collections.OrderedDict()
+        self._dict: "abc.OrderedDict[str, abc.Property]" = (
+            collections.OrderedDict()
+        )
         if items is not None:
             self.update(items)
 
@@ -354,7 +354,7 @@ class Properties(abc.Properties):
         ]
         key: str
         value: abc.Property
-        items: Union[Iterable[Tuple[str, abc.Property]]] = ()
+        items: Iterable[Tuple[str, abc.Property]] = ()
         for other in args:
             if isinstance(other, (Mapping, abc.Properties)):
                 if isinstance(other, (Reversible, abc.Properties)):

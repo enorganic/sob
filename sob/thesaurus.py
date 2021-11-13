@@ -665,10 +665,10 @@ class Synonyms:
 
     def _get_property_names_values(
         self,
-    ) -> abc.OrderedDict[str, List[abc.MarshallableTypes]]:
-        keys_values: abc.OrderedDict[
-            str, List[abc.MarshallableTypes]
-        ] = collections.OrderedDict()
+    ) -> "abc.OrderedDict[str, List[abc.MarshallableTypes]]":
+        keys_values: "abc.OrderedDict[str, List[abc.MarshallableTypes]]" = (
+            collections.OrderedDict()
+        )
         item: abc.MarshallableTypes
         for item in self:
             try:
@@ -976,7 +976,9 @@ class Thesaurus:
         ] = None,
         **kwargs: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
     ) -> None:
-        self._dict: abc.OrderedDict[str, Synonyms] = collections.OrderedDict()
+        self._dict: "abc.OrderedDict[str, Synonyms]" = (
+            collections.OrderedDict()
+        )
         key: str
         value: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
         for key, value in collections.OrderedDict(
@@ -1100,9 +1102,9 @@ class Thesaurus:
         module_name: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
     ) -> str:
-        class_names_metadata: abc.OrderedDict[
-            str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
-        ] = collections.OrderedDict()
+        class_names_metadata: (
+            "abc.OrderedDict[str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]]"  # noqa
+        ) = collections.OrderedDict()
         imports: List[str] = []
         classes: List[str] = []
         metadatas: List[str] = []

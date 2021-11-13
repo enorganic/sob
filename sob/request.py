@@ -72,7 +72,9 @@ class Headers(collections.OrderedDict):
         ],
         **kwargs: str,
     ) -> None:
-        capitalized_dict: abc.OrderedDict[str, str] = collections.OrderedDict()
+        capitalized_dict: "abc.OrderedDict[str, str]" = (
+            collections.OrderedDict()
+        )
         key: str
         value: str
         for key, value in collections.OrderedDict(*args, **kwargs).items():

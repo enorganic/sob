@@ -28,16 +28,10 @@ def _get_object_property_names(object_: abc.Object) -> Set[str]:
 
 def _object_discrepancies(
     object_a: abc.Object, object_b: abc.Object
-) -> abc.OrderedDict[
-    str,
-    Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]],
-]:
-    discrepancies: abc.OrderedDict[
-        str,
-        Tuple[
-            Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]
-        ],
-    ] = collections.OrderedDict()
+) -> "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]":  # noqa
+    discrepancies: (
+        "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]"  # noqa
+    ) = collections.OrderedDict()
     for property_ in sorted(
         (
             _get_object_property_names(object_a)
