@@ -1655,17 +1655,11 @@ def marshal(
 
 
 def _is_non_string_iterable(value: abc.MarshallableTypes) -> bool:
-    if not isinstance(value, (str, bytes)):
-        # Note: Testing to see if a value is an instance of typing.Iterable
-        # produces recursion errors in some circumstances, so we check
-        # the old-fashioned way
-        try:
-            iter_method: Any = getattr(value, "__iter__")
-            if callable(iter_method):
-                return True
-        except AttributeError:
-            pass
-    return False
+    return (
+        (not isinstance(value, (str, bytes)))
+        and (not isinstance(value, Mapping))
+        and isinstance(value, Iterable)
+    )
 
 
 def _is_non_string_sequence_or_set_subclass(type_: type) -> bool:
@@ -1738,24 +1732,34 @@ class _Unmarshal:
         """
         Return `self.data` unmarshalled
         """
-        unmarshalled_data: abc.MarshallableTypes = self.data
-        if self.data is not NULL:
-            # If the data is a sob `Model`, get it's metadata
-            if isinstance(self.data, abc.Model):
-                self.meta = meta.read(self.data)
-            # Only un-marshall models if they have no metadata yet (are
-            # generic)
-            if self.meta is None:
-                # If the data provided is a `Generator`, make it static by
-                # casting the data into a tuple
-                if isinstance(self.data, GeneratorType):
-                    self.data = tuple(self.data)
-                if self.types is None:
-                    # If no types are provided, we unmarshal the data into one
-                    # of sob's generic container types
-                    unmarshalled_data = self.as_container_or_simple_type
-                else:
-                    unmarshalled_data = self.as_typed
+        try:
+            unmarshalled_data: abc.MarshallableTypes = self.data
+            if self.data is not NULL:
+                # If the data is a sob `Model`, get it's metadata
+                if isinstance(self.data, abc.Model):
+                    self.meta = meta.read(self.data)
+                # Only un-marshall models if they have no metadata yet (are
+                # generic)
+                if self.meta is None:
+                    # If the data provided is a `Generator`, make it static by
+                    # casting the data into a tuple
+                    if isinstance(self.data, GeneratorType):
+                        self.data = tuple(self.data)
+                    if self.types is None:
+                        # If no types are provided, we unmarshal the data into
+                        # one of sob's generic container types
+                        unmarshalled_data = self.as_container_or_simple_type
+                    else:
+                        unmarshalled_data = self.as_typed
+        except Exception as error:
+            append_exception_text(
+                error,
+                (
+                    "An error was encountered during execution of:\n"
+                    f"{self.represent_function_call()}"
+                ),
+            )
+            raise error
         return unmarshalled_data
 
     @property  # type: ignore
@@ -1874,12 +1878,13 @@ class _Unmarshal:
         return data
 
     def as_dictionary_type(self, type_: type) -> abc.Model:
+        data: abc.MarshallableTypes
         unmarshalled_data: abc.Model
         dictionary_type = self.get_dictionary_type(type_)
         # Determine whether the `type_` is an `Object` or a `Dictionary`
         if dictionary_type:
             type_ = dictionary_type
-            data: abc.MarshallableTypes = self.before_hook(type_)
+            data = self.before_hook(type_)
             if "value_types" in signature(type_).parameters:
                 unmarshalled_data = type_(data, value_types=self.value_types)
             else:
@@ -1921,7 +1926,7 @@ class _Unmarshal:
             unmarshalled_data = _unmarshal_property_value(type_, self.data)
         elif isinstance(type_, type):
             if isinstance(
-                self.data, (dict, collections.OrderedDict, abc.Model)
+                self.data, (dict, collections.OrderedDict, abc.Model, Mapping)
             ):
                 unmarshalled_data = self.as_dictionary_type(type_)
             elif _is_non_string_iterable(self.data):
@@ -1934,6 +1939,16 @@ class _Unmarshal:
             else:
                 raise TypeError(self.data)
         return unmarshalled_data
+
+    def represent_function_call(self) -> str:
+        return (
+            "unmarshal(\n"
+            f"   data={indent_(repr(self.data))},"
+            f"   types={indent_(repr(self.types))},"
+            f"   value_types={indent_(repr(self.value_types))},"
+            f"   item_types={indent_(repr(self.item_types))},"
+            ")"
+        )
 
 
 def unmarshal(
@@ -2343,7 +2358,15 @@ class _UnmarshalProperty:
             value_types=self.property.value_types,
         )
 
-    def __call__(self, value: abc.MarshallableTypes) -> abc.MarshallableTypes:
+    def represent_function_call(self, value: abc.MarshallableTypes) -> str:
+        return (
+            "_unmarshal_property_value(\n"
+            f"   {indent_(repr(self.property))},"
+            f"   {indent_(repr(value))},"
+            ")"
+        )
+
+    def _call(self, value: abc.MarshallableTypes) -> abc.MarshallableTypes:
         type_: type
         matched: bool = False
         unmarshalled_value: abc.MarshallableTypes = value
@@ -2382,6 +2405,19 @@ class _UnmarshalProperty:
                     unmarshalled_value, types=self.property.types
                 )
         return unmarshalled_value
+
+    def __call__(self, value: abc.MarshallableTypes) -> abc.MarshallableTypes:
+        try:
+            return self._call(value)
+        except Exception as error:
+            append_exception_text(
+                error,
+                (
+                    "An error was encountered during execution of:\n"
+                    f"{self.represent_function_call(value)}"
+                ),
+            )
+            raise error
 
 
 def _unmarshal_property_value(
