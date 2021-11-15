@@ -333,6 +333,8 @@ class Array(Model, abc.Array):
         self.__setitem__(index, value)
 
     def append(self, value: abc.MarshallableTypes) -> None:
+        if not isinstance(value, abc.MARSHALLABLE_TYPES + (NoneType,)):
+            raise errors.UnmarshalTypeError(data=value)
         instance_hooks: Optional[abc.ArrayHooks] = hooks.array_read(self)
         if instance_hooks and instance_hooks.before_append:
             value = instance_hooks.before_append(self, value)
@@ -1191,9 +1193,7 @@ class Object(Model, abc.Object):
                     )
                 else:
                     error.args = (message + repr(value),)
-
                 raise error
-
         return value
 
     def __setattr__(
