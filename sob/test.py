@@ -153,7 +153,7 @@ def _remarshal_object(
     string_object: str, object_instance: abc.Object, format_: str = "json"
 ) -> None:
     if format_ == "yaml":
-        reloaded_marshalled_data = yaml_.load(string_object)
+        reloaded_marshalled_data = yaml_.safe_load(string_object)
     else:
         reloaded_marshalled_data = _json.loads(
             string_object,
