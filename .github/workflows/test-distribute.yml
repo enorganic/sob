@@ -7,21 +7,6 @@ on:
     branches:
       - master
 jobs:
-  lint-and-test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python: [3.9]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python }}
-    - name: Install
-      run: make
-    - name: Tox
-      run: venv/bin/tox  -p all -e py39-black -e py39-flake8 -e py39-mypy -e py39-pytest
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -36,11 +21,10 @@ jobs:
     - name: Install
       run: make
     - name: Tox
-      run: venv/bin/tox -e py-pytest -p all
+      run: venv/bin/tox -p all
   distribute:
     needs:
       - test
-      - lint-and-test
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
