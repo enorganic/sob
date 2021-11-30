@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Dict, Hashable, List
+from typing import Any, Dict, Hashable, List, Tuple, Callable
 
 __all__: List[str] = [
     "UNDEFINED",
@@ -63,8 +63,15 @@ class Undefined:
         """
         return other is self
 
+    def __reduce__(self) -> Tuple[Callable[[], "Undefined"], Tuple]:
+        return _undefined, ()
+
 
 UNDEFINED: Undefined = Undefined()
+
+
+def _undefined() -> Undefined:
+    return UNDEFINED
 
 
 class NoneType(metaclass=ABCMeta):
@@ -127,5 +134,12 @@ class Null:
     def __deepcopy__(self, memo: Dict[Hashable, Any]) -> "Null":
         return self
 
+    def __reduce__(self) -> Tuple[Callable[[], "Null"], Tuple]:
+        return _null, ()
+
 
 NULL: Null = Null()
+
+
+def _null() -> Null:
+    return NULL
