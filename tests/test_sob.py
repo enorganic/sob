@@ -295,7 +295,10 @@ meta.object_writable(Tesstee).properties = {  # type: ignore
 }
 
 with open(
-    os.path.join(os.path.dirname(__file__), "data", "rainbow.png"), mode="rb"
+    os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
+    ),
+    mode="rb",
 ) as f:
     _rainbow = f.read()
 
@@ -422,7 +425,7 @@ def test_object():
 
 @functools.lru_cache()
 def _get_testy_path() -> str:
-    data_dir: str = urljoin(__file__, "data/")
+    data_dir: str = urljoin(os.path.abspath(__file__), "data/")
     path: str
     # The following accounts for `dict` being ordered in python 3.8+
     if isinstance({}, Reversible):
@@ -486,7 +489,7 @@ def test_request() -> None:
     """
     This will test `sob.requests`,
     """
-    data_dir: str = urljoin(__file__, "data/")
+    data_dir: str = urljoin(os.path.abspath(__file__), "data/")
     with open(
         urljoin(data_dir, "rainbow.png"),
         mode="rb",

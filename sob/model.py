@@ -1,6 +1,7 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
+import os
 import builtins
 import collections
 import collections.abc
@@ -1240,8 +1241,8 @@ class Object(Model, abc.Object):
             if type_module_name:
                 type_module: Any = sys.modules.get(type_module_name, None)
                 if type_module:
-                    type_module_file: str = getattr(
-                        type_module, "__file__", ""
+                    type_module_file: str = os.path.abspath(
+                        getattr(type_module, "__file__", "")
                     )
                     found_in = f"found in {type_module_file}, "
             raise KeyError(
