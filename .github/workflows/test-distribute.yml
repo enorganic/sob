@@ -27,7 +27,7 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install
-      run: pip3 install --upgrade pip tox -r requirements.txt -e '.[all]'
+      run: pip3 install --upgrade pip tox -r requirements.txt -e .
     - name: test
       run: tox -p all
   distribute:
@@ -42,7 +42,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: install
-      run: pip3 install --upgrade pip tox -r requirements.txt -e '.[all]'
+      run: pip3 install --upgrade pip tox -r requirements.txt -e .
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}

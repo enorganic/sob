@@ -6,7 +6,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, Iterable, Optional, Reversible, Union
+from typing import Dict, Iterable, Optional, Reversible, Union, IO
 from urllib.parse import urljoin
 
 from iso8601 import iso8601  # type: ignore
@@ -425,17 +425,19 @@ def test_object():
 
 @functools.lru_cache()
 def _get_testy_path() -> str:
-    data_dir: str = urljoin(os.path.abspath(__file__), "data/")
+    data_dir: str = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data/"
+    )
     path: str
     # The following accounts for `dict` being ordered in python 3.8+
     if isinstance({}, Reversible):
-        path = urljoin(data_dir, "reversible_dict_testy.json")
+        path = os.path.join(data_dir, "reversible_dict_testy.json")
     else:
-        path = urljoin(data_dir, "testy.json")
+        path = os.path.join(data_dir, "testy.json")
     return path
 
 
-def test_json_serialization():
+def test_json_serialization() -> None:
     model.validate(testy)
     test.json(testy)
     path: str = _get_testy_path()
@@ -446,6 +448,7 @@ def test_json_serialization():
         serialized_testy = model.serialize(testy, "json").strip()
         file_testy = file.read().strip()
         assert_equals("serialized_testy", serialized_testy, file_testy)
+    file: IO[bytes]
     with open(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
