@@ -1,28 +1,37 @@
-name: Test and Publish
+name: test-distribute
 on:
   push:
     branches:
-      - master
+    - master
   pull_request:
     branches:
-      - master
+    - '*'
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python: [3.6, 3.7, 3.8, 3.9]
+        os:
+        - ubuntu-latest
+        - windows-latest
+        python:
+        - 3.6
+        - 3.7
+        - 3.8
+        - 3.9
+        - '3.10'
     steps:
     - uses: actions/checkout@v2
     - name: Setup Python
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python }}
-    - name: Install
-      run: make
-    - name: Tox
-      run: venv/bin/tox -p all
+    - name: install
+      run: pip3 install --upgrade pip tox -r requirements.txt -e '.[all]'
+    - name: test
+      run: tox -p all
   distribute:
+    if: github.ref == 'refs/heads/master'
     needs:
       - test
     runs-on: ubuntu-latest
@@ -32,10 +41,10 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.x'
-    - name: Install
-      run: make
-    - name: Build and Publish
+    - name: install
+      run: pip3 install --upgrade pip tox -r requirements.txt -e '.[all]'
+    - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: make distribute
+      run: daves-dev-tools distribute --skip-existing
