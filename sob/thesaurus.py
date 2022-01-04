@@ -1039,7 +1039,7 @@ class Thesaurus:
     def get(
         self, key: str, default: Union[Undefined, Synonyms] = UNDEFINED
     ) -> Synonyms:
-        return self._dict.get(
+        return self._dict.get(  # type: ignore
             key,
             **(
                 {} if isinstance(default, Undefined) else dict(default=default)

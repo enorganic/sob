@@ -3,7 +3,7 @@ import json as _json
 from typing import Any, List, Optional, Sequence, Set, Tuple
 from warnings import warn
 
-import yaml as yaml_
+import yaml as yaml_  # type: ignore
 
 from . import abc, meta
 from .errors import ObjectDiscrepancyError

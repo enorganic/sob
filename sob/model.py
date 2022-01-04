@@ -40,7 +40,7 @@ from typing import (
 )
 from urllib.parse import urljoin
 
-import yaml
+import yaml  # type: ignore
 from more_itertools import chunked
 
 from . import __name__ as _parent_module_name
