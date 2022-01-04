@@ -7,7 +7,6 @@ from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Dict, Iterable, Optional, Reversible, Union, IO
-from urllib.parse import urljoin
 
 from iso8601 import iso8601  # type: ignore
 
@@ -492,9 +491,11 @@ def test_request() -> None:
     """
     This will test `sob.requests`,
     """
-    data_dir: str = urljoin(os.path.abspath(__file__), "data/")
+    data_dir: str = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "data/"
+    )
     with open(
-        urljoin(data_dir, "rainbow.png"),
+        os.path.join(data_dir, "rainbow.png"),
         mode="rb",
     ) as rainbow_file:
         rainbow_bytes = rainbow_file.read()
@@ -517,7 +518,7 @@ def test_request() -> None:
         )
         # This accounts for `dict` becoming ordered (and therefore reversible)
         # in python 3.8+
-        path = urljoin(
+        path = os.path.join(
             data_dir,
             "{}multi_part_json_request".format(
                 "reversible_dict_" if isinstance({}, Reversible) else ""
