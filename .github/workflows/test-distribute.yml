@@ -14,6 +14,7 @@ jobs:
         os:
         - ubuntu-latest
         - windows-latest
+        - macos-latest
         python:
         - 3.6
         - 3.7
@@ -27,9 +28,9 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install
-      run: pip3 install --upgrade pip tox -r requirements.txt -e .
+      run: make
     - name: test
-      run: tox -p all
+      run: make test
   distribute:
     if: github.ref == 'refs/heads/master'
     needs:
@@ -42,9 +43,9 @@ jobs:
       with:
         python-version: '3.x'
     - name: install
-      run: pip3 install --upgrade pip tox -r requirements.txt -e .
+      run: make
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-      run: daves-dev-tools distribute --skip-existing
+      run: make distribute

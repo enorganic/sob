@@ -65,7 +65,7 @@ class Headers(collections.OrderedDict):
         self._reset_part()
         return super().setdefault(key, default)
 
-    def update(
+    def update(  # type: ignore
         self,
         *args: Union[
             Mapping[str, str], abc.Dictionary, Iterable[Tuple[str, str]]

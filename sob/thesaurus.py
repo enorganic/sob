@@ -430,6 +430,7 @@ def _is_datetime_str(value: Any) -> bool:
     `datetime`.
 
     >>> _is_datetime_str("1999-12-31T00:00:00.000")
+    True
     """
     return isinstance(value, str) and _str_date_or_datetime(value) is datetime
 
