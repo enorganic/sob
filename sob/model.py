@@ -2621,11 +2621,11 @@ def _type_hint_from_type(type_: type, module: str) -> str:
         if len(type_hint) > 60:
             type_hint_lines: List[str] = ["("]
             for chunk in chunked(type_hint, 57):
-                type_hint_lines.append(f"    '{''.join(chunk)}'")
+                type_hint_lines.append(f'    "{"".join(chunk)}"')
             type_hint_lines.append(")")
             type_hint = "\n".join(type_hint_lines)
         else:
-            type_hint = f"'{type_hint}'"
+            type_hint = f'"{type_hint}"'
     return type_hint
 
 
