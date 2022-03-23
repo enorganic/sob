@@ -877,7 +877,7 @@ class Dictionary(Model, abc.Dictionary):
                 [
                     "        (",
                     f"            {repr(key)},",
-                    f"            {repr(value_representation)}",
+                    f"            {value_representation}",
                     "        ),",
                 ]
             )
