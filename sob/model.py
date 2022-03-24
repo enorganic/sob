@@ -8,6 +8,7 @@ import collections.abc
 import json
 import re
 import sys
+import yaml  # type: ignore
 from abc import abstractmethod
 from base64 import b64decode, b64encode
 from copy import copy, deepcopy
@@ -40,9 +41,6 @@ from typing import (
     TYPE_CHECKING,
 )
 from urllib.parse import urljoin
-
-import yaml  # type: ignore
-from more_itertools import chunked
 
 from . import __name__ as _parent_module_name
 from . import abc
