@@ -319,7 +319,7 @@ class Array(Model, abc.Array):
         item_types: Optional[abc.Types] = (
             None if meta_ is None else meta_.item_types
         )
-        value = unmarshal(value, types=item_types)
+        value = unmarshal(value, types=item_types or ())
         self._list.__setitem__(index, value)
         if instance_hooks and instance_hooks.after_setitem:
             instance_hooks.after_setitem(self, index, value)
@@ -341,7 +341,7 @@ class Array(Model, abc.Array):
         item_types: Optional[abc.Types] = None
         if instance_meta:
             item_types = instance_meta.item_types
-        value = unmarshal(value, types=item_types)
+        value = unmarshal(value, types=item_types or ())
         self._list.append(value)
         if instance_hooks and instance_hooks.after_append:
             instance_hooks.after_append(self, value)
@@ -703,7 +703,7 @@ class Dictionary(Model, abc.Dictionary):
             value_types = instance_meta.value_types
         try:
             unmarshalled_value: abc.MarshallableTypes = unmarshal(
-                value, types=value_types
+                value, types=value_types or ()
             )
         except TypeError as error:
             message = f"\n - {qualified_name(type(self))}['{key}']: {{}}"
@@ -1678,52 +1678,43 @@ class _Unmarshal:
         types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
             type,
             abc.Property,
-        ] = None,
+        ] = (),
         value_types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
             type,
             abc.Property,
-        ] = None,
+        ] = (),
         item_types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
             type,
             abc.Property,
-        ] = None,
+        ] = (),
     ) -> None:
         # If only one type was passed for any of the following parameters--we
         # convert it to a tuple
-        if types is not None:
-            if isinstance(types, (type, abc.Property)):
-                types = (types,)
-        if value_types is not None:
-            if isinstance(value_types, (type, abc.Property)):
-                value_types = (value_types,)
-        if item_types is not None:
-            if isinstance(item_types, (type, abc.Property)):
-                item_types = (item_types,)
+        if isinstance(types, (type, abc.Property)):
+            types = (types,)
+        if isinstance(value_types, (type, abc.Property)):
+            value_types = (value_types,)
+        if isinstance(item_types, (type, abc.Property)):
+            item_types = (item_types,)
         # Instance Attributes
         self.data: abc.MarshallableTypes = data
         self.types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
         ] = types
         self.value_types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
         ] = value_types
         self.item_types: Union[
             Iterable[Union[type, abc.Property]],
             abc.Types,
-            None,
         ] = item_types
         self.meta: Optional[abc.Meta] = None
 
@@ -1744,7 +1735,7 @@ class _Unmarshal:
                     # casting the data into a tuple
                     if isinstance(self.data, GeneratorType):
                         self.data = tuple(self.data)
-                    if self.types is None:
+                    if not self.types:
                         # If no types are provided, we unmarshal the data into
                         # one of sob's generic container types
                         unmarshalled_data = self.as_container_or_simple_type
@@ -1774,13 +1765,13 @@ class _Unmarshal:
             unmarshalled_data = NULL
         elif isinstance(self.data, abc.Dictionary):
             type_ = type(self.data)
-            if self.value_types is not None:
+            if self.value_types:
                 unmarshalled_data = type_(
                     self.data, value_types=self.value_types
                 )
         elif isinstance(self.data, abc.Array):
             type_ = type(self.data)
-            if self.item_types is not None:
+            if self.item_types:
                 unmarshalled_data = type_(
                     self.data, item_types=self.item_types
                 )
@@ -1809,7 +1800,7 @@ class _Unmarshal:
         error_messages: List[str] = []
         # Attempt to un-marshal the data as each type, in the order
         # provided
-        assert self.types is not None
+        assert self.types
         for type_ in self.types:
             try:
                 unmarshalled_data = self.as_type(type_)
@@ -1957,22 +1948,19 @@ def unmarshal(
         type,
         abc.Property,
         abc.Types,
-        None,
-    ] = None,
+    ] = (),
     value_types: Union[
         Iterable[Union[type, abc.Property]],
         type,
         abc.Property,
         abc.Types,
-        None,
-    ] = None,
+    ] = (),
     item_types: Union[
         Iterable[Union[type, abc.Property]],
         type,
         abc.Property,
         abc.Types,
-        None,
-    ] = None,
+    ] = (),
 ) -> abc.MarshallableTypes:
     """
     Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
@@ -2343,8 +2331,8 @@ class _UnmarshalProperty:
         assert isinstance(self.property, abc.ArrayProperty)
         return unmarshal(
             value,
-            types=self.property.types,
-            item_types=self.property.item_types,
+            types=self.property.types or (),
+            item_types=self.property.item_types or (),
         )
 
     def unmarshall_dictionary(
@@ -2353,8 +2341,8 @@ class _UnmarshalProperty:
         assert isinstance(self.property, abc.DictionaryProperty)
         return unmarshal(
             value,
-            types=self.property.types,
-            value_types=self.property.value_types,
+            types=self.property.types or (),
+            value_types=self.property.value_types or (),
         )
 
     def represent_function_call(self, value: abc.MarshallableTypes) -> str:
