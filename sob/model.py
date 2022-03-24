@@ -1767,17 +1767,17 @@ class _Unmarshal:
             type_ = type(self.data)
             if self.value_types:
                 unmarshalled_data = type_(
-                    self.data, value_types=self.value_types
+                    self.data, value_types=self.value_types or None
                 )
         elif isinstance(self.data, abc.Array):
             type_ = type(self.data)
             if self.item_types:
                 unmarshalled_data = type_(
-                    self.data, item_types=self.item_types
+                    self.data, item_types=self.item_types or None
                 )
-        elif isinstance(self.data, (Mapping, abc.Dictionary)):
+        elif isinstance(self.data, Mapping):
             unmarshalled_data = Dictionary(
-                self.data, value_types=self.value_types
+                self.data, value_types=self.value_types or None
             )
         elif isinstance(self.data, Iterable) and not isinstance(
             self.data, (str, bytes, bytearray)
@@ -1786,7 +1786,9 @@ class _Unmarshal:
             items: List[abc.MarshallableTypes] = [
                 (NULL if item is None else item) for item in self.data
             ]
-            unmarshalled_data = Array(items, item_types=self.item_types)
+            unmarshalled_data = Array(
+                items, item_types=self.item_types or None
+            )
         elif not isinstance(self.data, abc.MARSHALLABLE_TYPES):
             raise errors.UnmarshalValueError(
                 f"{repr(self.data)} cannot be un-marshalled"
@@ -1876,7 +1878,9 @@ class _Unmarshal:
             type_ = dictionary_type
             data = self.before_hook(type_)
             if "value_types" in signature(type_).parameters:
-                unmarshalled_data = type_(data, value_types=self.value_types)
+                unmarshalled_data = type_(
+                    data, value_types=self.value_types or None
+                )
             else:
                 unmarshalled_data = type_(data)
             unmarshalled_data = self.after_hook(type_, unmarshalled_data)
@@ -1902,7 +1906,9 @@ class _Unmarshal:
     def as_array_type(self, type_: type) -> abc.Array:
         type_ = self.get_array_type(type_)
         if "item_types" in signature(type_).parameters:
-            unmarshalled_data = type_(self.data, item_types=self.item_types)
+            unmarshalled_data = type_(
+                self.data, item_types=self.item_types or None
+            )
         else:
             unmarshalled_data = type_(self.data)
         return unmarshalled_data
