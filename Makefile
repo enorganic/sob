@@ -1,15 +1,27 @@
 # python 3.6 is used, for the time being, in order to ensure compatibility
 install:
-	(python3.6 -m venv venv || python3 -m venv venv || \
-	py -3.6 -m venv venv || py -3 -m venv venv) && \
+	make venv && \
+	make activate && \
 	python3 -m pip install --upgrade pip && \
 	python3 -m pip install\
 	 -r requirements.txt\
 	 -e . && \
 	mypy --install-types --non-interactive ;
 
+venv:
+	(python3.6 -m venv venv || python3 -m venv venv || \
+	py -3.6 -m venv venv || py -3 -m venv venv)
+
+activate:
+	(. venv/bin/activate || venv/Scripts/activate.bat)
+
+editable:
+	make activate && \
+	daves-dev-tools install-editable --upgrade-strategy eager && \
+	make requirements
+
 clean:
-	(. venv/bin/activate || venv/Scripts/activate.bat) && \
+	make activate && \
 	daves-dev-tools uninstall-all\
 	 -e .\
      -e pyproject.toml\
@@ -18,11 +30,11 @@ clean:
 	daves-dev-tools clean
 
 distribute:
-	(. venv/bin/activate || venv/Scripts/activate.bat) && \
+	make activate && \
 	daves-dev-tools distribute --skip-existing
 
 upgrade:
-	(. venv/bin/activate || venv/Scripts/activate.bat) && \
+	make activate && \
 	daves-dev-tools requirements freeze\
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .unversioned_requirements.txt && \
@@ -32,7 +44,7 @@ upgrade:
 	make requirements
 
 requirements:
-	(. venv/bin/activate || venv/Scripts/activate.bat) && \
+	make activate && \
 	daves-dev-tools requirements update\
 	 -v\
 	 -aen all\
@@ -43,4 +55,4 @@ requirements:
 	 > requirements.txt
 
 test:
-	(. venv/bin/activate || venv/Scripts/activate.bat) && tox -r -p
+	make activate && tox -r -p
