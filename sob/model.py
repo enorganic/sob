@@ -1890,7 +1890,7 @@ class _Unmarshal:
             unmarshalled_data = self.after_hook(type_, unmarshalled_data)
         return unmarshalled_data
 
-    def get_array_type(self, type_: type) -> type:
+    def get_array_type(self, type_: type) -> Type[abc.Array]:
         if type_ is abc.Array:
             type_ = Array
         elif issubclass(type_, abc.Array):
@@ -1907,10 +1907,10 @@ class _Unmarshal:
         type_ = self.get_array_type(type_)
         if "item_types" in signature(type_).parameters:
             unmarshalled_data = type_(
-                self.data, item_types=self.item_types or None
+                self.data, item_types=self.item_types or None  # type: ignore
             )
         else:
-            unmarshalled_data = type_(self.data)
+            unmarshalled_data = type_(self.data)  # type: ignore
         return unmarshalled_data
 
     def as_type(
@@ -2873,7 +2873,7 @@ def from_meta(
     docstring: Optional[str] = None,
     pre_init_source: str = "",
     post_init_source: str = "",
-) -> type:
+) -> Type[abc.Model]:
     """
     Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
     instance of `sob.meta.Meta`.
