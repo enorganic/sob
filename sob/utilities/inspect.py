@@ -29,6 +29,10 @@ from .string import indent
 from .types import UNDEFINED, Undefined
 
 
+def _is_public(name: str) -> bool:
+    return not name.startswith("_")
+
+
 def properties_values(
     object_: object, include_private: bool = False
 ) -> Iterable[Tuple[str, Any]]:
@@ -37,11 +41,17 @@ def properties_values(
     properties, yielding a tuple comprised of each attribute/property name and
     value
     """
-    for attribute in dir(object_):
-        if include_private or attribute[0] != "_":
-            value = getattr(object_, attribute, lambda: None)
-            if not callable(value):
-                yield attribute, value
+    names: Iterable[str] = dir(object_)
+    if not include_private:
+        names = filter(_is_public, names)
+
+    def get_name_value(name: str) -> Optional[Tuple[str, str]]:
+        value: Any = getattr(object_, name, lambda: None)
+        if callable(value):
+            return None
+        return name, value
+
+    return filter(None, map(get_name_value, names))
 
 
 QUALIFIED_NAME_ARGUMENT_TYPES: Tuple[Any, ...] = (
