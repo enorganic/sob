@@ -134,9 +134,7 @@ def _get_module_name(file_name: str) -> str:
             if "[" in module_name:
                 module_name = "[".join(module_name.split("[")[:-1])
         else:
-            raise ValueError(
-                'The path "%s" is not a python module' % file_name
-            )
+            raise ValueError(f'The path "{file_name}" is not a python module')
     return module_name
 
 
@@ -288,25 +286,25 @@ def _repr_list(list_instance: list) -> str:
     """
     Returns a string representation of `list` argument values
     """
-    return "[\n%s\n]" % _repr_items(list_instance)
+    return f"[\n{_repr_items(list_instance)}\n]"
 
 
 def _repr_tuple(tuple_instance: tuple) -> str:
     """
     Returns a string representation of `tuple` argument values
     """
-    return "(\n{}\n)".format(
-        _repr_items(tuple_instance) + ("," if len(tuple_instance) == 1 else "")
-    )
+    comma: str = "," if len(tuple_instance) == 1 else ""
+    return f"(\n{_repr_items(tuple_instance)}{comma}\n)"
 
 
 def _repr_set(set_instance: set) -> str:
     """
     Returns a string representation of `set` argument values
     """
-    return "{\n%s\n}" % _repr_items(
-        sorted(set_instance, key=lambda item: repr(item))
+    items: str = _repr_items(
+        sorted(set_instance, key=lambda item: represent(item))
     )
+    return f"{{\n{items}\n}}"
 
 
 def represent(value: Any) -> str:
@@ -319,16 +317,20 @@ def represent(value: Any) -> str:
     else:
         value_type: type = type(value)
         if value_type is list:
-            assert isinstance(value, list)
             value_representation = _repr_list(value)
         elif value_type is tuple:
-            assert isinstance(value, tuple)
             value_representation = _repr_tuple(value)
         elif value_type is set:
-            assert isinstance(value, set)
             value_representation = _repr_set(value)
         else:
             value_representation = repr(value)
+            if (
+                value_type is str
+                and '"' not in value_representation
+                and value_representation.startswith("'")
+                and value_representation.endswith("'")
+            ):
+                value_representation = f'"{value_representation[1:-1]}"'
     return value_representation
 
 

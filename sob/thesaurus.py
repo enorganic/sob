@@ -6,6 +6,7 @@ import binascii
 import collections
 import collections.abc
 import functools
+from itertools import chain
 import os
 from base64 import b64decode
 from copy import copy, deepcopy
@@ -1103,37 +1104,33 @@ class Thesaurus:
         module_name: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
     ) -> str:
-        class_names_metadata: (
-            "abc.OrderedDict[str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]]"  # noqa
-        ) = collections.OrderedDict()
-        imports: List[str] = []
+        class_names_metadata: abc.OrderedDict[
+            str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
+        ] = collections.OrderedDict()
+        imports: Set[str] = set()
         classes: List[str] = []
         metadatas: List[str] = []
         model_class: type
         for model_class in self.get_models(module=module_name, name=name):
-            imports_str: str
-            import_line: str
-            source: str = get_source(model_class)
-            if "\n\n\n" not in source:
-                raise ValueError(source)
-            imports_str, source = source.split("\n\n\n")
-            for import_line in imports_str.split("\n"):
-                if import_line not in imports:
-                    imports.append(import_line)
-            classes.append(source)
+            class_imports: str
+            class_source: str = get_source(model_class)
+            if "\n\n\n" not in class_source:
+                raise ValueError(class_source)
+            class_imports, class_source = class_source.split("\n\n\n")
+            collections.deque(
+                map(imports.add, filter(None, class_imports.split("\n"))),
+                maxlen=0,
+            )
+            classes.append(class_source)
             meta_instance: Optional[abc.Meta] = meta.read(model_class)
             assert isinstance(
                 meta_instance,
                 (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
             )
             class_names_metadata[model_class.__name__] = meta_instance
-        for negative_index, class_name_metadata in enumerate(
-            class_names_metadata.items(), -(len(class_names_metadata) - 1)
-        ):
-            separator: str
-            class_name_: str
-            metadata: Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
-            class_name_, metadata = class_name_metadata
+        class_name_: str
+        metadata: Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
+        for class_name_, metadata in class_names_metadata.items():
             assert isinstance(
                 metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)
             )
@@ -1156,15 +1153,17 @@ class Thesaurus:
                     )
                 )
         return "\n".join(
-            sorted(
-                imports,
-                key=lambda line: (
-                    1 if line == f"import {_parent_module_name}" else 0
+            chain(
+                sorted(
+                    imports,
+                    key=lambda line: (
+                        1 if line == f"import {_parent_module_name}" else 0
+                    ),
                 ),
+                ("\n",),
+                classes,
+                metadatas,
             )
-            + ["\n"]
-            + classes
-            + metadatas
         )
 
     def get_module_source(

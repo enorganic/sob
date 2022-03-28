@@ -603,7 +603,7 @@ class Dictionary(Property, abc.DictionaryProperty):
     def __init__(
         self,
         value_types: Optional[
-            Union[type, Sequence[Union[type, Property]], Undefined]
+            Union[type, Sequence[Union[type, Property]], Undefined, abc.Types]
         ] = UNDEFINED,
         name: Optional[str] = None,
         required: bool = False,
