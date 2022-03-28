@@ -1,5 +1,5 @@
 attrs==21.4.0
-black==22.1.0
+black==21.12b0
 bleach==4.1.0
 certifi==2021.10.8
 charset-normalizer==2.0.12
