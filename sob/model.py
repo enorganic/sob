@@ -2626,10 +2626,10 @@ def _type_hint_from_property(
         )
         if item_type_hint:
             type_hint = (
-                f"typing.Iterable[\n    {indent_(item_type_hint)}\n" "]"
+                f"typing.Sequence[\n    {indent_(item_type_hint)}\n" "]"
             )
         else:
-            type_hint = "typing.Iterable"
+            type_hint = "typing.Sequence"
     elif isinstance(property_or_type, abc.DictionaryProperty):
         value_type_hint: str = _type_hint_from_property_types(
             property_or_type.value_types, module
