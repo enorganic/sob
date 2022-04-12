@@ -424,13 +424,14 @@ def split_long_docstring_lines(
         docstring = docstring.replace("\t", indent_)
     lines: List[str] = docstring.split("\n")
     indentation_length: int = sys.maxsize
-    for line in filter(lambda line: line, lines):
+    for line in filter(None, lines):
         matched = re.match(r"^[ ]+", line)
         if matched:
             indentation_length = min(indentation_length, len(matched.group()))
         else:
             indentation_length = 0
             break
+    indent_ = " " * indentation_length
     if indentation_length < sys.maxsize:
         wrapped_lines: List[str] = []
         for line in lines:
