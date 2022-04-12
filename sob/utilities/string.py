@@ -431,7 +431,7 @@ def split_long_docstring_lines(
         else:
             indentation_length = 0
             break
-    indent_ = " " * indentation_length
+    indent_ = " " * (indentation_length or 4)
     if indentation_length < sys.maxsize:
         wrapped_lines: List[str] = []
         for line in lines:
