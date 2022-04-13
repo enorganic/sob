@@ -1938,11 +1938,13 @@ class _Unmarshal:
 
     def represent_function_call(self) -> str:
         return (
-            "unmarshal(\n"
-            f"   data={indent_(repr(self.data))},"
-            f"   types={indent_(repr(self.types))},"
-            f"   value_types={indent_(repr(self.value_types))},"
-            f"   item_types={indent_(repr(self.item_types))},"
+            "sob.model.unmarshal(\n"
+            f"    data={indent_(utilities.inspect.represent(self.data))},\n"
+            f"    types={indent_(utilities.inspect.represent(self.types))},\n"
+            "    value_types="
+            f"{indent_(utilities.inspect.represent(self.value_types))},\n"
+            "    item_types="
+            f"{indent_(utilities.inspect.represent(self.item_types))},\n"
             ")"
         )
 

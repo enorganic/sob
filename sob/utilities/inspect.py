@@ -16,8 +16,6 @@ from typing import (
     Iterable,
     List,
     Optional,
-    Sequence,
-    Set,
     Tuple,
     Union,
 )
@@ -271,10 +269,10 @@ def parameters_defaults(function: Callable[..., Any]) -> Dict[str, Any]:
     return defaults
 
 
-def _repr_items(items: Union[Sequence, Set]) -> str:
+def _repr_items(items: Iterable) -> str:
     """
-    Returns a string representation of the items in a `list`, `tuple`, or
-    `set`.
+    Returns a string representation of the items in a `list`, `tuple`,
+    `set`, or `collections.OrderedDict().items()`.
     """
     lines: List[str] = []
     for item in items:
@@ -282,34 +280,86 @@ def _repr_items(items: Union[Sequence, Set]) -> str:
     return ",\n".join(lines)
 
 
+def _repr_dict_items(items: Iterable[Tuple[Any, Any]]) -> str:
+    """
+    Returns a string representation of dictionary items.
+    """
+    key: Any
+    value: Any
+    lines: List[str] = []
+    for key, value in items:
+        lines.append(
+            f"{indent(represent(key), start=0)}: {indent(represent(value))}"
+        )
+    return ",\n".join(lines)
+
+
 def _repr_list(list_instance: list) -> str:
     """
     Returns a string representation of `list` argument values
     """
-    return f"[\n{_repr_items(list_instance)}\n]"
+    if list_instance:
+        return f"[\n{_repr_items(list_instance)}\n]"
+    else:
+        return "[]"
 
 
 def _repr_tuple(tuple_instance: tuple) -> str:
     """
     Returns a string representation of `tuple` argument values
     """
-    comma: str = "," if len(tuple_instance) == 1 else ""
-    return f"(\n{_repr_items(tuple_instance)}{comma}\n)"
+    if tuple_instance:
+        comma: str = "," if len(tuple_instance) == 1 else ""
+        return f"(\n{_repr_items(tuple_instance)}{comma}\n)"
+    else:
+        return "()"
 
 
 def _repr_set(set_instance: set) -> str:
     """
     Returns a string representation of `set` argument values
     """
-    items: str = _repr_items(
-        sorted(set_instance, key=lambda item: represent(item))
-    )
-    return f"{{\n{items}\n}}"
+    if set_instance:
+        items: str = _repr_items(
+            sorted(set_instance, key=lambda item: represent(item))
+        )
+        return f"{{\n{items}\n}}"
+    else:
+        return "set()"
+
+
+def _repr_dict(dict_instance: dict) -> str:
+    """
+    Returns a string representation of `dict` argument values
+    """
+    items: Tuple[Tuple[Any, Any], ...] = tuple(dict_instance.items())
+    if items:
+        return f"{{\n{_repr_dict_items(items)}\n}}"
+    else:
+        return "{}"
+
+
+def _repr_ordered_dict(ordered_dict_instance: collections.OrderedDict) -> str:
+    """
+    Returns a string representation of `collections.OrderedDict` argument
+    values
+    """
+    items: Tuple[Tuple[Any, Any], ...] = tuple(ordered_dict_instance.items())
+    if items:
+        return f"collections.OrderedDict([\n{_repr_items(items)}\n])"
+    else:
+        return "collections.OrderedDict()"
 
 
 def represent(value: Any) -> str:
     """
-    Returns a string representation of a value.
+    Returns a string representation of a value, formatted to minimize
+    character width, and utilizing fully qualified class/function names
+    (including module) where applicable.
+
+    Parameters:
+
+    - value
     """
     value_representation: str
     if isinstance(value, type):
@@ -322,6 +372,10 @@ def represent(value: Any) -> str:
             value_representation = _repr_tuple(value)
         elif value_type is set:
             value_representation = _repr_set(value)
+        elif value_type is dict:
+            value_representation = _repr_dict(value)
+        elif value_type is collections.OrderedDict:
+            value_representation = _repr_ordered_dict(value)
         else:
             value_representation = repr(value)
             if (
