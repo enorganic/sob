@@ -2085,7 +2085,8 @@ def deserialize(
             # Append the data which couldn't be deserialized to the exception
             append_exception_text(
                 error,
-                "\nErrors occurred while attempting to deserialize:\n" f"{data}",
+                "\nErrors occurred while attempting to deserialize:\n"
+                f"{data}",
             )
             raise error
     elif isinstance(data, bytes):

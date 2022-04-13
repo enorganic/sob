@@ -245,25 +245,45 @@ class Property(abc.Property):
         else:
             return "".join(lines)
 
-    def __copy__(self) -> abc.Property:
+    def _copy(self, deep: bool, memo: Optional[dict] = None) -> abc.Property:
         new_instance = self.__class__()
         attribute_name: str
         for attribute_name in dir(self):
-            if attribute_name[0] != "_" and attribute_name != "data":
+            if attribute_name in (
+                "_types",
+                "_date2str",
+                "_str2date",
+                "_datetime2str",
+                "_str2datetime",
+            ):
+                setattr(
+                    new_instance, attribute_name, getattr(self, attribute_name)
+                )
+            elif not (
+                attribute_name.startswith("_")
+                or (
+                    attribute_name
+                    in (
+                        "types",
+                        "date2str",
+                        "str2date",
+                        "datetime2str",
+                        "str2datetime",
+                    )
+                )
+            ):
                 value = getattr(self, attribute_name)
+                if deep:
+                    value = deepcopy(value, memo=memo)
                 if not callable(value):
                     setattr(new_instance, attribute_name, value)
         return new_instance
 
+    def __copy__(self) -> abc.Property:
+        return self._copy(deep=False)
+
     def __deepcopy__(self, memo: dict) -> abc.Property:
-        new_instance: abc.Property = self.__class__()
-        attribute: str
-        value: Any
-        types_is_mutable: bool = bool(type(self)._types is None)
-        for attribute, value in properties_values(self):
-            if attribute != "types" or types_is_mutable:
-                setattr(new_instance, attribute, deepcopy(value, memo=memo))
-        return new_instance
+        return self._copy(deep=True, memo=memo or {})
 
 
 class String(Property, abc.String):
