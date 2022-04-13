@@ -2085,7 +2085,7 @@ def deserialize(
             # Append the data which couldn't be deserialized to the exception
             append_exception_text(
                 error,
-                "Errors occurred while attempting to deserialize:\n" f"{data}",
+                "\nErrors occurred while attempting to deserialize:\n" f"{data}",
             )
             raise error
     elif isinstance(data, bytes):
@@ -2355,9 +2355,9 @@ class _UnmarshalProperty:
 
     def represent_function_call(self, value: abc.MarshallableTypes) -> str:
         return (
-            "_unmarshal_property_value(\n"
-            f"   {indent_(repr(self.property))},"
-            f"   {indent_(repr(value))},"
+            "sob.model._unmarshal_property_value(\n"
+            f"    {indent_(utilities.inspect.represent(self.property))},\n"
+            f"    {indent_(utilities.inspect.represent(value))}\n"
             ")"
         )
 
@@ -2408,7 +2408,7 @@ class _UnmarshalProperty:
             append_exception_text(
                 error,
                 (
-                    "An error was encountered during execution of:\n"
+                    "\nAn error was encountered during execution of:\n"
                     f"{self.represent_function_call(value)}"
                 ),
             )
