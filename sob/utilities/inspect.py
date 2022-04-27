@@ -107,13 +107,16 @@ def calling_functions_qualified_names(depth: int = 1) -> List[str]:
     sob.utilities.inspect.calling_functions_qualified_names.my_function_a
     """
     depth += 1
-    name = calling_function_qualified_name(depth=depth)
+    name: str = calling_function_qualified_name(depth=depth) or ""
     names: List[str] = []
     while name:
         if name and not (names and names[0] == name):
             names.insert(0, name)
         depth += 1
-        name = calling_function_qualified_name(depth=depth)
+        try:
+            name = calling_function_qualified_name(depth=depth) or ""
+        except ValueError:
+            name = ""
     return names
 
 
@@ -194,7 +197,6 @@ def calling_module_name(depth: int = 1) -> str:
     return name
 
 
-# noinspection PyUnresolvedReferences
 def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     """
     Return the fully qualified name of the function from within which this is

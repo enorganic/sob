@@ -29,6 +29,12 @@ def property_name(string: str) -> str:
     >>> print(property_name('theBirdsAndTheBees'))
     the_birds_and_the_bees
 
+    >>> print(property_name('theBirdsAndTheBEEs'))
+    the_birds_and_the_bees
+
+    >>> print(property_name('theBirdsAndTheBEEsEs'))
+    the_birds_and_the_be_es_es
+
     >>> print(property_name('FYIThisIsAnAcronym'))
     fyi_this_is_an_acronym
 
@@ -57,8 +63,10 @@ def property_name(string: str) -> str:
     name = re.sub(r"([a-z])([A-Z])", r"\1_\2", name)
     # Insert underscores between uppercase characters and following uppercase
     # characters which are followed by lowercase characters (indicating the
-    # latter uppercase character was intended as part of a capitalized word
-    name = re.sub(r"([A-Z])([A-Z])([a-z])", r"\1_\2\3", name)
+    # latter uppercase character was intended as part of a capitalized word),
+    # except where the trailing lowercase character is a solo lowercase "s"
+    # (pluralizing the acronym).
+    name = re.sub(r"([A-Z])([A-Z])([a-rt-z]|s(?!\b))", r"\1_\2\3", name)
     # Replace any series of one or more non-alphanumeric characters remaining
     # with a single underscore
     name = re.sub(r"[^\w_]+", "_", name).lower()
