@@ -52,6 +52,9 @@ def property_name(string: str) -> str:
 
     >>> print(property_name('@One2One'))
     one_2_one
+
+    >>> print(property_name('One2One-ALL'))
+    one2one_all
     """
     name: str = string
     # Replace accented and otherwise modified latin characters with their
@@ -71,8 +74,12 @@ def property_name(string: str) -> str:
     # with a single underscore
     name = re.sub(r"[^\w_]+", "_", name).lower()
     # Only insert underscores between letters and numbers if camelCasing is
-    # found in the original string
-    if string != string.lower() and string != string.upper():
+    # found in the original string *and* no other separators are present
+    if (
+        string != string.lower()
+        and string != string.upper()
+        and not re.search(r"[A-Za-z0-9][^A-Za-z0-9][A-Za-z0-9]", name)
+    ):
         name = re.sub(r"([0-9])([a-zA-Z])", r"\1_\2", name)
         name = re.sub(r"([a-zA-Z])([0-9])", r"\1_\2", name)
     # Replace any two or more adjacent underscores with a single underscore
