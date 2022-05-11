@@ -54,6 +54,9 @@ def property_name(string: str) -> str:
     one_2_one
 
     >>> print(property_name('One2One-ALL'))
+    one_2_one_all
+
+    >>> print(property_name('one2one-ALL'))
     one2one_all
     """
     name: str = string
@@ -62,6 +65,11 @@ def property_name(string: str) -> str:
     name = normalize("NFKD", name)
     # Replace any remaining non-latin characters with underscores
     name = re.sub(r"([^\x20-\x7F]|\s)+", "_", name)
+    # Only insert underscores between letters and numbers if camelCasing is
+    # found in the original string
+    if re.search(r"[A-Z][a-z]", name) or re.search(r"[a-z][A-Z]", name):
+        name = re.sub(r"([0-9])([a-zA-Z])", r"\1_\2", name)
+        name = re.sub(r"([a-zA-Z])([0-9])", r"\1_\2", name)
     # Insert underscores between lowercase and uppercase characters
     name = re.sub(r"([a-z])([A-Z])", r"\1_\2", name)
     # Insert underscores between uppercase characters and following uppercase
@@ -73,15 +81,6 @@ def property_name(string: str) -> str:
     # Replace any series of one or more non-alphanumeric characters remaining
     # with a single underscore
     name = re.sub(r"[^\w_]+", "_", name).lower()
-    # Only insert underscores between letters and numbers if camelCasing is
-    # found in the original string *and* no other separators are present
-    if (
-        string != string.lower()
-        and string != string.upper()
-        and not re.search(r"[A-Za-z0-9][^A-Za-z0-9][A-Za-z0-9]", name)
-    ):
-        name = re.sub(r"([0-9])([a-zA-Z])", r"\1_\2", name)
-        name = re.sub(r"([a-zA-Z])([0-9])", r"\1_\2", name)
     # Replace any two or more adjacent underscores with a single underscore
     name = re.sub(r"__+", "_", name)
     # Append an underscore to the keyword until it does not conflict with any
