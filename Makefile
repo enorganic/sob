@@ -33,7 +33,7 @@ upgrade:
 	 -nv '*' . pyproject.toml tox.ini \
 	 > .unversioned_requirements.txt && \
 	python3 -m pip install --upgrade --upgrade-strategy eager\
-	 -r .unversioned_requirements.txt -e '.[all]' && \
+	 -r .unversioned_requirements.txt -e . && \
 	rm .unversioned_requirements.txt && \
 	make requirements
 
