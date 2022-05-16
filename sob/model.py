@@ -1442,7 +1442,6 @@ class Object(Model, abc.Object):
         property_: abc.Property,
         value: abc.MarshallableTypes,
     ) -> Iterable[str]:
-        error_messages: List[str] = []
         if value is None:
             if property_.required:
                 yield (
@@ -1451,7 +1450,7 @@ class Object(Model, abc.Object):
                 )
         elif value is NULL:
             if (property_.types is not None) and (Null not in property_.types):
-                error_messages.append(
+                yield (
                     "Null values are not allowed in `{}.{}`, "
                     "permitted types include: {}.".format(
                         qualified_name(type(self)),
