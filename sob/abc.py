@@ -354,7 +354,7 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
 class Readable(metaclass=ABCMeta):
     """
     A generic ABC for IO-like objects which are readable but not
-    necessarily writable.=
+    necessarily writable.
     """
 
     register: Callable[[type], None]
