@@ -1,4 +1,6 @@
 import collections
+import builtins
+import sys
 from inspect import (
     FrameInfo,
     Parameter,
@@ -19,10 +21,6 @@ from typing import (
     Tuple,
     Union,
 )
-
-import builtins
-import sys
-
 from .string import indent
 from .types import UNDEFINED, Undefined
 
@@ -74,15 +72,29 @@ def qualified_name(type_or_module: Union[type, Callable, ModuleType]) -> str:
     if isinstance(type_or_module, ModuleType):
         type_name = type_or_module.__name__
     else:
-        type_name = ".".join(
-            name_part
-            for name_part in getattr(
-                type_or_module,
-                "__qualname__",
-                getattr(type_or_module, "__name__"),
-            ).split(".")
-            if name_part[0] != "<"
+        type_name = getattr(
+            type_or_module,
+            "__qualname__",
+            getattr(type_or_module, "__name__", ""),
         )
+        if "<" in type_name:
+            name_part: str
+            type_name = ".".join(
+                filter(
+                    lambda name_part: not name_part.startswith("<"),
+                    type_name.split("."),
+                )
+            )
+        if (not type_name) and hasattr(type_or_module, "__origin__"):
+            # If this is a generic alias, we can use `repr`
+            # to get the qualified type name
+            type_name = repr(type_or_module)
+        if not type_name:
+            raise TypeError(
+                "A qualified type name could not be inferred for "
+                f"`{repr(type_or_module)}` "
+                f"(an instance of {type(type_or_module).__name__})"
+            )
         if type_or_module.__module__ not in (
             "builtins",
             "__builtin__",
