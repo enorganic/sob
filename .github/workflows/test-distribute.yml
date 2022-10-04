@@ -2,7 +2,7 @@ name: test-distribute
 on:
   push:
     branches:
-    - master
+    - main
   pull_request:
     branches:
     - '*'
@@ -16,7 +16,6 @@ jobs:
         - windows-latest
         - macos-latest
         python:
-        - 3.6
         - 3.7
         - 3.8
         - 3.9
@@ -28,11 +27,11 @@ jobs:
       with:
         python-version: ${{ matrix.python }}
     - name: install
-      run: make
+      run: make ci-install
     - name: test
       run: make test
   distribute:
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main'
     needs:
       - test
     runs-on: ubuntu-latest
@@ -43,7 +42,7 @@ jobs:
       with:
         python-version: '3.x'
     - name: install
-      run: make
+      run: make ci-install
     - name: distribute
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}

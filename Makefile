@@ -1,13 +1,22 @@
-# python 3.6 is used, for the time being, in order to ensure compatibility
 install:
-	{ python3.6 -m venv venv || python3 -m venv venv || \
-	py -3.6 -m venv venv || py -3 -m venv venv ; } && \
+	{ rm -R venv || echo "" ; } && \
+	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	python3 -m pip install --upgrade pip && \
-	python3 -m pip install\
+	pip install --upgrade pip wheel && \
+	pip install\
 	 -r requirements.txt\
 	 -e . && \
-	mypy --install-types --non-interactive ;
+	{ mypy --install-types --non-interactive || echo "" ; } && \
+	echo "Installation Successful!"
+
+ci-install:
+	{ python3 -m venv venv || py -3 -m venv venv ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	pip install --upgrade pip wheel && \
+	pip install\
+	 -r requirements.txt\
+	 -e . && \
+	echo "Installation Successful!"
 
 editable:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
@@ -30,11 +39,11 @@ distribute:
 upgrade:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools requirements freeze\
-	 -nv '*' . pyproject.toml tox.ini \
-	 > .unversioned_requirements.txt && \
-	python3 -m pip install --upgrade --upgrade-strategy eager\
-	 -r .unversioned_requirements.txt -e . && \
-	rm .unversioned_requirements.txt && \
+	 -nv '*' . pyproject.toml tox.ini daves-dev-tools \
+	 > .requirements.txt && \
+	pip install --upgrade --upgrade-strategy eager\
+	 -r .requirements.txt -e . && \
+	rm .requirements.txt && \
 	make requirements
 
 requirements:
