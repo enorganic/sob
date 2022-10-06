@@ -11,6 +11,7 @@ import os
 from base64 import b64decode
 from copy import copy, deepcopy
 from datetime import date, datetime
+import re
 from types import ModuleType
 from typing import (
     Any,
@@ -680,7 +681,14 @@ class Synonyms:
                     "item", item, (Mapping, abc.Dictionary)
                 )
             value: abc.MarshallableTypes
-            for key, value in item.items():
+            item_: Tuple[str, Any]
+            for key, value in sorted(
+                item.items(),
+                key=lambda item_: (
+                    (1 if re.match(r"^[^A-Za-z0-9]", item_[0]) else 0),
+                    item_[0],
+                ),
+            ):
                 if key not in keys_values:
                     keys_values[key] = []
                 keys_values[key].append(value)
@@ -716,8 +724,12 @@ class Synonyms:
         key: str
         property_name_: str
         values: List[abc.MarshallableTypes]
+        visited_property_names: Set[str] = set()
         for key, values in self._get_property_names_values().items():
             property_name_ = property_name(key)
+            while property_name_ in visited_property_names:
+                property_name_ = f"{property_name_}_"
+            visited_property_names.add(property_name_)
             item_type: Optional[type] = None
             is_model: bool = False
             property_synonyms: Synonyms = type(self)(values)

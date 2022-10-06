@@ -42,7 +42,7 @@ upgrade:
 	 -nv '*' . pyproject.toml tox.ini daves-dev-tools \
 	 > .requirements.txt && \
 	pip install --upgrade --upgrade-strategy eager\
-	 -r .requirements.txt -e . && \
+	 -r .requirements.txt && \
 	rm .requirements.txt && \
 	make requirements
 
