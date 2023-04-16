@@ -12,8 +12,8 @@ install:
 ci-install:
 	{ python3 -m venv venv || py -3 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	pip install --upgrade pip wheel && \
-	pip install\
+	{ python3 -m pip install --upgrade pip || echo "" ; } && \
+	python3 -m pip install\
 	 -r requirements.txt\
 	 -e . && \
 	echo "Installation Successful!"
