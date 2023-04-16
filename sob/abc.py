@@ -87,7 +87,6 @@ def _check_methods(class_: type, methods: Iterable[str]) -> Optional[bool]:
 
 
 class Types(metaclass=ABCMeta):
-
     # noinspection PyUnusedLocal,PyMissingConstructor
     @abstractmethod
     def __init__(
@@ -107,7 +106,7 @@ class Types(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __deepcopy__(self, memo: dict = None) -> "Types":
+    def __deepcopy__(self, memo: Optional[dict] = None) -> "Types":
         pass
 
     @abstractmethod
@@ -124,6 +123,7 @@ class Types(metaclass=ABCMeta):
     ) -> bool:
         pass
 
+    @abstractmethod
     def __getitem__(self, index: int) -> Union[type, "Property"]:
         pass
 
@@ -198,7 +198,7 @@ class Hooks(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __deepcopy__(self, memo: dict = None) -> "Hooks":
+    def __deepcopy__(self, memo: Optional[dict] = None) -> "Hooks":
         pass
 
     @abstractmethod
@@ -386,14 +386,15 @@ class Readable(metaclass=ABCMeta):
         pass
 
     @classmethod
-    def __subclasshook__(cls, subclass: type) -> Optional[bool]:
+    def __subclasshook__(  # type: ignore
+        cls, subclass: type
+    ) -> Optional[bool]:
         if cls is Readable:
             return _check_methods(subclass, ("read",))
         return NotImplemented
 
 
 class Meta(metaclass=ABCMeta):
-
     pass
 
 
@@ -497,7 +498,6 @@ class ArrayMeta(Meta, metaclass=ABCMeta):
 
 
 class Properties(Meta, metaclass=ABCMeta):
-
     # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
@@ -532,7 +532,7 @@ class Properties(Meta, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __deepcopy__(self, memo: dict = None) -> "Properties":
+    def __deepcopy__(self, memo: Optional[dict] = None) -> "Properties":
         pass
 
     @abstractmethod
@@ -601,7 +601,6 @@ class Properties(Meta, metaclass=ABCMeta):
 
 
 class Model(metaclass=ABCMeta):
-
     _format: Optional[str]
     _meta: Optional[Meta]
     _hooks: Optional[Hooks]
@@ -655,7 +654,6 @@ class Model(metaclass=ABCMeta):
 
 
 class Dictionary(Model, metaclass=ABCMeta):
-
     _meta: Optional[DictionaryMeta]
 
     @abstractmethod
@@ -677,7 +675,7 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
+    def _marshal(self) -> "OrderedDict[str, JSONTypes]":
         pass
 
     @abstractmethod
@@ -751,6 +749,10 @@ class Dictionary(Model, metaclass=ABCMeta):
     def values(self) -> ValuesView[Any]:
         pass
 
+    @abstractmethod
+    def __reversed__(self) -> Iterator[str]:
+        pass
+
 
 class Object(Model, metaclass=ABCMeta):
     """
@@ -776,7 +778,7 @@ class Object(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
+    def _marshal(self) -> "OrderedDict[str, JSONTypes]":
         pass
 
     @abstractmethod
@@ -838,19 +840,15 @@ class Object(Model, metaclass=ABCMeta):
     ) -> Iterable[str]:
         pass
 
-    def __reversed__(self) -> Iterator[str]:
-        pass
-
 
 class Array(Model, metaclass=ABCMeta):
-
     _meta: Optional[ArrayMeta]
 
     @abstractmethod
     def __init__(
         self,
         items: Union[
-            "Array", Iterable["MarshallableTypes"], str, bytes, Readable
+            "Array", Iterable["MarshallableTypes"], str, bytes, Readable, None
         ] = None,
         item_types: Union[
             Iterable[Union[type, "Property"]],
@@ -965,7 +963,7 @@ class Property(metaclass=ABCMeta):
     @abstractmethod
     def __init__(
         self,
-        types: Iterable[Union[type, "Property"]] = None,
+        types: Optional[Iterable[Union[type, "Property"]]] = None,
         name: Optional[str] = None,
         required: Union[bool, Callable] = False,
         versions: Optional[Iterable[Union[str, "Version"]]] = None,
@@ -1058,17 +1056,14 @@ class Enumerated(Property, metaclass=ABCMeta):
 
 
 class Number(Property, metaclass=ABCMeta):
-
     pass
 
 
 class Integer(Property, metaclass=ABCMeta):
-
     pass
 
 
 class Boolean(Property, metaclass=ABCMeta):
-
     pass
 
 
@@ -1112,7 +1107,6 @@ class DictionaryProperty(Property, metaclass=ABCMeta):
 
 
 class Version(metaclass=ABCMeta):
-
     specification: Optional[str]
     equals: Optional[Sequence[Union[str, float, int, Decimal]]]
     not_equals: Optional[Sequence[Union[str, float, int, Decimal]]]

@@ -4,6 +4,7 @@ This module defines classes for describing properties of a model.
 
 import collections
 import collections.abc
+from iso8601.iso8601 import parse_date
 from copy import deepcopy
 from datetime import date, datetime
 from typing import (
@@ -19,10 +20,7 @@ from typing import (
     Callable,
 )
 from decimal import Decimal
-
-from iso8601 import parse_date  # type: ignore
 from itertools import chain
-
 from . import abc
 from .types import Types, MutableTypes
 from .utilities import (
@@ -309,6 +307,7 @@ class String(Property, abc.String):
 
 
 def _date2str(value: date) -> str:
+    assert isinstance(value, date)
     return value.isoformat()
 
 
@@ -320,12 +319,12 @@ class Date(Property, abc.Date):
 
         - date2str (collections.Callable): A function, taking one argument (a
           python `date` json_object), and returning a date string in the
-          desired format. The default is `date.isoformat`--returning an
-          iso8601 compliant date string.
+          desired format. The default is `datetime.date.isoformat`--returning
+          an ISO-8601 compliant date string.
 
         - str2date (collections.Callable): A function, taking one argument (a
           date string), and returning a python `date` object. By default,
-          this is `iso8601.parse_date`.
+          this is `iso8601.iso8601.parse_date`.
     """
 
     _types: Optional[abc.Types] = Types((date,))
@@ -338,7 +337,7 @@ class Date(Property, abc.Date):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         date2str: Callable[[date], str] = _date2str,
-        str2date: Callable[[str], date] = parse_date,
+        str2date: Callable[[str], date] = date.fromisoformat,
     ) -> None:
         super().__init__(
             name=name,
@@ -367,11 +366,11 @@ class DateTime(Property, abc.DateTime):
 
     - datetime2str (collections.Callable): A function, taking one argument
       (a python `datetime` json_object), and returning a date-time string
-      in the desired format. The default is `datetime.isoformat`--returning
-      an iso8601 compliant date-time string.
+      in the desired format. The default is `datetime.datetime.isoformat`,
+      returning an ISO-8601 compliant date/time string.
     - str2datetime (collections.Callable): A function, taking one argument
-      (a datetime string), and returning a python `datetime` json_object.
-      By default, this is `iso8601.parse_date`.
+      (a datetime string), and returning a python `datetime.datetime` object.
+      By default, this is `iso8601.iso8601.parse_date`.
     """
 
     _types: abc.Types = Types((datetime,))  # type: ignore

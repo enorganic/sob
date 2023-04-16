@@ -71,7 +71,7 @@ class Meta(abc.Meta):
         assert isinstance(new_instance, abc.Meta)  # to appease `mypy`
         return new_instance
 
-    def __deepcopy__(self, memo: dict = None) -> abc.Meta:
+    def __deepcopy__(self, memo: Optional[dict] = None) -> abc.Meta:
         new_instance: Meta = self.__class__()
         for a, v in properties_values(self):
             # noinspection PyArgumentList
@@ -253,7 +253,7 @@ class Properties(abc.Properties):
         return new_instance
 
     # noinspection PyArgumentList
-    def __deepcopy__(self, memo: dict = None) -> abc.Properties:
+    def __deepcopy__(self, memo: Optional[dict] = None) -> abc.Properties:
         key: str
         value: abc.Property
         new_instance: Properties = self.__class__(

@@ -27,12 +27,10 @@ __all__: List[str] = [
 
 
 class ValidationError(Exception):
-
     pass
 
 
 class VersionError(AttributeError):
-
     pass
 
 
@@ -170,12 +168,10 @@ class UnmarshalError(Exception):
 
 
 class UnmarshalTypeError(UnmarshalError, TypeError):
-
     pass
 
 
 class UnmarshalValueError(UnmarshalError, ValueError):
-
     pass
 
 
@@ -188,7 +184,6 @@ class UnmarshalKeyError(KeyError):
 
 
 class ObjectDiscrepancyError(AssertionError):
-
     pass
 
 
@@ -207,17 +202,14 @@ def append_exception_text(error: Exception, message: str) -> None:
     Cause `message` to be appended to an error's exception text.
     """
     last_attribute_name: str
-    repr_last_attribute_value: str
-    for last_attribute_name in ("strerror", "msg"):
+    for last_attribute_name in ("errmsg", "strerror", "msg"):
         last_attribute_value = getattr(error, last_attribute_name, "")
         if last_attribute_value:
             setattr(
                 error, last_attribute_name, f"{last_attribute_value}{message}"
             )
-            break
     if not last_attribute_value:
         index: int
-        arg: Any
         reversed_args: List[Any] = list(reversed(error.args)) or [""]
         for index, value in enumerate(reversed_args):
             if isinstance(value, str):

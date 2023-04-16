@@ -75,7 +75,6 @@ def _undefined() -> Undefined:
 
 
 class NoneType(metaclass=ABCMeta):
-
     pass
 
 
@@ -84,7 +83,6 @@ NoneType.register(type(None))
 
 
 class DefinitionExistsError(Exception):
-
     pass
 
 

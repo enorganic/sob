@@ -1,15 +1,13 @@
 import functools
 import os
 import re
+from iso8601.iso8601 import parse_date
 from base64 import b64encode
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Dict, Iterable, Optional, Reversible, Union, IO
-
-from iso8601 import iso8601  # type: ignore
-
 from sob import abc, meta, model, properties, test, utilities
 from sob.request import MultipartRequest, Part
 from sob.utilities.assertion import assert_equals
@@ -309,8 +307,8 @@ a = A(
     beta=2,
     gamma=3,
     delta=1,
-    iso8601_datetime=iso8601.parse_date("2016-03-28T23:33:41.3116627-0500"),
-    iso8601_date=iso8601.parse_date("2016-03-28"),
+    iso8601_datetime=parse_date("2016-03-28T23:33:41.3116627-0500"),
+    iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
 b = B(
@@ -322,8 +320,8 @@ b = B(
     beta="B",
     gamma="B",
     delta="C",
-    iso8601_datetime=iso8601.parse_date("2016-03-28T23:33:41.3116627-0500"),
-    iso8601_date=iso8601.parse_date("2016-03-28"),
+    iso8601_datetime=parse_date("2016-03-28T23:33:41.3116627-0500"),
+    iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
 c = C(
@@ -334,8 +332,8 @@ c = C(
     beta=False,
     gamma=True,
     delta=False,
-    iso8601_datetime=iso8601.parse_date("2001-10-26T21:32:52+02:00"),
-    iso8601_date=iso8601.parse_date("2001-10-26"),
+    iso8601_datetime=parse_date("2001-10-26T21:32:52+02:00"),
+    iso8601_date=date.fromisoformat("2001-10-26"),
 )
 
 testy = Tesstee(
@@ -555,7 +553,6 @@ def test_utilities():
     )
 
     class TestCallingFunctionQualifiedNameA:
-
         __module__ = "sob.test"
 
         def __init__(self):

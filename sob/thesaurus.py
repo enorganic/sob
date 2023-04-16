@@ -6,8 +6,9 @@ import binascii
 import collections
 import collections.abc
 import functools
-from itertools import chain
 import os
+from iso8601.iso8601 import parse_date, ParseError
+from itertools import chain
 from base64 import b64decode
 from copy import copy, deepcopy
 from datetime import date, datetime
@@ -32,9 +33,6 @@ from typing import (
     ValuesView,
 )
 from urllib.parse import quote_plus
-
-from iso8601 import ParseError, parse_date  # type: ignore
-
 from . import __name__ as _parent_module_name, abc, meta
 from .abc import MARSHALLABLE_TYPES
 from .errors import IsInstanceAssertionError
@@ -1080,8 +1078,8 @@ class Thesaurus:
     def __copy__(self) -> "Thesaurus":
         return self.__class__(copy(self._dict))
 
-    def __reversed__(self) -> Iterator[str]:
-        return reversed(self._dict)
+    def __reversed__(self) -> "Thesaurus":
+        return self.__class__(reversed(self._dict.items()))
 
     def __deepcopy__(self, memo: Optional[dict] = None) -> "Thesaurus":
         return self.__class__(deepcopy(self._dict, memo=memo))

@@ -37,7 +37,7 @@ class Hooks(abc.Hooks):
     def __copy__(self) -> "Hooks":
         return self.__class__(**vars(self))
 
-    def __deepcopy__(self, memo: dict = None) -> "Hooks":
+    def __deepcopy__(self, memo: Optional[dict] = None) -> "Hooks":
         return self.__class__(
             **{
                 key: deepcopy(value, memo=memo)

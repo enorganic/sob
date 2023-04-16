@@ -3,9 +3,27 @@ on:
   push:
     branches:
     - main
+    paths:
+    - sob/**
+    - pyproject.toml
+    - setup.py
+    - setup.cfg
+    - tests/**
+    - requirements.txt
+    - tox.ini
+    - .github/**
   pull_request:
     branches:
     - '*'
+    paths:
+    - sob/**
+    - pyproject.toml
+    - setup.py
+    - setup.cfg
+    - tests/**
+    - requirements.txt
+    - tox.ini
+    - .github/**
 jobs:
   test:
     runs-on: ${{ matrix.os }}
