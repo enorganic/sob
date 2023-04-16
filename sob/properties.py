@@ -4,6 +4,7 @@ This module defines classes for describing properties of a model.
 
 import collections
 import collections.abc
+from iso8601.iso8601 import parse_date
 from copy import deepcopy
 from datetime import date, datetime
 from typing import (
@@ -322,7 +323,7 @@ class Date(Property, abc.Date):
 
         - str2date (collections.Callable): A function, taking one argument (a
           date string), and returning a python `date` object. By default,
-          this is `datetime.date.fromisoformat`.
+          this is `iso8601.iso8601.parse_date`.
     """
 
     _types: Optional[abc.Types] = Types((date,))
@@ -335,7 +336,7 @@ class Date(Property, abc.Date):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         date2str: Callable[[date], str] = _date2str,
-        str2date: Callable[[str], date] = date.fromisoformat,
+        str2date: Callable[[str], date] = parse_date,
     ) -> None:
         super().__init__(
             name=name,
@@ -368,7 +369,7 @@ class DateTime(Property, abc.DateTime):
       returning an ISO-8601 compliant date/time string.
     - str2datetime (collections.Callable): A function, taking one argument
       (a datetime string), and returning a python `datetime.datetime` object.
-      By default, this is `datetime.datetime.fromisoformat`.
+      By default, this is `iso8601.iso8601.parse_date`.
     """
 
     _types: abc.Types = Types((datetime,))  # type: ignore
@@ -381,7 +382,7 @@ class DateTime(Property, abc.DateTime):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         datetime2str: Callable[[datetime], str] = _datetime2str,
-        str2datetime: Callable[[str], datetime] = datetime.fromisoformat,
+        str2datetime: Callable[[str], datetime] = parse_date,
     ) -> None:
         self._datetime2str = datetime2str
         self._str2datetime = str2datetime

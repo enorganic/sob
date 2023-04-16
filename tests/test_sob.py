@@ -1,6 +1,7 @@
 import functools
 import os
 import re
+from iso8601.iso8601 import parse_date
 from base64 import b64encode
 from collections import OrderedDict
 from copy import deepcopy
@@ -306,9 +307,7 @@ a = A(
     beta=2,
     gamma=3,
     delta=1,
-    iso8601_datetime=datetime.fromisoformat(
-        "2016-03-28T23:33:41.3116627-0500"
-    ),
+    iso8601_datetime=parse_date("2016-03-28T23:33:41.3116627-0500"),
     iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
@@ -321,9 +320,7 @@ b = B(
     beta="B",
     gamma="B",
     delta="C",
-    iso8601_datetime=datetime.fromisoformat(
-        "2016-03-28T23:33:41.3116627-0500"
-    ),
+    iso8601_datetime=parse_date("2016-03-28T23:33:41.3116627-0500"),
     iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
@@ -335,7 +332,7 @@ c = C(
     beta=False,
     gamma=True,
     delta=False,
-    iso8601_datetime=datetime.fromisoformat("2001-10-26T21:32:52+02:00"),
+    iso8601_datetime=parse_date("2001-10-26T21:32:52+02:00"),
     iso8601_date=date.fromisoformat("2001-10-26"),
 )
 

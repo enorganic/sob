@@ -6,8 +6,9 @@ import binascii
 import collections
 import collections.abc
 import functools
-from itertools import chain
 import os
+from iso8601.iso8601 import parse_date, ParseError
+from itertools import chain
 from base64 import b64decode
 from copy import copy, deepcopy
 from datetime import date, datetime
@@ -406,7 +407,7 @@ def _str_date_or_datetime(value: str) -> type:
     `datetime`.
     """
     try:
-        timestamp: datetime = datetime.fromisoformat(value)
+        timestamp: datetime = parse_date(value)
         if (
             timestamp.hour
             or timestamp.minute
@@ -419,7 +420,7 @@ def _str_date_or_datetime(value: str) -> type:
             return datetime
         else:
             return date
-    except ValueError:
+    except ParseError:
         return str
 
 
