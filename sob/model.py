@@ -744,7 +744,7 @@ class Dictionary(Model, abc.Dictionary):
             new_instance[key] = value
         return new_instance
 
-    def __deepcopy__(self, memo: dict = None) -> "Dictionary":
+    def __deepcopy__(self, memo: Optional[dict] = None) -> "Dictionary":
         new_instance = self.__class__()
         instance_meta: Optional[abc.DictionaryMeta] = meta.dictionary_read(
             self
@@ -2843,7 +2843,7 @@ def _class_definition_from_meta(
     name: str,
     metadata: abc.Meta,
     docstring: Optional[str] = None,
-    module: str = None,
+    module: Optional[str] = None,
     pre_init_source: str = "",
     post_init_source: str = "",
 ) -> str:

@@ -224,7 +224,6 @@ def camel(string: str, capitalize: bool = False) -> str:
 
 
 class _CharacterType(enum.Enum):
-
     DIGIT = enum.auto()
     LOWERCASE = enum.auto()
     UPPERCASE = enum.auto()

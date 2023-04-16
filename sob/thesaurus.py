@@ -32,9 +32,6 @@ from typing import (
     ValuesView,
 )
 from urllib.parse import quote_plus
-
-from iso8601 import ParseError, parse_date  # type: ignore
-
 from . import __name__ as _parent_module_name, abc, meta
 from .abc import MARSHALLABLE_TYPES
 from .errors import IsInstanceAssertionError
@@ -409,7 +406,7 @@ def _str_date_or_datetime(value: str) -> type:
     `datetime`.
     """
     try:
-        timestamp: datetime = parse_date(value)
+        timestamp: datetime = datetime.fromisoformat(value)
         if (
             timestamp.hour
             or timestamp.minute
@@ -422,7 +419,7 @@ def _str_date_or_datetime(value: str) -> type:
             return datetime
         else:
             return date
-    except ParseError:
+    except ValueError:
         return str
 
 

@@ -63,7 +63,7 @@ class Headers(collections.OrderedDict):
     def setdefault(self, key: str, default: Optional[str] = None) -> str:
         key = key.capitalize()
         self._reset_part()
-        return super().setdefault(key, default)
+        return super().setdefault(key, default)  # type: ignore
 
     def update(  # type: ignore
         self,
