@@ -307,6 +307,7 @@ class String(Property, abc.String):
 
 
 def _date2str(value: date) -> str:
+    assert isinstance(value, date)
     return value.isoformat()
 
 
@@ -336,7 +337,7 @@ class Date(Property, abc.Date):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         date2str: Callable[[date], str] = _date2str,
-        str2date: Callable[[str], date] = parse_date,
+        str2date: Callable[[str], date] = date.fromisoformat,
     ) -> None:
         super().__init__(
             name=name,

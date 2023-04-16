@@ -675,7 +675,7 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
+    def _marshal(self) -> "OrderedDict[str, JSONTypes]":
         pass
 
     @abstractmethod
@@ -749,6 +749,10 @@ class Dictionary(Model, metaclass=ABCMeta):
     def values(self) -> ValuesView[Any]:
         pass
 
+    @abstractmethod
+    def __reversed__(self) -> Iterator[str]:
+        pass
+
 
 class Object(Model, metaclass=ABCMeta):
     """
@@ -774,7 +778,7 @@ class Object(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, "JSONTypes"]:
+    def _marshal(self) -> "OrderedDict[str, JSONTypes]":
         pass
 
     @abstractmethod
@@ -834,10 +838,6 @@ class Object(Model, metaclass=ABCMeta):
         property_: "Property",
         value: "MarshallableTypes",
     ) -> Iterable[str]:
-        pass
-
-    @abstractmethod
-    def __reversed__(self) -> Iterator[str]:
         pass
 
 

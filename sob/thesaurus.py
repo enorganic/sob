@@ -1078,8 +1078,8 @@ class Thesaurus:
     def __copy__(self) -> "Thesaurus":
         return self.__class__(copy(self._dict))
 
-    def __reversed__(self) -> Iterator[str]:
-        return reversed(self._dict)
+    def __reversed__(self) -> "Thesaurus":
+        return self.__class__(reversed(self._dict.items()))
 
     def __deepcopy__(self, memo: Optional[dict] = None) -> "Thesaurus":
         return self.__class__(deepcopy(self._dict, memo=memo))
