@@ -202,20 +202,19 @@ def append_exception_text(error: Exception, message: str) -> None:
     Cause `message` to be appended to an error's exception text.
     """
     last_attribute_name: str
-    for last_attribute_name in ("errmsg", "strerror", "msg"):
-        last_attribute_value = getattr(error, last_attribute_name, "")
+    for last_attribute_name in ("strerror", "msg"):
+        last_attribute_value: str = getattr(error, last_attribute_name, "")
         if last_attribute_value:
             setattr(
                 error, last_attribute_name, f"{last_attribute_value}{message}"
             )
-    if not last_attribute_value:
-        index: int
-        reversed_args: List[Any] = list(reversed(error.args)) or [""]
-        for index, value in enumerate(reversed_args):
-            if isinstance(value, str):
-                reversed_args[index] = f"{value}{message}"
-                break
-        error.args = tuple(reversed(reversed_args))
+    index: int
+    reversed_args: List[Any] = list(reversed(error.args)) or [""]
+    for index, value in enumerate(reversed_args):
+        if isinstance(value, str):
+            reversed_args[index] = f"{value}{message}"
+            break
+    error.args = tuple(reversed(reversed_args))
 
 
 def _repr_or_list(values: Iterable[Any], quotes: str = "") -> str:
