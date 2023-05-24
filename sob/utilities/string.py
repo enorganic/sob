@@ -182,6 +182,9 @@ def camel(string: str, capitalize: bool = False) -> str:
 
     >>> print(camel('ABC_DEF_GHI'))
     abcDefGhi
+
+    >>> print(camel('AB_CDEfg'))
+    ABCdEfg
     """
     index: int
     character: str
@@ -203,17 +206,27 @@ def camel(string: str, capitalize: bool = False) -> str:
                 if all_uppercase:
                     uncapitalize_next = True
                 elif capitalize or characters:
-                    character = character.upper()
                     # This prevents two acronyms which are adjacent from
                     # retaining capitalization (since word separations would
                     # not be possible to identify if caps were kept for both)
                     if characters and (characters[-1] in _UPPERCASE_ALPHABET):
                         uncapitalize_next = True
-            elif uncapitalize_next:
+                    character = character.upper()
+            elif uncapitalize_next and character:
                 if character in _LOWERCASE_ALPHABET:
                     uncapitalize_next = False
                 else:
                     character = character.lower()
+                    # Halt lowercasing if the next character starts a
+                    # camelCased word
+                    next_index: int = index + 1
+                    tail: str = string[next_index:]
+                    if (
+                        len(tail) > 1
+                        and tail[0] in _UPPERCASE_ALPHABET
+                        and tail[1] in _LOWERCASE_ALPHABET
+                    ):
+                        uncapitalize_next = False
             characters.append(character)
             capitalize_next = False
         else:
