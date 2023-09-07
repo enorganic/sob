@@ -1,3 +1,5 @@
+SHELL := bash
+
 install:
 	{ rm -R venv || echo "" ; } && \
 	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
