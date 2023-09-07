@@ -1,6 +1,6 @@
 install:
 	{ rm -R venv || echo "" ; } && \
-	{ python3.7 -m venv venv || py -3.7 -m venv venv ; } && \
+	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install\
@@ -49,7 +49,7 @@ upgrade:
 requirements:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	daves-dev-tools requirements update\
-	 -aen all\
+	 -i more-itertools -aen all\
 	 setup.cfg pyproject.toml tox.ini && \
 	daves-dev-tools requirements freeze\
 	 -nv setuptools -nv filelock -nv platformdirs\
