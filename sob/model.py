@@ -54,6 +54,7 @@ from .errors import (
     append_exception_text,
     get_exception_text,
 )
+from .utilities.datetime import datetime2str, date2str
 from .utilities.assertion import (
     assert_in,
     assert_is_instance,
@@ -1600,7 +1601,7 @@ def _marshal_typed(
     return marshalled_data
 
 
-def marshal(
+def marshal(  # noqa: C901
     data: abc.MarshallableTypes,
     types: Union[Iterable[Union[type, abc.Property]], abc.Types, None] = None,
     value_types: Union[
@@ -1630,8 +1631,10 @@ def marshal(
         marshalled_data = getattr(data, "_marshal")()
     elif types is not None:
         marshalled_data = _marshal_typed(data, types)
-    elif isinstance(data, (date, datetime)):
-        marshalled_data = data.isoformat()
+    elif isinstance(data, datetime):
+        marshalled_data = datetime2str(data)
+    elif isinstance(data, date):
+        marshalled_data = date2str(data)
     elif isinstance(data, (bytes, bytearray)):
         # Convert `bytes` to base-64 encoded strings
         marshalled_data = str(b64encode(data), "ascii")

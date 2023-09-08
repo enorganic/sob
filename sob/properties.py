@@ -4,7 +4,6 @@ This module defines classes for describing properties of a model.
 
 import collections
 import collections.abc
-from iso8601.iso8601 import parse_date
 from copy import deepcopy
 from datetime import date, datetime
 from typing import (
@@ -32,6 +31,12 @@ from .utilities import (
 from .utilities.assertion import assert_is_instance
 from .utilities.inspect import represent
 from .utilities.types import UNDEFINED, Undefined, NoneType
+from .utilities.datetime import (
+    str2datetime as _str2datetime,
+    str2date as _str2date,
+    date2str as _date2str,
+    datetime2str as _datetime2str,
+)
 from .abc import MarshallableTypes
 from .version import Version
 
@@ -306,11 +311,6 @@ class String(Property, abc.String):
         )
 
 
-def _date2str(value: date) -> str:
-    assert isinstance(value, date)
-    return value.isoformat()
-
-
 class Date(Property, abc.Date):
     """
     ...See `sob.properties.Property`
@@ -337,7 +337,7 @@ class Date(Property, abc.Date):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         date2str: Callable[[date], str] = _date2str,
-        str2date: Callable[[str], date] = date.fromisoformat,
+        str2date: Callable[[str], date] = _str2date,
     ) -> None:
         super().__init__(
             name=name,
@@ -352,10 +352,6 @@ class Date(Property, abc.Date):
 
     def str2date(self, value: str) -> date:
         return self._str2date(value)
-
-
-def _datetime2str(value: datetime) -> str:
-    return value.isoformat()
 
 
 class DateTime(Property, abc.DateTime):
@@ -383,7 +379,7 @@ class DateTime(Property, abc.DateTime):
             Union[str, abc.Version, Iterable[Union[str, abc.Version]]]
         ] = None,
         datetime2str: Callable[[datetime], str] = _datetime2str,
-        str2datetime: Callable[[str], datetime] = parse_date,
+        str2datetime: Callable[[str], datetime] = _str2datetime,
     ) -> None:
         self._datetime2str = datetime2str
         self._str2datetime = str2datetime
