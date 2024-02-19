@@ -3,8 +3,8 @@ from io import UnsupportedOperation
 from typing import Callable, Optional, Union
 from urllib.parse import urljoin
 
-from .inspect import get_method
 from ..abc import Readable
+from .inspect import get_method
 
 
 def read(file: Readable) -> Union[str, bytes]:

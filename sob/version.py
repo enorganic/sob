@@ -1,7 +1,6 @@
 import collections
 import operator
 import re
-
 from decimal import Decimal
 from itertools import chain
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Union

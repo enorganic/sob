@@ -18,6 +18,7 @@ from typing import (
 )
 
 from . import abc, errors
+from .abc import MarshallableTypes
 from .types import MutableTypes
 from .utilities import (
     calling_function_qualified_name,
@@ -27,8 +28,7 @@ from .utilities import (
 )
 from .utilities.assertion import assert_is_instance
 from .utilities.inspect import represent
-from .utilities.types import NoneType, UNDEFINED, Undefined
-from .abc import MarshallableTypes
+from .utilities.types import UNDEFINED, NoneType, Undefined
 
 
 def _is_dictionary(_dictionary: Any) -> bool:
@@ -400,9 +400,8 @@ def read(model: Union[type, abc.Model]) -> Any:
             return getattr(model, "_meta")
         else:
             raise TypeError(
-                "%s requires a parameter which is an instance or sub-class of "
-                "`%s`, not `%s`"
-                % (
+                "{} requires a parameter which is an instance or sub-class of "
+                "`{}`, not `{}`".format(
                     calling_function_qualified_name(),
                     qualified_name(abc.Model),
                     qualified_name(model),
@@ -411,15 +410,14 @@ def read(model: Union[type, abc.Model]) -> Any:
     else:
         repr_model: str = repr(model)
         raise TypeError(
-            "%s requires a parameter which is an instance or sub-class of "
-            "`%s`, not%s"
-            % (
+            "{} requires a parameter which is an instance or sub-class of "
+            "`{}`, not{}".format(
                 calling_function_qualified_name(),
                 qualified_name(abc.Model),
                 (
-                    ":\n" + repr_model
+                    f":\n{repr_model}"
                     if "\n" in repr_model
-                    else " `%s`" % repr_model
+                    else f" `{repr_model}`"
                 ),
             )
         )
@@ -463,9 +461,7 @@ def writable(model: Union[type, abc.Model]) -> Any:
             model._meta = (
                 Object()
                 if issubclass(model, abc.Object)
-                else Array()
-                if issubclass(model, abc.Array)
-                else Dictionary()
+                else Array() if issubclass(model, abc.Array) else Dictionary()
             )
         else:
             # Ensure that the metadata is not being inherited from a base
@@ -558,11 +554,15 @@ def write(model: Union[type, abc.Model], meta: Optional[abc.Meta]) -> None:
         metadata_type: type = (
             Object
             if issubclass(model_type, abc.Object)
-            else Array
-            if issubclass(model_type, abc.Array)
-            else Dictionary
-            if issubclass(model_type, abc.Dictionary)
-            else Meta
+            else (
+                Array
+                if issubclass(model_type, abc.Array)
+                else (
+                    Dictionary
+                    if issubclass(model_type, abc.Dictionary)
+                    else Meta
+                )
+            )
         )
         if not isinstance(meta, metadata_type):
             raise ValueError(

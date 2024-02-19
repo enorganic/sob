@@ -3,19 +3,22 @@
 authoring of API models which are readable and introspective, and to expedite
 code and data validation and testing.
 """
+
 from typing import List
 
-from . import utilities
-from . import errors
-from . import abc
-from . import model
-from . import meta
-from . import types
-from . import hooks
-from . import properties
-from . import test
-from . import request
-from . import thesaurus
+from . import (
+    abc,
+    errors,
+    hooks,
+    meta,
+    model,
+    properties,
+    request,
+    test,
+    thesaurus,
+    types,
+    utilities,
+)
 
 __all__: List[str] = [
     "utilities",

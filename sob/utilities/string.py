@@ -1,12 +1,10 @@
+import builtins
 import enum
 import re
 import sys
-
-import builtins
 from keyword import iskeyword
 from typing import List, Match, Optional, Pattern, Tuple
 from unicodedata import normalize
-
 
 _DIGITS: str = "0123456789"
 # noinspection SpellCheckingInspection
@@ -288,11 +286,15 @@ def camel_split(string: str) -> Tuple[str, ...]:
         character_type: _CharacterType = (
             _CharacterType.LOWERCASE
             if character in _LOWERCASE_ALPHABET
-            else _CharacterType.DIGIT
-            if character in _DIGITS
-            else _CharacterType.UPPERCASE
-            if character in _UPPERCASE_ALPHABET
-            else _CharacterType.OTHER
+            else (
+                _CharacterType.DIGIT
+                if character in _DIGITS
+                else (
+                    _CharacterType.UPPERCASE
+                    if character in _UPPERCASE_ALPHABET
+                    else _CharacterType.OTHER
+                )
+            )
         )
         if character_type == _CharacterType.LOWERCASE:
             if preceding_character_type == _CharacterType.LOWERCASE:

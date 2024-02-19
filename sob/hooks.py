@@ -2,9 +2,9 @@ from copy import deepcopy
 from typing import Any, Callable, Optional, Tuple, Union
 
 from . import abc
-from .utilities.inspect import qualified_name
-from .utilities.assertion import assert_is_instance
 from .abc import JSONTypes, MarshallableTypes
+from .utilities.assertion import assert_is_instance
+from .utilities.inspect import calling_function_qualified_name, qualified_name
 
 
 class Hooks(abc.Hooks):
@@ -196,10 +196,47 @@ def read(model: Union[type, abc.Model]) -> Any:
     Read metadata from a model class or instance (the returned metadata may be
     inherited, and therefore should not be written to)
     """
-    hooks: Optional[abc.Hooks] = getattr(model, "_hooks")
-    if isinstance(model, abc.Model) and (hooks is None):
-        hooks = read(type(model))
-    return hooks
+    if isinstance(model, abc.Model):
+        return getattr(model, "_hooks")
+    elif isinstance(model, type):
+        if issubclass(model, abc.Model):
+            # return getattr(model, "_hooks")
+            base: type
+            try:
+                return next(
+                    filter(
+                        None,
+                        map(
+                            lambda base: getattr(base, "_hooks", None),
+                            model.__mro__,
+                        ),
+                    )
+                )
+            except StopIteration:
+                return None
+        else:
+            raise TypeError(
+                "{} requires a parameter which is an instance or sub-class of "
+                "`{}`, not `{}`".format(
+                    calling_function_qualified_name(),
+                    qualified_name(abc.Model),
+                    qualified_name(model),
+                )
+            )
+    else:
+        repr_model: str = repr(model)
+        raise TypeError(
+            "{} requires a parameter which is an instance or sub-class of "
+            "`{}`, not{}".format(
+                calling_function_qualified_name(),
+                qualified_name(abc.Model),
+                (
+                    f":\n{repr_model}"
+                    if "\n" in repr_model
+                    else f" `{repr_model}`"
+                ),
+            )
+        )
 
 
 def object_read(model: Union[type, abc.Object]) -> Optional[abc.ObjectHooks]:
@@ -245,11 +282,15 @@ def writable(model: Union[type, abc.Model]) -> Any:
             new_hooks: Optional[Hooks] = (
                 Object()
                 if issubclass(model, abc.Object)
-                else Array()
-                if issubclass(model, abc.Array)
-                else Dictionary()
-                if issubclass(model, abc.Dictionary)
-                else Hooks()
+                else (
+                    Array()
+                    if issubclass(model, abc.Array)
+                    else (
+                        Dictionary()
+                        if issubclass(model, abc.Dictionary)
+                        else Hooks()
+                    )
+                )
             )
             writable_hooks = new_hooks
         else:
@@ -316,17 +357,13 @@ def type_(model: Union[type, abc.Model]) -> type:
         hooks_type = (
             Object
             if issubclass(model, abc.Object)
-            else Array
-            if issubclass(model, abc.Array)
-            else Dictionary
+            else Array if issubclass(model, abc.Array) else Dictionary
         )
     else:
         hooks_type = (
             Object
             if isinstance(model, abc.Object)
-            else Array
-            if isinstance(model, abc.Array)
-            else Dictionary
+            else Array if isinstance(model, abc.Array) else Dictionary
         )
     return hooks_type
 

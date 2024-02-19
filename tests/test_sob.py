@@ -1,13 +1,14 @@
 import functools
 import os
 import re
-from iso8601.iso8601 import parse_date
 from base64 import b64encode
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, Iterable, Optional, Reversible, Union, IO
+from typing import IO, Dict, Iterable, Optional, Reversible, Union
+
+from iso8601.iso8601 import parse_date
 from sob import abc, meta, model, properties, test, utilities
 from sob.request import MultipartRequest, Part
 from sob.utilities.assertion import assert_equals

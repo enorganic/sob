@@ -1,15 +1,16 @@
 import collections
 import decimal
+import typing
 from abc import ABCMeta, abstractmethod
 from datetime import date, datetime
 from decimal import Decimal
 from inspect import Traceback
 from typing import (
+    IO,
     Any,
     Callable,
     Collection,
     Dict,
-    IO,
     ItemsView,
     Iterable,
     Iterator,
@@ -24,10 +25,7 @@ from typing import (
     ValuesView,
 )
 
-import typing
-
-from .utilities.types import NoneType, Null, UNDEFINED, Undefined
-
+from .utilities.types import UNDEFINED, NoneType, Null, Undefined
 
 __all__: List[str] = [
     "OrderedDict",

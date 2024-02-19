@@ -1,5 +1,5 @@
-import collections
 import builtins
+import collections
 import sys
 from inspect import (
     FrameInfo,
@@ -11,16 +11,8 @@ from inspect import (
     stack,
 )
 from types import ModuleType
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+
 from .string import indent
 from .types import UNDEFINED, Undefined
 

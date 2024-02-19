@@ -6,7 +6,6 @@ from . import abc
 from .utilities.inspect import represent
 from .utilities.string import indent
 
-
 __all__: List[str] = [
     "ValidationError",
     "VersionError",
@@ -90,9 +89,7 @@ class UnmarshalError(Exception):
         types_label: str = (
             "item_types"
             if item_types
-            else "value_types"
-            if value_types
-            else "types"
+            else "value_types" if value_types else "types"
         )
         types = item_types or value_types or types
         if types is None:

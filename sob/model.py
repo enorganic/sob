@@ -1,14 +1,14 @@
 """
 This module defines the building blocks of an `sob` based data model.
 """
-import os
+
 import builtins
 import collections
 import collections.abc
 import json
+import os
 import re
 import sys
-import yaml  # type: ignore
 from abc import abstractmethod
 from base64 import b64decode, b64encode
 from copy import copy, deepcopy
@@ -18,6 +18,7 @@ from inspect import signature
 from itertools import chain
 from types import GeneratorType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Collection,
@@ -38,27 +39,22 @@ from typing import (
     Type,
     Union,
     ValuesView,
-    TYPE_CHECKING,
+    cast,
 )
 from urllib.parse import urljoin
 
+import yaml  # type: ignore
+
 from . import __name__ as _parent_module_name
-from . import abc
-from . import errors
-from . import hooks
-from . import meta
-from . import utilities
+from . import abc, errors, hooks, meta, utilities
 from .errors import (
     DeserializeError,
     IsInstanceAssertionError,
     append_exception_text,
     get_exception_text,
 )
-from .utilities.datetime import datetime2str, date2str
-from .utilities.assertion import (
-    assert_in,
-    assert_is_instance,
-)
+from .utilities.assertion import assert_in, assert_is_instance
+from .utilities.datetime import date2str, datetime2str
 from .utilities.inspect import (
     calling_module_name,
     get_method,
@@ -66,19 +62,10 @@ from .utilities.inspect import (
     represent,
 )
 from .utilities.io import read
-from .utilities.string import (
-    MAX_LINE_LENGTH,
-    indent as indent_,
-    split_long_docstring_lines,
-    suffix_long_lines,
-)
-from .utilities.types import (
-    NULL,
-    NoneType,
-    Null,
-    UNDEFINED,
-    Undefined,
-)
+from .utilities.string import MAX_LINE_LENGTH
+from .utilities.string import indent as indent_
+from .utilities.string import split_long_docstring_lines, suffix_long_lines
+from .utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
 
 
 class Model(abc.Model):
@@ -337,12 +324,16 @@ class Array(Model, abc.Array):
             raise errors.UnmarshalTypeError(data=value)
         instance_hooks: Optional[abc.ArrayHooks] = hooks.array_read(self)
         if instance_hooks and instance_hooks.before_append:
-            value = instance_hooks.before_append(self, value)
+            value = instance_hooks.before_append(
+                self, cast(abc.MarshallableTypes, value)
+            )
         instance_meta: Optional[abc.ArrayMeta] = meta.array_read(self)
         item_types: Optional[abc.Types] = None
         if instance_meta:
             item_types = instance_meta.item_types
-        value = unmarshal(value, types=item_types or ())
+        value = unmarshal(
+            cast(abc.MarshallableTypes, value), types=item_types or ()
+        )
         self._list.append(value)
         if instance_hooks and instance_hooks.after_append:
             instance_hooks.after_append(self, value)
@@ -677,9 +668,9 @@ class Dictionary(Model, abc.Dictionary):
                 meta_: Optional[abc.DictionaryMeta] = meta.dictionary_read(
                     self
                 )
-                values_meta: Optional[
-                    abc.DictionaryMeta
-                ] = meta.dictionary_read(items)
+                values_meta: Optional[abc.DictionaryMeta] = (
+                    meta.dictionary_read(items)
+                )
                 if meta_ is not values_meta:
                     meta.write(self, deepcopy(values_meta))
         else:
@@ -1166,8 +1157,9 @@ class Object(Model, abc.Object):
             except (KeyError, AttributeError):
                 pass
         raise KeyError(
-            '`%s` has no attribute "%s".'
-            % (qualified_name(type(self)), property_name_)
+            '`{}` has no attribute "{}".'.format(
+                qualified_name(type(self)), property_name_
+            )
         )
 
     def _unmarshal_value(
@@ -1346,9 +1338,9 @@ class Object(Model, abc.Object):
             for property_name_, property_ in instance_meta.properties.items():
                 value: abc.JSONTypes = getattr(object_, property_name_)
                 if value is not None:
-                    data[
-                        property_.name or property_name_
-                    ] = _marshal_property_value(property_, value)
+                    data[property_.name or property_name_] = (
+                        _marshal_property_value(property_, value)
+                    )
         if instance_hooks and instance_hooks.after_marshal:
             after_marshal_data: abc.JSONTypes = instance_hooks.after_marshal(
                 data
@@ -2709,9 +2701,7 @@ def _model_class_from_meta(
     return (
         Object
         if isinstance(metadata, abc.ObjectMeta)
-        else Array
-        if isinstance(metadata, abc.ArrayMeta)
-        else Dictionary
+        else Array if isinstance(metadata, abc.ArrayMeta) else Dictionary
     )
 
 
