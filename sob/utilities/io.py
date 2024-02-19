@@ -3,8 +3,11 @@ from io import UnsupportedOperation
 from typing import Callable, Optional, Union
 from urllib.parse import urljoin
 
-from ..abc import Readable
+# isort: off
 from .inspect import get_method
+from ..abc import Readable
+
+# isort: on
 
 
 def read(file: Readable) -> Union[str, bytes]:

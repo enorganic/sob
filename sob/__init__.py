@@ -6,19 +6,22 @@ code and data validation and testing.
 
 from typing import List
 
+# isort: off
 from . import (
-    abc,
-    errors,
-    hooks,
-    meta,
-    model,
-    properties,
-    request,
-    test,
-    thesaurus,
-    types,
     utilities,
+    errors,
+    abc,
+    model,
+    meta,
+    types,
+    hooks,
+    properties,
+    test,
+    request,
+    thesaurus,
 )
+
+# isort: on
 
 __all__: List[str] = [
     "utilities",
