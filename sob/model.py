@@ -1227,7 +1227,7 @@ class Object(Model, abc.Object):
                         property_name_ = potential_property_name
                         break
         if property_name_ is None:
-            found_in: str = ""
+            found_in: str = " "
             type_module_name: str = getattr(type(self), "__module__", "")
             if type_module_name:
                 type_module: Any = sys.modules.get(type_module_name, None)
@@ -1235,9 +1235,9 @@ class Object(Model, abc.Object):
                     type_module_file: str = os.path.abspath(
                         getattr(type_module, "__file__", "")
                     )
-                    found_in = f"found in {type_module_file}, "
+                    found_in = f", found in {type_module_file}, "
             raise KeyError(
-                f"`{qualified_name(type(self))}`, {found_in}"
+                f"`{qualified_name(type(self))}`{found_in}"
                 f'has no property mapped to the name "{key}"'
             )
         return property_name_

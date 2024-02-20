@@ -197,7 +197,7 @@ def read(model: Union[type, abc.Model]) -> Any:
     inherited, and therefore should not be written to)
     """
     if isinstance(model, abc.Model):
-        return getattr(model, "_hooks")
+        return getattr(model, "_hooks") or read(type(model))
     elif isinstance(model, type):
         if issubclass(model, abc.Model):
             # return getattr(model, "_hooks")
