@@ -4,8 +4,8 @@ from typing import Any, Optional
 from sob.utilities import inspect, io, string, types
 from sob.utilities.assertion import assert_in
 from sob.utilities.inspect import (
-    calling_module_name,
     calling_function_qualified_name,
+    calling_module_name,
 )
 
 

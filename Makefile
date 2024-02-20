@@ -1,8 +1,8 @@
 SHELL := bash
+PYTHON_VERSION := 3.8
 
 install:
-	{ rm -R venv || echo "" ; } && \
-	{ python3.8 -m venv venv || py -3.8 -m venv venv ; } && \
+	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
 	pip install --upgrade pip wheel && \
 	pip install\
@@ -60,3 +60,18 @@ requirements:
 
 test:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && tox -r -p
+
+# Apply formatting requirements and perform checks
+format:
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	black . && isort . && flake8 && mypy
+
+reinstall:
+	{ rm -R venv || echo "" ; } && \
+	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
+	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
+	pip install --upgrade pip && \
+	pip install isort flake8 mypy black tox pytest daves-dev-tools -e . && \
+	{ mypy --install-types --non-interactive || echo "" ; } && \
+	make requirements && \
+	echo "Installation complete"

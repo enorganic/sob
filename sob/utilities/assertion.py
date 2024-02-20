@@ -1,4 +1,4 @@
-from typing import Any, Tuple, Union, Iterable
+from typing import Any, Iterable, Tuple, Union
 
 from ..errors import (
     EqualsAssertionError,

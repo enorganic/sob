@@ -9,10 +9,7 @@ from . import abc, meta
 from .errors import ObjectDiscrepancyError
 from .model import serialize, validate
 from .utilities import qualified_name
-from .utilities.assertion import (
-    assert_in,
-    assert_is_instance,
-)
+from .utilities.assertion import assert_in, assert_is_instance
 from .utilities.types import NoneType
 
 
@@ -29,9 +26,9 @@ def _get_object_property_names(object_: abc.Object) -> Set[str]:
 def _object_discrepancies(
     object_a: abc.Object, object_b: abc.Object
 ) -> "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]":  # noqa
-    discrepancies: (
-        "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]"  # noqa
-    ) = collections.OrderedDict()
+    discrepancies: "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]" = (  # noqa
+        collections.OrderedDict()
+    )  # noqa
     for property_ in sorted(
         (
             _get_object_property_names(object_a)

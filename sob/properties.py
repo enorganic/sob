@@ -6,7 +6,11 @@ import collections
 import collections.abc
 from copy import deepcopy
 from datetime import date, datetime
+from decimal import Decimal
+from itertools import chain
 from typing import (
+    Any,
+    Callable,
     Dict,
     Iterable,
     List,
@@ -15,13 +19,11 @@ from typing import (
     Set,
     Tuple,
     Union,
-    Any,
-    Callable,
 )
-from decimal import Decimal
-from itertools import chain
+
 from . import abc
-from .types import Types, MutableTypes
+from .abc import MarshallableTypes
+from .types import MutableTypes, Types
 from .utilities import (
     indent,
     parameters_defaults,
@@ -29,15 +31,12 @@ from .utilities import (
     qualified_name,
 )
 from .utilities.assertion import assert_is_instance
+from .utilities.datetime import date2str as _date2str
+from .utilities.datetime import datetime2str as _datetime2str
+from .utilities.datetime import str2date as _str2date
+from .utilities.datetime import str2datetime as _str2datetime
 from .utilities.inspect import represent
-from .utilities.types import UNDEFINED, Undefined, NoneType
-from .utilities.datetime import (
-    str2datetime as _str2datetime,
-    str2date as _str2date,
-    date2str as _date2str,
-    datetime2str as _datetime2str,
-)
-from .abc import MarshallableTypes
+from .utilities.types import UNDEFINED, NoneType, Undefined
 from .version import Version
 
 __all__: List[str] = [

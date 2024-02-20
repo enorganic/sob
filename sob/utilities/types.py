@@ -1,5 +1,5 @@
 from abc import ABCMeta
-from typing import Any, Dict, Hashable, List, Tuple, Callable
+from typing import Any, Callable, Dict, Hashable, List, Tuple
 
 __all__: List[str] = [
     "UNDEFINED",

@@ -2,17 +2,17 @@
 This module provides functionality for creating a data model from a
 set of example structures.
 """
+
 import binascii
 import collections
 import collections.abc
 import functools
 import os
-from iso8601.iso8601 import parse_date, ParseError
-from itertools import chain
+import re
 from base64 import b64decode
 from copy import copy, deepcopy
 from datetime import date, datetime
-import re
+from itertools import chain
 from types import ModuleType
 from typing import (
     Any,
@@ -33,12 +33,16 @@ from typing import (
     ValuesView,
 )
 from urllib.parse import quote_plus
-from . import __name__ as _parent_module_name, abc, meta
+
+from iso8601.iso8601 import ParseError, parse_date
+
+from . import __name__ as _parent_module_name
+from . import abc, meta
 from .abc import MARSHALLABLE_TYPES
 from .errors import IsInstanceAssertionError
 from .meta import escape_reference_token
 from .model import detect_format, from_meta, unmarshal
-from .properties import Property, TYPES_PROPERTIES, has_mutable_types
+from .properties import TYPES_PROPERTIES, Property, has_mutable_types
 from .types import MutableTypes
 from .utilities import get_source, qualified_name
 from .utilities.assertion import (
@@ -48,12 +52,8 @@ from .utilities.assertion import (
 )
 from .utilities.inspect import calling_module_name
 from .utilities.io import read
-from .utilities.string import (
-    class_name,
-    suffix_long_lines,
-    property_name,
-)
-from .utilities.types import NULL, NoneType, Null, UNDEFINED, Undefined
+from .utilities.string import class_name, property_name, suffix_long_lines
+from .utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
 
 __all__: List[str] = ["Synonyms", "Thesaurus"]
 
@@ -122,9 +122,11 @@ def _update_array_meta(
         item_types: abc.MutableTypes = (
             MutableTypes()
             if metadata.item_types is None
-            else metadata.item_types
-            if isinstance(metadata.item_types, abc.MutableTypes)
-            else MutableTypes(metadata.item_types)
+            else (
+                metadata.item_types
+                if isinstance(metadata.item_types, abc.MutableTypes)
+                else MutableTypes(metadata.item_types)
+            )
         )
         _update_types(item_types, new_item_types, memo)
         metadata.item_types = item_types  # type: ignore
@@ -151,9 +153,11 @@ def _update_dictionary_meta(
         value_types: abc.MutableTypes = (
             MutableTypes()
             if metadata.value_types is None
-            else metadata.value_types
-            if isinstance(metadata.value_types, abc.MutableTypes)
-            else MutableTypes(metadata.value_types)
+            else (
+                metadata.value_types
+                if isinstance(metadata.value_types, abc.MutableTypes)
+                else MutableTypes(metadata.value_types)
+            )
         )
         _update_types(value_types, new_value_types, memo)
         metadata.value_types = value_types  # type: ignore
@@ -192,9 +196,11 @@ def _update_object_meta(
             mutable_types: abc.MutableTypes = (
                 MutableTypes()
                 if types_ is None
-                else types_
-                if isinstance(types_, abc.MutableTypes)
-                else MutableTypes(types_)
+                else (
+                    types_
+                    if isinstance(types_, abc.MutableTypes)
+                    else MutableTypes(types_)
+                )
             )
             _update_types(
                 mutable_types,
@@ -572,9 +578,7 @@ class Synonyms:
         return (
             other._set
             if isinstance(other, Synonyms)
-            else other
-            if isinstance(other, Set)
-            else Synonyms(other)._set
+            else other if isinstance(other, Set) else Synonyms(other)._set
         )
 
     def __iand__(
@@ -939,9 +943,11 @@ def get_class_meta_attribute_assignment_source(
         (
             "object"
             if isinstance(metadata, abc.ObjectMeta)
-            else "array"
-            if isinstance(metadata, abc.ArrayMeta)
-            else "dictionary"
+            else (
+                "array"
+                if isinstance(metadata, abc.ArrayMeta)
+                else "dictionary"
+            )
         ),
     )
     # We insert "  # type: ignore" at the end of the first line where the value

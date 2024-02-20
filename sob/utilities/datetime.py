@@ -1,4 +1,5 @@
-from datetime import datetime, date
+from datetime import date, datetime
+
 from iso8601.iso8601 import parse_date
 
 

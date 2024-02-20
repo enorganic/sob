@@ -1,10 +1,9 @@
 from typing import List
 
-from . import io
-from . import inspect
-from . import string
-from . import types
+# isort: off
+from . import io, inspect, string, types
 
+# isort: on
 from .inspect import (
     calling_function_qualified_name,
     calling_functions_qualified_names,
