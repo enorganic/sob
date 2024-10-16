@@ -4,7 +4,7 @@ PYTHON_VERSION := 3.8
 install:
 	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	pip install --upgrade pip wheel && \
+	pip install --upgrade pip && \
 	pip install\
 	 -r requirements.txt\
 	 -e . && \
@@ -19,11 +19,6 @@ ci-install:
 	 -r requirements.txt\
 	 -e . && \
 	echo "Installation Successful!"
-
-editable:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	daves-dev-tools install-editable --upgrade-strategy eager && \
-	make requirements
 
 clean:
 	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
