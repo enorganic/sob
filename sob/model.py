@@ -2783,6 +2783,7 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "            None,\n"
             "        ] = None,"
         )
+        property_assignments: List[str] = []
         metadata_properties_items: Tuple[Tuple[str, abc.Property], ...] = (
             ()
             if metadata.properties is None
@@ -2805,27 +2806,18 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             repr_property_typing: str = indent_(
                 _type_hint_from_property(property_, module), 12
             )
-            parameter_declaration: str = (
+            property_assignments.append(
+                f"        self.{property_name_}: typing.Optional[\n"
+                f"            {repr_property_typing}\n"
+                f"        ] = {property_name_}"
+            )
+            out.append(
                 f"        {property_name_}: typing.Optional[\n"
                 f"            {repr_property_typing}\n"
                 f"        ] = None{repr_comma}"
             )
-            out.append(parameter_declaration)
         out.append("    ) -> None:")
-        if metadata.properties is not None:
-            for property_name_ in metadata.properties.keys():
-                property_assignment: str = "        self.%s = %s" % (
-                    property_name_,
-                    property_name_,
-                )
-                # Ensure line-length aligns with PEP-8
-                if len(property_assignment) > MAX_LINE_LENGTH:
-                    property_assignment = (
-                        f"        self.{property_name_} = (\n"
-                        f"            {property_name_}\n"
-                        f"        )"
-                    )
-                out.append(property_assignment)
+        out.extend(property_assignments)
         out.append("        super().__init__(_data)\n\n")
     else:
         raise ValueError(metadata)
