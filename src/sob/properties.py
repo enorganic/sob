@@ -124,7 +124,6 @@ class Property(abc.Property):
 
     _types: abc.Types | None = None
 
-    # noinspection PyShadowingNames
     def __init__(
         self,
         types: abc.Types
@@ -424,7 +423,6 @@ class Enumerated(Property, abc.Enumerated):
     This class exposes public properties matching its keyword parameters.
     """
 
-    # noinspection PyShadowingNames
     def __init__(
         self,
         types: abc.Types

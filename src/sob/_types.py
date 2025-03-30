@@ -71,7 +71,6 @@ class NoneType(metaclass=ABCMeta):  # noqa: B024
     pass
 
 
-# noinspection PyUnresolvedReferences
 NoneType.register(type(None))
 
 

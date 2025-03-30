@@ -88,7 +88,6 @@ def _check_methods(class_: type, methods: Iterable[str]) -> bool | None:
 
 
 class Types(metaclass=ABCMeta):
-    # noinspection PyUnusedLocal,PyMissingConstructor
     @abstractmethod
     def __init__(
         self,
@@ -170,7 +169,6 @@ class Hooks(metaclass=ABCMeta):
     before_validate: Callable[[Model], Any] | None
     after_validate: Callable[[Model], None] | None
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -218,7 +216,6 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
     )
     after_setitem: Callable[[Object, str, MarshallableTypes], None] | None
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -260,7 +257,6 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
     )
     after_append: Callable[[Array, MarshallableTypes], None] | None
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -295,7 +291,6 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
     )
     after_setitem: Callable[[Dictionary, str, MarshallableTypes], None] | None
 
-    # noinspection PyUnusedLocal
     def __init__(
         self,
         before_marshal: Callable[[MarshallableTypes], MarshallableTypes]
@@ -374,7 +369,6 @@ class ObjectMeta(Meta, metaclass=ABCMeta):
     TODO
     """
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -407,7 +401,6 @@ class DictionaryMeta(Meta, metaclass=ABCMeta):
     TODO
     """
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -442,7 +435,6 @@ class ArrayMeta(Meta, metaclass=ABCMeta):
     TODO
     """
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,
@@ -469,7 +461,6 @@ class ArrayMeta(Meta, metaclass=ABCMeta):
 
 
 class Properties(Meta, metaclass=ABCMeta):
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,

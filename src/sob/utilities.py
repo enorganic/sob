@@ -24,9 +24,7 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 _DIGITS: str = "0123456789"
-# noinspection SpellCheckingInspection
 _LOWERCASE_ALPHABET: str = "abcdefghijklmnopqrstuvwxyz"
-# noinspection SpellCheckingInspection
 _UPPERCASE_ALPHABET: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _ALPHANUMERIC_CHARACTERS = (
     f"{_DIGITS}" f"{_UPPERCASE_ALPHABET}" f"{_LOWERCASE_ALPHABET}"
@@ -546,7 +544,6 @@ def get_qualified_name(type_or_module: type | Callable | ModuleType) -> str:
     if not isinstance(type_or_module, QUALIFIED_NAME_ARGUMENT_TYPES):
         raise TypeError(type_or_module)
     type_name: str
-    # noinspection SpellCheckingInspection
     if isinstance(type_or_module, ModuleType):
         type_name = type_or_module.__name__
     else:

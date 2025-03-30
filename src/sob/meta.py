@@ -76,9 +76,10 @@ class Meta(abc.Meta):
 
     def __deepcopy__(self, memo: dict | None = None) -> abc.Meta:
         new_instance: Meta = self.__class__()
-        for a, v in iter_properties_values(self):
-            # noinspection PyArgumentList
-            setattr(new_instance, a, deepcopy(v, memo=memo))
+        property_name: str
+        value: Any
+        for property_name, value in iter_properties_values(self):
+            setattr(new_instance, property_name, deepcopy(value, memo=memo))
         return cast(abc.Meta, new_instance)
 
     def __bool__(self) -> bool:
@@ -100,9 +101,6 @@ class Meta(abc.Meta):
         lines[-1] = lines[-1][:-1]
         lines.append(")")
         return "\n".join(lines)
-
-
-# noinspection PyUnresolvedReferences
 
 
 class Object(Meta, abc.ObjectMeta):
@@ -240,7 +238,6 @@ class Properties(abc.Properties):
         new_instance: abc.Properties = self.__class__(self)
         return new_instance
 
-    # noinspection PyArgumentList
     def __deepcopy__(self, memo: dict | None = None) -> abc.Properties:
         key: str
         value: abc.Property
