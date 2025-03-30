@@ -1,19 +1,24 @@
+from __future__ import annotations
+
 import collections
 import operator
 import re
 from decimal import Decimal
 from itertools import chain
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Callable
 
-from . import abc
-from .utilities.assertion import assert_is_instance
-from .utilities.inspect import represent
+from sob import abc
+from sob.utilities.assertion import assert_is_instance
+from sob.utilities.inspect import represent
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 _DOT_SYNTAX_RE = re.compile(r"^\d+(\.\d+)*$")
 
 
 def _are_versions_compatible(
-    version_a: Tuple[int, ...], version_b: Tuple[int, ...]
+    version_a: tuple[int, ...], version_b: tuple[int, ...]
 ) -> bool:
     length_a: int = len(version_a)
     length_b: int = len(version_b)
@@ -25,13 +30,13 @@ def _are_versions_compatible(
         return (
             version_b
             <= version_a
-            < (tuple(version_b[:-2]) + (version_b[-2] + 1, 0))
+            < ((*tuple(version_b[:-2]), version_b[-2] + 1, 0))
         )
     return version_a == version_b
 
 
 def _are_versions_equal(
-    version_a: Tuple[int, ...], version_b: Tuple[int, ...]
+    version_a: tuple[int, ...], version_b: tuple[int, ...]
 ) -> bool:
     length_a: int = len(version_a)
     length_b: int = len(version_b)
@@ -42,7 +47,7 @@ def _are_versions_equal(
     return version_a == version_b
 
 
-_VERSION_PROPERTIES_COMPARE_FUNCTIONS: Tuple[Tuple[str, Callable], ...] = (
+_VERSION_PROPERTIES_COMPARE_FUNCTIONS: tuple[tuple[str, Callable], ...] = (
     ("exactly_equals", operator.eq),
     ("equals", _are_versions_equal),
     ("not_equals", operator.ne),
@@ -52,7 +57,7 @@ _VERSION_PROPERTIES_COMPARE_FUNCTIONS: Tuple[Tuple[str, Callable], ...] = (
     ("greater_than_or_equal_to", operator.ge),
     ("compatible_with", _are_versions_compatible),
 )
-_REPR_OPERATORS_VERSION_PROPERTIES: Tuple[Tuple[str, str], ...] = (
+_REPR_OPERATORS_VERSION_PROPERTIES: tuple[tuple[str, str], ...] = (
     ("===", "exactly_equals"),
     ("<=", "less_than_or_equal_to"),
     (">=", "greater_than_or_equal_to"),
@@ -63,7 +68,7 @@ _REPR_OPERATORS_VERSION_PROPERTIES: Tuple[Tuple[str, str], ...] = (
     (">", "greater_than"),
     ("=", "equals"),
 )
-_VERSION_PROPERTIES_REPR_OPERATORS: Tuple[Tuple[str, str], ...] = (
+_VERSION_PROPERTIES_REPR_OPERATORS: tuple[tuple[str, str], ...] = (
     ("exactly_equals", "==="),
     ("equals", "=="),
     ("compatible_with", "~="),
@@ -75,20 +80,20 @@ _VERSION_PROPERTIES_REPR_OPERATORS: Tuple[Tuple[str, str], ...] = (
 )
 
 
-def _version_string_as_tuple(version_string: str) -> Tuple[int, ...]:
+def _version_string_as_tuple(version_string: str) -> tuple[int, ...]:
     assert _DOT_SYNTAX_RE.match(version_string)
     return tuple(int(item) for item in version_string.split("."))
 
 
 def _version_number_as_tuple(
-    version_number: Union[float, int, Decimal]
-) -> Tuple[int, ...]:
+    version_number: float | int | Decimal,
+) -> tuple[int, ...]:
     return _version_string_as_tuple(str(version_number))
 
 
 def _version_sequence_as_tuple(
-    version_sequence: Sequence[Union[str, int, float, Decimal]]
-) -> Tuple[int, ...]:
+    version_sequence: Sequence[str | int | float | Decimal],
+) -> tuple[int, ...]:
     return tuple(
         chain(
             *(
@@ -104,9 +109,9 @@ def _version_sequence_as_tuple(
 
 
 def _version_as_tuple(
-    version_: Union[str, int, float, Decimal, Sequence[int]]
-) -> Tuple[int, ...]:
-    version_tuple: Tuple[int, ...]
+    version_: str | int | float | Decimal | Sequence[int],
+) -> tuple[int, ...]:
+    version_tuple: tuple[int, ...]
     assert_is_instance(
         "version_",
         version_,
@@ -124,26 +129,18 @@ def _version_as_tuple(
 class Version(abc.Version):
     def __init__(
         self,
-        version_string: Optional[str] = None,
+        version_string: str | None = None,
         specification: str = "",
-        compatible_with: Optional[
-            Sequence[Union[str, int, float, Decimal]]
-        ] = None,
-        equals: Optional[Sequence[Union[str, int, float, Decimal]]] = None,
-        exactly_equals: Optional[
-            Sequence[Union[str, int, float, Decimal]]
-        ] = None,
-        not_equals: Optional[Sequence[Union[str, int, float, Decimal]]] = None,
-        less_than: Optional[Sequence[Union[str, int, float, Decimal]]] = None,
-        less_than_or_equal_to: Optional[
-            Sequence[Union[str, int, float, Decimal]]
-        ] = None,
-        greater_than: Optional[
-            Sequence[Union[str, int, float, Decimal]]
-        ] = None,
-        greater_than_or_equal_to: Optional[
-            Sequence[Union[str, int, float, Decimal]]
-        ] = None,
+        compatible_with: Sequence[str | int | float | Decimal] | None = None,
+        equals: Sequence[str | int | float | Decimal] | None = None,
+        exactly_equals: Sequence[str | int | float | Decimal] | None = None,
+        not_equals: Sequence[str | int | float | Decimal] | None = None,
+        less_than: Sequence[str | int | float | Decimal] | None = None,
+        less_than_or_equal_to: Sequence[str | int | float | Decimal]
+        | None = None,
+        greater_than: Sequence[str | int | float | Decimal] | None = None,
+        greater_than_or_equal_to: Sequence[str | int | float | Decimal]
+        | None = None,
     ) -> None:
         self.specification = specification
         self.compatible_with = compatible_with
@@ -176,33 +173,33 @@ class Version(abc.Version):
                     if spec:
                         if self.specification:
                             if spec != self.specification:
-                                raise ValueError(
+                                msg = (
                                     "Multiple specifications cannot be "
                                     "associated with one instance of "
                                     "`sob.meta.Version`:\n"
                                     f"- {represent(spec)}\n"
                                     f"- {represent(specification)}\n"
                                 )
+                                raise ValueError(msg)
                         else:
                             self.specification = spec
                     setattr(self, variable_name, version_number_string)
                     break
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         compare_property_name: str
         compare_function: Callable
         for (
             compare_property_name,
             compare_function,
         ) in _VERSION_PROPERTIES_COMPARE_FUNCTIONS:
-            compare_value: Optional[
-                Union[int, float, Decimal, str, Tuple[int, ...]]
-            ] = getattr(self, compare_property_name)
-            if compare_value is not None:
-                if not compare_function(
-                    _version_as_tuple(other), _version_as_tuple(compare_value)
-                ):
-                    return False
+            compare_value: (
+                int | float | Decimal | str | tuple[int, ...] | None
+            ) = getattr(self, compare_property_name)
+            if compare_value is not None and not compare_function(
+                _version_as_tuple(other), _version_as_tuple(compare_value)
+            ):
+                return False
         return True
 
     def __str__(self) -> str:
@@ -211,13 +208,13 @@ class Version(abc.Version):
         identification described in
         [PEP-440](https://www.python.org/dev/peps/pep-0440).
         """
-        version_specifiers: List[str] = []
+        version_specifiers: list[str] = []
         property_name: str
         repr_operator: str
         for property_name, repr_operator in _VERSION_PROPERTIES_REPR_OPERATORS:
-            version_: Optional[
-                Union[int, float, Decimal, str, Tuple[int, ...]]
-            ] = getattr(self, property_name)
+            version_: int | float | Decimal | str | tuple[int, ...] | None = (
+                getattr(self, property_name)
+            )
             if version_ is not None:
                 version_specifiers.append(
                     repr_operator
@@ -229,4 +226,4 @@ class Version(abc.Version):
         return self.specification + ",".join(version_specifiers)
 
     def __repr__(self) -> str:
-        return f"'{str(self)}'"
+        return f"'{self!s}'"

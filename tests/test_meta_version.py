@@ -3,9 +3,14 @@ This module tests the application of version-specific properties and types to
 model instances
 """
 
-from typing import IO, Dict, List, Optional, Sequence, Set, Union
+from __future__ import annotations
+
+from typing import IO, TYPE_CHECKING
 
 import sob
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # region Declare classes
 
@@ -13,10 +18,10 @@ import sob
 class MemberObjectA(sob.model.Object):
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
-        property_a: Optional[int] = None,
-        property_b: Optional[str] = None,
-        property_c: Optional[Union[str, int, sob.types.Null]] = None,
+        _data: str | bytes | dict | Sequence | IO | None = None,
+        property_a: int | None = None,
+        property_b: str | None = None,
+        property_c: str | int | sob.types.Null | None = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -27,10 +32,10 @@ class MemberObjectA(sob.model.Object):
 class MemberObjectB(sob.model.Object):
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
-        property_a: Optional[Union[str, int, sob.types.Null]] = None,
-        property_b: Optional[int] = None,
-        property_c: Optional[str] = None,
+        _data: str | bytes | dict | Sequence | IO | None = None,
+        property_a: str | int | sob.types.Null | None = None,
+        property_b: int | None = None,
+        property_c: str | None = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -41,11 +46,11 @@ class MemberObjectB(sob.model.Object):
 class MemberObjectC(sob.model.Object):
     def __init__(
         self,
-        _data: Optional[Union[str, bytes, dict, Sequence, IO]] = None,
-        property_a: Optional[Union[str, int, sob.types.Null]] = None,
-        property_b: Optional[int] = None,
-        property_c: Optional[str] = None,
-        property_d: Optional[str] = None,
+        _data: str | bytes | dict | Sequence | IO | None = None,
+        property_a: str | int | sob.types.Null | None = None,
+        property_b: int | None = None,
+        property_c: str | None = None,
+        property_d: str | None = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -57,9 +62,7 @@ class MemberObjectC(sob.model.Object):
 class MemberDictionaryA(sob.model.Dictionary):
     def __init__(
         self,
-        items: Optional[
-            Union[Dict[str, MemberObjectA], IO, str, bytes]
-        ] = None,
+        items: dict[str, MemberObjectA] | IO | str | bytes | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -67,11 +70,11 @@ class MemberDictionaryA(sob.model.Dictionary):
 class MemberDictionaryB(sob.model.Dictionary):
     def __init__(
         self,
-        items: Optional[
-            Union[
-                Dict[str, Union[MemberObjectA, MemberObjectB]], IO, str, bytes
-            ]
-        ] = None,
+        items: dict[str, MemberObjectA | MemberObjectB]
+        | IO
+        | str
+        | bytes
+        | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -79,17 +82,11 @@ class MemberDictionaryB(sob.model.Dictionary):
 class MemberDictionaryC(sob.model.Dictionary):
     def __init__(
         self,
-        items: Optional[
-            Union[
-                Dict[
-                    str,
-                    List[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
-                ],
-                IO,
-                str,
-                bytes,
-            ]
-        ] = None,
+        items: dict[str, list[MemberObjectA | MemberObjectB | MemberObjectC]]
+        | IO
+        | str
+        | bytes
+        | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -97,9 +94,12 @@ class MemberDictionaryC(sob.model.Dictionary):
 class MemberArrayA(sob.model.Array):
     def __init__(
         self,
-        items: Optional[
-            Union[Sequence[MemberObjectA], Set[MemberObjectA], str, bytes, IO]
-        ] = None,
+        items: Sequence[MemberObjectA]
+        | set[MemberObjectA]
+        | str
+        | bytes
+        | IO
+        | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -107,9 +107,12 @@ class MemberArrayA(sob.model.Array):
 class MemberArrayB(sob.model.Array):
     def __init__(
         self,
-        items: Optional[
-            Union[Sequence[MemberObjectB], Set[MemberObjectB], str, bytes, IO]
-        ] = None,
+        items: Sequence[MemberObjectB]
+        | set[MemberObjectB]
+        | str
+        | bytes
+        | IO
+        | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -117,15 +120,12 @@ class MemberArrayB(sob.model.Array):
 class MemberArrayC(sob.model.Array):
     def __init__(
         self,
-        items: Optional[
-            Union[
-                Sequence[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
-                Set[Union[MemberObjectA, MemberObjectB, MemberObjectC]],
-                str,
-                bytes,
-                IO,
-            ]
-        ] = None,
+        items: Sequence[MemberObjectA | MemberObjectB | MemberObjectC]
+        | set[MemberObjectA | MemberObjectB | MemberObjectC]
+        | str
+        | bytes
+        | IO
+        | None = None,
     ) -> None:
         super().__init__(items)
 
@@ -138,38 +138,34 @@ class VersionedObject(sob.model.Object):
 
     def __init__(
         self,
-        _data: Optional[str] = None,
-        version: Optional[Union[str, int, float]] = None,
-        versioned_simple_type: Optional[Union[str, int]] = None,
-        versioned_container: Optional[
-            Union[
-                MemberObjectA,
-                MemberObjectB,
-                MemberObjectC,
-                MemberArrayA,
-                MemberArrayB,
-                MemberArrayC,
-                MemberDictionaryA,
-                MemberDictionaryB,
-                MemberDictionaryC,
-            ]
-        ] = None,
+        _data: str | None = None,
+        version: str | int | float | None = None,
+        versioned_simple_type: str | int | None = None,
+        versioned_container: MemberObjectA
+        | MemberObjectB
+        | MemberObjectC
+        | MemberArrayA
+        | MemberArrayB
+        | MemberArrayC
+        | MemberDictionaryA
+        | MemberDictionaryB
+        | MemberDictionaryC
+        | None = None,
     ) -> None:
-        self.version: Optional[str] = None
-        self.versioned_simple_type: Optional[Union[str, int]] = None
-        self.versioned_container: Optional[
-            Union[
-                MemberObjectA,
-                MemberObjectB,
-                MemberObjectC,
-                MemberArrayA,
-                MemberArrayB,
-                MemberArrayC,
-                MemberDictionaryA,
-                MemberDictionaryB,
-                MemberDictionaryC,
-            ]
-        ] = None
+        self.version: str | None = None
+        self.versioned_simple_type: str | int | None = None
+        self.versioned_container: (
+            MemberObjectA
+            | MemberObjectB
+            | MemberObjectC
+            | MemberArrayA
+            | MemberArrayB
+            | MemberArrayC
+            | MemberDictionaryA
+            | MemberDictionaryB
+            | MemberDictionaryC
+            | None
+        ) = None
         super().__init__(_data)
         sob.meta.version(self, "test-specification", version)
         self.version = version
@@ -216,12 +212,12 @@ sob.meta.writable(MemberObjectA).properties = [
 def test_version_1():
     versioned_object: VersionedObject
     caught_error: Exception
-    error: Optional[Exception] = None
+    error: Exception | None = None
     # Verify that setting the version to a non-string raises an error
     # when the version is < 1.2
     try:
         VersionedObject(version=1.0)
-    except TypeError as caught_error:  # noqa
+    except TypeError as caught_error:
         error = caught_error
     assert isinstance(error, TypeError)
     # Verify that setting the version to a non-string raises no error

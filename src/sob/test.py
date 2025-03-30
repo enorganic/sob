@@ -1,20 +1,23 @@
+from __future__ import annotations
+
 import collections
 import json as _json
-from typing import Any, List, Optional, Sequence, Set, Tuple
+from typing import TYPE_CHECKING, Any, Optional, Tuple
 from warnings import warn
 
-import yaml as yaml_  # type: ignore
+from sob import abc, meta
+from sob.errors import ObjectDiscrepancyError
+from sob.model import serialize, validate
+from sob.utilities import qualified_name
+from sob.utilities.assertion import assert_is_instance
+from sob.utilities.types import NoneType
 
-from . import abc, meta
-from .errors import ObjectDiscrepancyError
-from .model import serialize, validate
-from .utilities import qualified_name
-from .utilities.assertion import assert_in, assert_is_instance
-from .utilities.types import NoneType
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
-def _get_object_property_names(object_: abc.Object) -> Set[str]:
-    meta_: Optional[abc.Meta] = meta.read(object_)
+def _get_object_property_names(object_: abc.Object) -> set[str]:
+    meta_: abc.Meta | None = meta.read(object_)
     assert isinstance(meta_, (abc.ObjectMeta, NoneType))
     return set(
         meta_.properties.keys()
@@ -28,7 +31,7 @@ def _object_discrepancies(
 ) -> "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]":  # noqa
     discrepancies: "abc.OrderedDict[str,Tuple[Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]]]" = (  # noqa
         collections.OrderedDict()
-    )  # noqa
+    )
     for property_ in sorted(
         (
             _get_object_property_names(object_a)
@@ -36,8 +39,8 @@ def _object_discrepancies(
         ),
         key=lambda item: item[0],
     ):
-        a_value: Optional[abc.MarshallableTypes]
-        b_value: Optional[abc.MarshallableTypes]
+        a_value: abc.MarshallableTypes | None
+        b_value: abc.MarshallableTypes | None
         try:
             a_value = getattr(object_a, property_)
         except AttributeError:
@@ -67,12 +70,11 @@ def _get_value_discrepancies_error_message(
     b_representation = "".join(
         line.strip() for line in b_representation.split("\n")
     )
-    message: List[str] = []
+    message: list[str] = []
     if a_serialized != b_serialized or (a_representation != b_representation):
         message.append(
-            "\n    %s().%s:\n        %s        \n        %s\n     "
-            "   %s"
-            % (
+            "\n    {}().{}:\n        {}        \n        {}\n     "
+            "   {}".format(
                 class_name,
                 property_name,
                 a_serialized,
@@ -82,8 +84,7 @@ def _get_value_discrepancies_error_message(
         )
     if a_representation != b_representation:
         message.append(
-            "\n        %s\n        !=\n        %s"
-            % (a_representation, b_representation)
+            f"\n        {a_representation}\n        !=\n        {b_representation}"
         )
     return "\n".join(message)
 
@@ -107,8 +108,7 @@ def _get_object_discrepancies_error_message(
     ]
     if a_serialized != b_serialized or (a_representation != b_representation):
         message.append(
-            "        %s\n        %s\n        %s"
-            % (
+            "        {}\n        {}\n        {}".format(
                 a_serialized,
                 "==" if a_serialized == b_serialized else "!=",
                 b_serialized,
@@ -116,18 +116,17 @@ def _get_object_discrepancies_error_message(
         )
     if a_representation != b_representation:
         message.append(
-            "\n        %s\n        !=\n        %s"
-            % (a_representation, b_representation)
+            f"\n        {a_representation}\n        !=\n        {b_representation}"
         )
     property_name: str
-    property_values: Tuple[
-        Optional[abc.MarshallableTypes], Optional[abc.MarshallableTypes]
+    property_values: tuple[
+        abc.MarshallableTypes | None, abc.MarshallableTypes | None
     ]
     for property_name, property_values in _object_discrepancies(
         object_a, object_b
     ).items():
-        property_value_a: Optional[abc.MarshallableTypes]
-        property_value_b: Optional[abc.MarshallableTypes]
+        property_value_a: abc.MarshallableTypes | None
+        property_value_b: abc.MarshallableTypes | None
         property_value_a, property_value_b = property_values
         message.append(
             _get_value_discrepancies_error_message(
@@ -146,32 +145,25 @@ def _get_object_discrepancies_error(
     return ObjectDiscrepancyError(message)
 
 
-def _remarshal_object(
-    string_object: str, object_instance: abc.Object, format_: str = "json"
-) -> None:
-    if format_ == "yaml":
-        reloaded_marshalled_data = yaml_.safe_load(string_object)
-    else:
-        reloaded_marshalled_data = _json.loads(
-            string_object,
-            object_hook=collections.OrderedDict,
-            object_pairs_hook=collections.OrderedDict,
-        )
-    keys: Set[str] = set()
-    instance_meta: Optional[abc.Meta] = meta.read(object_instance)
+def _remarshal_object(string_object: str, object_instance: abc.Object) -> None:
+    reloaded_marshalled_data = _json.loads(
+        string_object,
+        object_hook=collections.OrderedDict,
+        object_pairs_hook=collections.OrderedDict,
+    )
+    keys: set[str] = set()
+    instance_meta: abc.Meta | None = meta.read(object_instance)
     assert isinstance(instance_meta, (abc.ObjectMeta, NoneType))
     if (instance_meta is not None) and (instance_meta.properties is not None):
         for property_name, property_ in instance_meta.properties.items():
             keys.add(property_.name or property_name)
-        for key in reloaded_marshalled_data.keys():
+        for key in reloaded_marshalled_data:
             if key not in keys:
-                raise KeyError(
-                    '"%s" not found in serialized/re-deserialized data: %s'
-                    % (key, string_object)
-                )
+                msg = f'"{key}" not found in serialized/re-deserialized data: {string_object}'
+                raise KeyError(msg)
 
 
-def _reload_object(object_instance: abc.Object, format_: str) -> None:
+def _reload_object(object_instance: abc.Object) -> None:
     object_type: type = type(object_instance)
     string_object: str = str(object_instance)
     assert string_object != ""
@@ -183,15 +175,13 @@ def _reload_object(object_instance: abc.Object, format_: str) -> None:
         )
     reloaded_string = str(reloaded_object_instance)
     if string_object != reloaded_string:
-        raise ObjectDiscrepancyError(
-            "\n%s\n!=\n%s" % (string_object, reloaded_string)
-        )
-    _remarshal_object(string_object, object_instance, format_)
+        msg = f"\n{string_object}\n!=\n{reloaded_string}"
+        raise ObjectDiscrepancyError(msg)
+    _remarshal_object(string_object, object_instance)
 
 
 def _object(
     object_instance: abc.Object,
-    format_: str,
     raise_validation_errors: bool = True,
 ) -> None:
     errors: Sequence[str] = validate(
@@ -199,96 +189,55 @@ def _object(
     )
     if errors:
         warn("\n" + "\n".join(errors))
-    _reload_object(object_instance, format_)
-    instance_meta: Optional[abc.Meta] = meta.read(object_instance)
+    _reload_object(object_instance)
+    instance_meta: abc.Meta | None = meta.read(object_instance)
     assert isinstance(instance_meta, (abc.ObjectMeta, NoneType))
     if (instance_meta is not None) and (instance_meta.properties is not None):
         # Recursively test property values
-        for property_name, property_ in instance_meta.properties.items():
+        for property_name in instance_meta.properties:
             property_value = getattr(object_instance, property_name)
             if isinstance(property_value, abc.Model):
                 model(
                     property_value,
-                    format_=format_,
                     raise_validation_errors=raise_validation_errors,
                 )
 
 
 def model(
     model_instance: abc.Model,
-    format_: str = "json",
     raise_validation_errors: bool = True,
 ) -> None:
     """
     Tests an instance of a `sob.model.Model` sub-class.
 
     Parameters:
-
-        - model_instance (sob.model.Model):
-
-            An instance of a `sob.model.Model` sub-class.
-
-        - format_ (str):
-
-            The serialization format being tested: 'json' or 'yaml'.
-
-        - raise_validation_errors (bool):
-
+        model_instance: An instance of a `sob.model.Model` sub-class.
+        raise_validation_errors:
             The function `sob.model.validate` verifies that all required
             attributes are present, as well as any additional validations
             implemented using the model's validation hooks `after_validate`
-            and/or `before_validate`.
-
-                - If `True`, errors resulting from `sob.model.validate` are
-                  raised.
-
-                - If `False`, errors resulting from `sob.model.validate` are
-                  expressed only as warnings.
+            and/or `before_validate`. If `True`, errors resulting from
+            `sob.model.validate` are raised. If `False`, errors resulting
+            from `sob.model.validate` are expressed only as warnings.
     """
     assert_is_instance("model_instance", model_instance, abc.Model)
-    assert_in("format_", format_, ("json", "yaml"))
-    meta.format_(model_instance, format_)
     if isinstance(model_instance, abc.Object):
-        _object(model_instance, format_, raise_validation_errors)
+        _object(model_instance, raise_validation_errors)
     elif isinstance(model_instance, abc.Array):
         validate(model_instance)
         for item in model_instance:
             if isinstance(item, abc.Model):
                 model(
                     item,
-                    format_=format_,
                     raise_validation_errors=raise_validation_errors,
                 )
     elif isinstance(model_instance, abc.Dictionary):
         validate(model_instance)
         key: str
         value: abc.MarshallableTypes
-        for key, value in model_instance.items():
+        for value in model_instance.values():
             if isinstance(value, abc.Model):
                 model(
                     value,
-                    format_=format_,
                     raise_validation_errors=raise_validation_errors,
                 )
-
-
-def json(
-    model_instance: abc.Model,
-    raise_validation_errors: bool = True,
-) -> None:
-    model(
-        model_instance=model_instance,
-        format_="json",
-        raise_validation_errors=raise_validation_errors,
-    )
-
-
-def yaml(
-    model_instance: abc.Model,
-    raise_validation_errors: bool = True,
-) -> None:
-    model(
-        model_instance=model_instance,
-        format_="yaml",
-        raise_validation_errors=raise_validation_errors,
-    )

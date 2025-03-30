@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import doctest
-from typing import Any, Optional
+from typing import Any
 
 from sob.utilities import inspect, io, string, types
 from sob.utilities.assertion import assert_in
@@ -20,14 +22,14 @@ def test_inspect() -> None:
             TODO
             """
 
-            def __call__(self) -> Optional[str]:
+            def __call__(self) -> str | None:
                 return self.get_method_name()
 
             @staticmethod
-            def get_static_method_name() -> Optional[str]:
+            def get_static_method_name() -> str | None:
                 return calling_function_qualified_name()
 
-            def get_method_name(self) -> Optional[str]:
+            def get_method_name(self) -> str | None:
                 return calling_function_qualified_name()
 
             def get_module_name(self) -> str:

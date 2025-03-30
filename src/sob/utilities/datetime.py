@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import date, datetime
 
 from iso8601.iso8601 import parse_date
@@ -8,9 +10,8 @@ def date2str(date_value: date) -> str:
     Return an ISO-8601 formatted representation of an instance of
     `datetime.date`.
     """
-    assert isinstance(date_value, date) and not isinstance(
-        date_value, datetime
-    )
+    if (not isinstance(date_value, date)) or isinstance(date_value, datetime):
+        raise ValueError(date_value)
     return date_value.isoformat()
 
 

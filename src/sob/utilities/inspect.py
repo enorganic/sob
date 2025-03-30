@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import collections
 import sys
@@ -11,10 +13,13 @@ from inspect import (
     stack,
 )
 from types import ModuleType
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable
 
-from .string import indent
-from .types import UNDEFINED, Undefined
+from sob.utilities.string import indent
+from sob.utilities.types import UNDEFINED, Undefined
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def _is_public(name: str) -> bool:
@@ -23,7 +28,7 @@ def _is_public(name: str) -> bool:
 
 def properties_values(
     object_: object, include_private: bool = False
-) -> Iterable[Tuple[str, Any]]:
+) -> Iterable[tuple[str, Any]]:
     """
     This function iterates over an object's public (non-callable)
     properties, yielding a tuple comprised of each attribute/property name and
@@ -33,7 +38,7 @@ def properties_values(
     if not include_private:
         names = filter(_is_public, names)
 
-    def get_name_value(name: str) -> Optional[Tuple[str, str]]:
+    def get_name_value(name: str) -> tuple[str, str] | None:
         value: Any = getattr(object_, name, lambda: None)
         if callable(value):
             return None
@@ -42,14 +47,14 @@ def properties_values(
     return filter(None, map(get_name_value, names))
 
 
-QUALIFIED_NAME_ARGUMENT_TYPES: Tuple[Any, ...] = (
+QUALIFIED_NAME_ARGUMENT_TYPES: tuple[Any, ...] = (
     type,
     collections.abc.Callable,
     ModuleType,
 )
 
 
-def qualified_name(type_or_module: Union[type, Callable, ModuleType]) -> str:
+def qualified_name(type_or_module: type | Callable | ModuleType) -> str:
     """
     >>> print(qualified_name(qualified_name))
     sob.utilities.inspect.qualified_name
@@ -82,11 +87,12 @@ def qualified_name(type_or_module: Union[type, Callable, ModuleType]) -> str:
             # to get the qualified type name
             type_name = repr(type_or_module)
         if not type_name:
-            raise TypeError(
+            msg = (
                 "A qualified type name could not be inferred for "
-                f"`{repr(type_or_module)}` "
+                f"`{type_or_module!r}` "
                 f"(an instance of {type(type_or_module).__name__})"
             )
+            raise TypeError(msg)
         if type_or_module.__module__ not in (
             "builtins",
             "__builtin__",
@@ -97,7 +103,7 @@ def qualified_name(type_or_module: Union[type, Callable, ModuleType]) -> str:
     return type_name
 
 
-def calling_functions_qualified_names(depth: int = 1) -> List[str]:
+def calling_functions_qualified_names(depth: int = 1) -> list[str]:
     """
     This function returns the qualified names of all calling functions in the
     stack, starting with the function at the indicated `depth` (defaults to 1).
@@ -106,13 +112,13 @@ def calling_functions_qualified_names(depth: int = 1) -> List[str]:
     ...     return calling_functions_qualified_names()
     >>> def my_function_b():
     ...     return my_function_a()
-    >>> print('\\n'.join(my_function_b()[-2:]))
+    >>> print("\\n".join(my_function_b()[-2:]))
     sob.utilities.inspect.calling_functions_qualified_names.my_function_b
     sob.utilities.inspect.calling_functions_qualified_names.my_function_a
     """
     depth += 1
     name: str = calling_function_qualified_name(depth=depth) or ""
-    names: List[str] = []
+    names: list[str] = []
     while name:
         if name and not (names and names[0] == name):
             names.insert(0, name)
@@ -139,12 +145,13 @@ def _get_module_name(file_name: str) -> str:
             if "[" in module_name:
                 module_name = "[".join(module_name.split("[")[:-1])
         else:
-            raise ValueError(f'The path "{file_name}" is not a python module')
+            msg = f'The path "{file_name}" is not a python module'
+            raise ValueError(msg)
     return module_name
 
 
-def _get_frame_info_names(frame_info: FrameInfo) -> List[str]:
-    names: List[str] = []
+def _get_frame_info_names(frame_info: FrameInfo) -> list[str]:
+    names: list[str] = []
     if frame_info.function != "<module>":
         names.append(frame_info.function)
         arguments, _, _, frame_locals = getargvalues(frame_info.frame)
@@ -193,15 +200,15 @@ def calling_module_name(depth: int = 1) -> str:
     """
     name: str
     try:
-        name = getattr(sys, "_getframe")(depth).f_globals.get(
-            "__name__", "__main__"
-        )
+        name = sys._getframe(  # noqa: SLF001
+            depth
+        ).f_globals.get("__name__", "__main__")
     except (AttributeError, ValueError):
         name = "__main__"
     return name
 
 
-def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
+def calling_function_qualified_name(depth: int = 1) -> str | None:
     """
     Return the fully qualified name of the function from within which this is
     being called
@@ -212,13 +219,12 @@ def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
     sob.utilities.inspect.calling_function_qualified_name.my_function
 
     >>> class MyClass:
-    ...
     ...     def __call__(self) -> None:
-    ...          return self.my_method()
+    ...         return self.my_method()
     ...
     ...     # noinspection PyMethodMayBeStatic
     ...     def my_method(self) -> str:
-    ...          return calling_function_qualified_name()
+    ...         return calling_function_qualified_name()
     >>> print(MyClass()())
     sob.utilities.inspect.MyClass.my_method
     """
@@ -229,11 +235,11 @@ def calling_function_qualified_name(depth: int = 1) -> Optional[str]:
         return None
     if len(stack_) < (depth + 1):
         return None
-    names: List[str] = _get_frame_info_names(stack_[depth])
+    names: list[str] = _get_frame_info_names(stack_[depth])
     return ".".join(reversed(names))
 
 
-def get_source(object_: Union[type, Callable, ModuleType]) -> str:
+def get_source(object_: type | Callable | ModuleType) -> str:
     """
     Get the source code which defined an object.
     """
@@ -243,17 +249,15 @@ def get_source(object_: Union[type, Callable, ModuleType]) -> str:
     return object_source
 
 
-def parameters_defaults(function: Callable[..., Any]) -> Dict[str, Any]:
+def parameters_defaults(function: Callable[..., Any]) -> dict[str, Any]:
     """
     Returns an ordered dictionary mapping a function's argument names to
     default values, or `UNDEFINED` in the case of
     positional arguments.
 
     >>> class X:
-    ...
-    ...    def __init__(self, a, b, c, d=1, e=2, f=3):
-    ...        pass
-    ...
+    ...     def __init__(self, a, b, c, d=1, e=2, f=3):
+    ...         pass
     >>> for parameter_name, default in parameters_defaults(X.__init__).items():
     ...     print((parameter_name, default))
     ('self', UNDEFINED)
@@ -264,7 +268,7 @@ def parameters_defaults(function: Callable[..., Any]) -> Dict[str, Any]:
     ('e', 2)
     ('f', 3)
     """
-    defaults: Dict[str, Any] = collections.OrderedDict()
+    defaults: dict[str, Any] = collections.OrderedDict()
     parameter_name: str
     parameter: Parameter
     for parameter_name, parameter in signature(function).parameters.items():
@@ -280,19 +284,19 @@ def _repr_items(items: Iterable) -> str:
     Returns a string representation of the items in a `list`, `tuple`,
     `set`, or `collections.OrderedDict().items()`.
     """
-    lines: List[str] = []
+    lines: list[str] = []
     for item in items:
         lines.append(indent(represent(item), start=0))
     return ",\n".join(lines)
 
 
-def _repr_dict_items(items: Iterable[Tuple[Any, Any]]) -> str:
+def _repr_dict_items(items: Iterable[tuple[Any, Any]]) -> str:
     """
     Returns a string representation of dictionary items.
     """
     key: Any
     value: Any
-    lines: List[str] = []
+    lines: list[str] = []
     for key, value in items:
         lines.append(
             f"{indent(represent(key), start=0)}: {indent(represent(value))}"
@@ -338,7 +342,7 @@ def _repr_dict(dict_instance: dict) -> str:
     """
     Returns a string representation of `dict` argument values
     """
-    items: Tuple[Tuple[Any, Any], ...] = tuple(dict_instance.items())
+    items: tuple[tuple[Any, Any], ...] = tuple(dict_instance.items())
     if items:
         return f"{{\n{_repr_dict_items(items)}\n}}"
     else:
@@ -350,7 +354,7 @@ def _repr_ordered_dict(ordered_dict_instance: collections.OrderedDict) -> str:
     Returns a string representation of `collections.OrderedDict` argument
     values
     """
-    items: Tuple[Tuple[Any, Any], ...] = tuple(ordered_dict_instance.items())
+    items: tuple[tuple[Any, Any], ...] = tuple(ordered_dict_instance.items())
     if items:
         return f"collections.OrderedDict([\n{_repr_items(items)}\n])"
     else:
@@ -397,8 +401,8 @@ def represent(value: Any) -> str:
 def get_method(
     object_instance: object,
     method_name: str,
-    default: Union[Callable, Undefined, None] = UNDEFINED,
-) -> Optional[Callable[..., Any]]:
+    default: Callable | Undefined | None = UNDEFINED,
+) -> Callable[..., Any] | None:
     """
     This function attempts to retrieve a method, by name.
 
@@ -422,11 +426,11 @@ def get_method(
             return default
     if callable(method):
         return method
+    elif isinstance(default, Undefined):
+        (
+            f"{qualified_name(type(object_instance))}.{method_name} "
+            "is not callable."
+        )
+        raise AttributeError(msg)
     else:
-        if isinstance(default, Undefined):
-            raise AttributeError(
-                f"{qualified_name(type(object_instance))}.{method_name} "
-                "is not callable."
-            )
-        else:
-            return method
+        return method

@@ -15,3 +15,6 @@ pip-wheel-metadata
 !.github
 !.gitignore
 !.flake8
+!.markdownlint.yaml
+!.editorconfig
+site

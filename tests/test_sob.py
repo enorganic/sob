@@ -1,16 +1,17 @@
+from __future__ import annotations
+
 import functools
 import os
-import re
 from base64 import b64encode
 from collections import OrderedDict
+from collections.abc import Iterable, Reversible
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import IO, Dict, Iterable, Optional, Reversible, Union
+from typing import IO
 
 from iso8601.iso8601 import parse_date
 from sob import abc, meta, model, properties, test, utilities
-from sob.request import MultipartRequest, Part
 from sob.utilities.assertion import assert_equals
 
 
@@ -21,16 +22,16 @@ class A(model.Object):
 
     def __init__(
         self,
-        _data: Optional[str] = None,
-        is_a_class: Optional[bool] = None,
-        boolean: Optional[bool] = None,
-        string: Optional[str] = None,
-        alpha: Optional[int] = None,
-        beta: Optional[int] = None,
-        gamma: Optional[int] = None,
-        delta: Optional[int] = None,
-        iso8601_datetime: Optional[datetime] = None,
-        iso8601_date: Optional[date] = None,
+        _data: str | None = None,
+        is_a_class: bool | None = None,
+        boolean: bool | None = None,
+        string: str | None = None,
+        alpha: int | None = None,
+        beta: int | None = None,
+        gamma: int | None = None,
+        delta: int | None = None,
+        iso8601_datetime: datetime | None = None,
+        iso8601_date: date | None = None,
     ):
         self.is_a_class = is_a_class
         self.boolean = boolean
@@ -64,17 +65,17 @@ class B(model.Object):
 
     def __init__(
         self,
-        _: Optional[str] = None,
-        is_b_class: Optional[bool] = None,
-        boolean: Optional[bool] = None,
-        string: Optional[str] = None,
-        integer: Optional[int] = None,
-        alpha: Optional[str] = None,
-        beta: Optional[str] = None,
-        gamma: Optional[str] = None,
-        delta: Optional[str] = None,
-        iso8601_datetime: Optional[datetime] = None,
-        iso8601_date: Optional[date] = None,
+        _: str | None = None,
+        is_b_class: bool | None = None,
+        boolean: bool | None = None,
+        string: str | None = None,
+        integer: int | None = None,
+        alpha: str | None = None,
+        beta: str | None = None,
+        gamma: str | None = None,
+        delta: str | None = None,
+        iso8601_datetime: datetime | None = None,
+        iso8601_date: date | None = None,
     ):
         self.is_b_class = is_b_class
         self.boolean = boolean
@@ -110,16 +111,16 @@ class C(model.Object):
 
     def __init__(
         self,
-        _: Optional[str] = None,
-        is_c_class: Optional[bool] = None,
-        string: Optional[str] = None,
-        integer: Optional[int] = None,
-        alpha: Optional[bool] = None,
-        beta: Optional[bool] = None,
-        gamma: Optional[bool] = None,
-        delta: Optional[bool] = None,
-        iso8601_datetime: Optional[datetime] = None,
-        iso8601_date: Optional[date] = None,
+        _: str | None = None,
+        is_c_class: bool | None = None,
+        string: str | None = None,
+        integer: int | None = None,
+        alpha: bool | None = None,
+        beta: bool | None = None,
+        gamma: bool | None = None,
+        delta: bool | None = None,
+        iso8601_datetime: datetime | None = None,
+        iso8601_date: date | None = None,
     ):
         self.is_c_class = is_c_class
         self.string = string
@@ -153,41 +154,40 @@ class Tesstee(model.Object):
 
     def __init__(
         self,
-        _data: Union[str, bytes, dict, abc.Readable, abc.Object] = None,
-        boolean: Optional[bool] = None,
-        string: Optional[str] = None,
-        number: Optional[Union[float, int, Decimal]] = None,
-        decimal: Optional[Union[float, int, Decimal]] = None,
-        integer: Optional[int] = None,
-        rainbow: Optional[bytes] = None,
-        a: Optional[A] = None,
-        b: Optional[B] = None,
-        c: Optional[C] = None,
-        testy: Optional["Tesstee"] = None,
-        boolean_array: Optional[Iterable[bool]] = None,
-        string_array: Optional[Iterable[str]] = None,
-        number_array: Optional[Iterable[Union[float, int, Decimal]]] = None,
-        integer_array: Optional[Iterable[int]] = None,
-        rainbow_array: Optional[Iterable[bytes]] = None,
-        testy_array: Optional[Iterable["Tesstee"]] = None,
-        string_number_boolean: Optional[
-            Union[str, float, int, Decimal, bool]
-        ] = None,
-        a_b_c: Optional[Union[A, B, C]] = None,
-        c_b_a: Optional[Union[C, B, A]] = None,
-        string2testy: Optional[Dict[str, "Tesstee"]] = None,
-        string2string2testy: Optional[Dict[str, Dict[str, "Tesstee"]]] = None,
-        string2a_b_c: Optional[Dict[str, Union[A, B, C]]] = None,
-        string2c_b_a: Optional[Dict[str, Union[C, B, A]]] = None,
-        string2string2a_b_c: Optional[
-            Dict[str, Dict[str, Union[A, B, C]]]
-        ] = None,
-        string2string2c_b_a: Optional[
-            Dict[str, Dict[str, Union[C, B, A]]]
-        ] = None,
-        version_switch: Optional[Union[int, str, Iterable[int]]] = None,
-        version_1: Optional[int] = None,
-        version_2: Optional[int] = None,
+        _data: str | bytes | dict | abc.Readable | abc.Object = None,
+        boolean: bool | None = None,
+        string: str | None = None,
+        number: float | int | Decimal | None = None,
+        decimal: float | int | Decimal | None = None,
+        integer: int | None = None,
+        rainbow: bytes | None = None,
+        a: A | None = None,
+        b: B | None = None,
+        c: C | None = None,
+        testy: Tesstee | None = None,
+        boolean_array: Iterable[bool] | None = None,
+        string_array: Iterable[str] | None = None,
+        number_array: Iterable[float | int | Decimal] | None = None,
+        integer_array: Iterable[int] | None = None,
+        rainbow_array: Iterable[bytes] | None = None,
+        testy_array: Iterable[Tesstee] | None = None,
+        string_number_boolean: str
+        | float
+        | int
+        | Decimal
+        | bool
+        | None = None,
+        a_b_c: A | B | C | None = None,
+        c_b_a: C | B | A | None = None,
+        string2testy: dict[str, Tesstee] | None = None,
+        string2string2testy: dict[str, dict[str, Tesstee]] | None = None,
+        string2a_b_c: dict[str, A | B | C] | None = None,
+        string2c_b_a: dict[str, C | B | A] | None = None,
+        string2string2a_b_c: dict[str, dict[str, A | B | C]] | None = None,
+        string2string2c_b_a: dict[str, dict[str, C | B | A]] | None = None,
+        version_switch: int | str | Iterable[int] | None = None,
+        version_1: int | None = None,
+        version_2: int | None = None,
     ):
         self.boolean = boolean
         self.string = string
@@ -421,7 +421,7 @@ def test_object():
     assert testy_deep_copy.string2string2c_b_a is None
 
 
-@functools.lru_cache()
+@functools.lru_cache
 def _get_testy_path() -> str:
     data_dir: str = os.path.join(
         os.path.dirname(os.path.abspath(__file__)), "data/"
@@ -442,7 +442,7 @@ def test_json_serialization() -> None:
     if not os.path.exists(path):
         with open(path, mode="w", encoding="utf-8") as file:
             file.write(model.serialize(testy, "json"))
-    with open(path, mode="r", encoding="utf-8") as file:
+    with open(path, encoding="utf-8") as file:
         serialized_testy = model.serialize(testy, "json").strip()
         file_testy = file.read().strip()
         assert_equals("serialized_testy", serialized_testy, file_testy)
@@ -467,7 +467,6 @@ def test_json_deserialization():
     """
     with open(
         _get_testy_path(),
-        mode="r",
         encoding="utf-8",
     ) as f:
         assert Tesstee(f) == testy
@@ -483,69 +482,6 @@ def test_validation():
     """
     TODO
     """
-    pass
-
-
-def test_request() -> None:
-    """
-    This will test `sob.requests`,
-    """
-    data_dir: str = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data/"
-    )
-    with open(
-        os.path.join(data_dir, "rainbow.png"),
-        mode="rb",
-    ) as rainbow_file:
-        rainbow_bytes = rainbow_file.read()
-        multi_part_json_request = MultipartRequest(
-            url="http://localhost",
-            headers={"Content-Type": "multipart/form-data"},
-            data=testy,
-            parts=[
-                Part(
-                    headers={
-                        "Content-Disposition": (
-                            "form-data; "
-                            'name="rainbow"; '
-                            'filename="rainbow.png"'
-                        )
-                    },
-                    data=rainbow_bytes,
-                )
-            ],
-        )
-        # This accounts for `dict` becoming ordered (and therefore reversible)
-        # in python 3.8+
-        path = os.path.join(
-            data_dir,
-            "{}multi_part_json_request".format(
-                "reversible_dict_" if isinstance({}, Reversible) else ""
-            ),
-        )
-        if os.path.exists(path):
-            with open(path, "rb") as multi_part_request_file:
-                stored_bytes = bytes(multi_part_request_file.read())
-                multi_part_request_bytes = bytes(multi_part_json_request)
-                stored_boundary = re.search(
-                    b"\\bboundary=([a-zA-Z0-9]+)", stored_bytes
-                ).groups()[0]
-                # We have to swap out the boundary prior to comparison because
-                # the boundary is a random string, and
-                # will be different every time.
-                boundary = bytes(multi_part_json_request.boundary)
-                assert boundary in multi_part_request_bytes
-                stored_bytes = stored_bytes.replace(stored_boundary, boundary)
-                assert_equals(
-                    "multi_part_request_bytes",
-                    multi_part_request_bytes,
-                    stored_bytes,
-                )
-        else:
-            with open(path, "wb") as multi_part_request_file:
-                assert multi_part_request_file.write(
-                    bytes(multi_part_json_request)
-                )
 
 
 def test_utilities():
@@ -604,17 +540,11 @@ def test_utilities():
 
     TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
     if hasattr(
-        getattr(
-            TestCallingFunctionQualifiedNameC,
-            "TestCallingFunctionQualifiedNameD",
-        ),
+        TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD,
         "__qualname__",
     ):
         assert utilities.qualified_name(
-            getattr(
-                TestCallingFunctionQualifiedNameC(),
-                "TestCallingFunctionQualifiedNameD",
-            )
+            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
         ) == (
             ("" if __name__ == "__main__" else "test_sob.")
             + "test_utilities.TestCallingFunctionQualifiedNameC."
@@ -622,23 +552,16 @@ def test_utilities():
         )
     else:
         assert utilities.qualified_name(
-            getattr(
-                TestCallingFunctionQualifiedNameC(),
-                "TestCallingFunctionQualifiedNameD",
-            )
+            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
         ) == (
             ("" if __name__ == "__main__" else "test_sob.")
             + "TestCallingFunctionQualifiedNameD"
         )
-    assert (
-        utilities.qualified_name(MultipartRequest)
-        == "sob.request.MultipartRequest"
-    )
+    assert utilities.qualified_name(model.Object) == "sob.model.Object"
 
 
 if __name__ == "__main__":
     test_json_serialization()
     test_json_deserialization()
     test_validation()
-    test_request()
     test_utilities()

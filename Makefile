@@ -1,72 +1,86 @@
 SHELL := bash
-PYTHON_VERSION := 3.8
+.PHONY: docs
+MINIMUM_PYTHON_VERSION := 3.9
 
+# Create all environments
 install:
-	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	pip install --upgrade pip && \
-	pip install\
-	 -r requirements.txt\
-	 -e . && \
-	{ mypy --install-types --non-interactive || echo "" ; } && \
-	echo "Installation Successful!"
+	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
+	hatch env create default && \
+	hatch env create docs && \
+	hatch env create hatch-static-analysis && \
+	hatch env create hatch-test && \
+	echo "Installation complete"
 
-ci-install:
-	{ python3 -m venv venv || py -3 -m venv venv ; } && \
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	{ python3 -m pip install --upgrade pip || echo "" ; } && \
-	python3 -m pip install\
-	 -r requirements.txt\
-	 -e . && \
-	echo "Installation Successful!"
-
-clean:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	daves-dev-tools uninstall-all\
-	 -e .\
-     -e pyproject.toml\
-     -e tox.ini\
-     -e requirements.txt && \
-	daves-dev-tools clean
+# Re-create all environments, from scratch (no reference to pinned
+# requirements)
+reinstall:
+	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
+	hatch env prune && \
+	make && \
+	make requirements
 
 distribute:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	daves-dev-tools distribute --skip-existing
+	hatch build && hatch publish && rm -rf dist
 
+# This will upgrade all requirements, and refresh pinned requirements to
+# match
 upgrade:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	daves-dev-tools requirements freeze\
-	 -nv '*' . pyproject.toml tox.ini daves-dev-tools \
-	 > .requirements.txt && \
-	pip install --upgrade --upgrade-strategy eager\
+	hatch run dependence freeze\
+	 --include-pointer /tool/hatch/envs/default\
+	 --include-pointer /project\
+	 pyproject.toml > .requirements.txt && \
+	hatch run pip install --upgrade --upgrade-strategy eager\
+	 -r .requirements.txt && \
+	hatch run docs:dependence freeze\
+	 --include-pointer /tool/hatch/envs/docs\
+	 --include-pointer /project\
+	 pyproject.toml > .requirements.txt && \
+	hatch run docs:pip install --upgrade --upgrade-strategy eager\
+	 -r .requirements.txt && \
+	hatch run hatch-static-analysis:dependence freeze\
+	 --include-pointer /tool/hatch/envs/docs\
+	 --include-pointer /project\
+	 pyproject.toml > .requirements.txt && \
+	hatch run hatch-static-analysis:pip install --upgrade --upgrade-strategy eager\
+	 -r .requirements.txt && \
+	hatch run hatch-test.py$(MINIMUM_PYTHON_VERSION):dependence freeze\
+	 --include-pointer /tool/hatch/envs/hatch-test\
+	 --include-pointer /project\
+	 pyproject.toml > .requirements.txt && \
+	hatch run hatch-test.py$(MINIMUM_PYTHON_VERSION):pip install --upgrade --upgrade-strategy eager\
 	 -r .requirements.txt && \
 	rm .requirements.txt && \
 	make requirements
 
+# This will update pinned requirements to align with the
+# package versions installed in each environment, and will align the project
+# dependency versions with those installed in the default environment
 requirements:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	dependence update\
-	 -i more-itertools -aen all\
-	 setup.cfg pyproject.toml tox.ini && \
-	dependence freeze\
-	 -nv setuptools -nv filelock -nv platformdirs\
-	 . pyproject.toml tox.ini daves-dev-tools\
-	 > requirements.txt
+	hatch run dependence update\
+	 --include-pointer /tool/hatch/envs/default\
+	 --include-pointer /project\
+	 pyproject.toml && \
+	hatch run docs:dependence update pyproject.toml --include-pointer /tool/hatch/envs/docs && \
+	hatch run hatch-test.py$(MINIMUM_PYTHON_VERSION):dependence update pyproject.toml --include-pointer /tool/hatch/envs/hatch-test && \
+	hatch run hatch-static-analysis:dependence update pyproject.toml --include-pointer /tool/hatch/envs/hatch-static-analysis && \
+	echo "Requirements updated"
 
+# Test & check linting/formatting (for local use only)
 test:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && tox -r -p
+	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
+	hatch fmt --check && hatch run mypy && hatch test -c && \
+	echo "Tests Successful"
 
-# Apply formatting requirements and perform checks
 format:
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	black . && isort . && flake8 && mypy
+	hatch fmt --formatter
+	hatch fmt --linter
+	hatch run mypy && \
+	echo "Format Successful!"
 
-reinstall:
-	{ rm -R venv || echo "" ; } && \
-	{ python$(PYTHON_VERSION) -m venv venv || py -$(PYTHON_VERSION) -m venv venv ; } && \
-	{ . venv/bin/activate || venv/Scripts/activate.bat ; } && \
-	pip install --upgrade pip && \
-	pip install isort flake8 mypy black tox pytest daves-dev-tools -e . && \
-	{ mypy --install-types --non-interactive || echo "" ; } && \
-	make requirements && \
-	echo "Installation complete"
+docs:
+	hatch run docs:mkdocs build && \
+	hatch run docs:mkdocs serve
+
+# Cleanup untracked files
+clean:
+	git clean -f -e .vscode -e .idea -x .

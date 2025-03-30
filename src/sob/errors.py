@@ -1,12 +1,17 @@
+from __future__ import annotations
+
 import sys
 from traceback import format_exception
-from typing import Any, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
-from . import abc
-from .utilities.inspect import represent
-from .utilities.string import indent
+from sob import abc
+from sob.utilities.inspect import represent
+from sob.utilities.string import indent
 
-__all__: List[str] = [
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+__all__: list[str] = [
     "ValidationError",
     "VersionError",
     "DeserializeError",
@@ -62,34 +67,24 @@ class UnmarshalError(Exception):
 
     def __init__(
         self,
-        message: Optional[str] = None,
-        data: Optional[abc.MarshallableTypes] = None,
-        types: Union[
-            Iterable[Union[abc.Property, type]],
-            abc.Types,
-            None,
-        ] = None,
-        item_types: Union[
-            Iterable[Union[abc.Property, type]],
-            abc.Types,
-            None,
-        ] = None,
-        value_types: Union[
-            Iterable[Union[abc.Property, type]],
-            abc.Types,
-            None,
-        ] = None,
+        message: str | None = None,
+        data: abc.MarshallableTypes | None = None,
+        types: Iterable[abc.Property | type] | abc.Types | None = None,
+        item_types: Iterable[abc.Property | type] | abc.Types | None = None,
+        value_types: Iterable[abc.Property | type] | abc.Types | None = None,
     ) -> None:
-        self._message: Optional[str] = None
-        self._parameter: Optional[str] = None
-        self._index: Union[str, int, None] = None
-        self._key: Optional[str] = None
-        error_message_lines: List[str] = []
+        self._message: str | None = None
+        self._parameter: str | None = None
+        self._index: str | int | None = None
+        self._key: str | None = None
+        error_message_lines: list[str] = []
         # Identify which parameter is being used for type validation
         types_label: str = (
             "item_types"
             if item_types
-            else "value_types" if value_types else "types"
+            else "value_types"
+            if value_types
+            else "types"
         )
         types = item_types or value_types or types
         if types is None:
@@ -115,7 +110,7 @@ class UnmarshalError(Exception):
         self.message = "\n".join(error_message_lines)
 
     @property  # type: ignore
-    def parameter(self) -> Optional[str]:
+    def parameter(self) -> str | None:
         return self._parameter
 
     @parameter.setter  # type: ignore
@@ -125,7 +120,7 @@ class UnmarshalError(Exception):
             self.assemble_message()
 
     @property  # type: ignore
-    def message(self) -> Optional[str]:
+    def message(self) -> str | None:
         return self._message
 
     @message.setter
@@ -135,11 +130,11 @@ class UnmarshalError(Exception):
             self.assemble_message()
 
     @property  # type: ignore
-    def index(self) -> Union[str, int, None]:
+    def index(self) -> str | int | None:
         return self._index
 
     @index.setter
-    def index(self, index_or_key: Union[str, int, None]) -> None:
+    def index(self, index_or_key: str | int | None) -> None:
         if index_or_key != self.index:
             self._index = index_or_key
             self.assemble_message()
@@ -151,13 +146,13 @@ class UnmarshalError(Exception):
         messages = []
         if self.parameter:
             messages.append(
-                "Errors encountered in attempting to un-marshal %s:"
-                % self.parameter
+                "Errors encountered in attempting to un-marshal "
+                f"{self.parameter}:"
             )
         if self.index is not None:
             messages.append(
                 "Errors encountered in attempting to un-marshal the value at "
-                "index %s:" % repr(self.index)
+                f"index {self.index}:"
             )
         if self.message:
             messages.append(self.message)
@@ -206,7 +201,7 @@ def append_exception_text(error: Exception, message: str) -> None:
     found: bool = False
     index: int
     arg: Any
-    reversed_args: List[Any] = list(reversed(error.args)) or [""]
+    reversed_args: list[Any] = list(reversed(error.args)) or [""]
     for index, value in enumerate(reversed_args):
         if isinstance(value, str):
             found = True
@@ -224,13 +219,12 @@ def _repr_or_list(values: Iterable[Any], quotes: str = "") -> str:
     if quotes:
         open_quote = quotes[0]
         close_quote = quotes[-1]
-    repr_values: List[str] = [
+    repr_values: list[str] = [
         f"{open_quote}{represent(value)}{close_quote}" for value in values
     ]
     if len(repr_values) > 1:
         return " or ".join([", ".join(repr_values[:-1]), repr_values[-1]])
-    else:
-        return ", ".join(repr_values)
+    return ", ".join(repr_values)
 
 
 class IsSubClassAssertionError(AssertionError, TypeError):
@@ -239,11 +233,10 @@ class IsSubClassAssertionError(AssertionError, TypeError):
     """
 
     def __init__(
-        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+        self, name: str, value: Any, type_: type | tuple[type, ...]
     ) -> None:
         super().__init__(
-            "`%s` must be a sub-class of %s (not `%s`)."
-            % (
+            "`{}` must be a sub-class of {} (not `{}`).".format(
                 name,
                 (
                     f"`{represent(type_)}`"
@@ -276,11 +269,10 @@ class IsInstanceAssertionError(AssertionError, TypeError):
     """
 
     def __init__(
-        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+        self, name: str, value: Any, type_: type | tuple[type, ...]
     ) -> None:
         super().__init__(
-            "`%s` must be an instance of %s (not `%s`)."
-            % (
+            "`{}` must be an instance of {} (not `{}`).".format(
                 name,
                 (
                     f"`{type_.__name__}`"
@@ -298,11 +290,10 @@ class NotIsInstanceAssertionError(AssertionError, TypeError):
     """
 
     def __init__(
-        self, name: str, value: Any, type_: Union[type, Tuple[type, ...]]
+        self, name: str, value: Any, type_: type | tuple[type, ...]
     ) -> None:
         super().__init__(
-            "`%s` must not be an instance of %s: %s"
-            % (
+            "`{}` must not be an instance of {}: {}".format(
                 name,
                 (
                     f"`{type_.__name__}`"

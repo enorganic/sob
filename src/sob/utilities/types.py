@@ -1,7 +1,12 @@
-from abc import ABCMeta
-from typing import Any, Callable, Dict, Hashable, List, Tuple
+from __future__ import annotations
 
-__all__: List[str] = [
+from abc import ABCMeta
+from typing import TYPE_CHECKING, Any, Callable
+
+if TYPE_CHECKING:
+    from collections.abc import Hashable
+
+__all__: list[str] = [
     "UNDEFINED",
     "Undefined",
     "NoneType",
@@ -10,7 +15,7 @@ __all__: List[str] = [
     "Null",
 ]
 
-_module_locals: Dict[str, Any] = locals()
+_module_locals: dict[str, Any] = locals()
 
 
 class Undefined:
@@ -26,9 +31,8 @@ class Undefined:
         checks to make sure this is the first use.
         """
         if "UNDEFINED" in _module_locals:
-            raise RuntimeError(
-                "%s may only be instantiated once." % repr(self)
-            )
+            msg = f"{self!r} may only be instantiated once."
+            raise RuntimeError(msg)
 
     def __repr__(self) -> str:
         """
@@ -42,9 +46,7 @@ class Undefined:
             "__builtin__",
             __name__,
         ):
-            representation = "".join(
-                [type(self).__module__, ".", representation]
-            )
+            representation = f"{type(self).__module__}.{representation}"
         return representation
 
     def __bool__(self) -> bool:
@@ -56,14 +58,14 @@ class Undefined:
     def __hash__(self) -> int:
         return 0
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         """
         Another object is only equal to this if it shares the same id, since
         there should only be one instance of this class defined
         """
         return other is self
 
-    def __reduce__(self) -> Tuple[Callable[[], "Undefined"], Tuple]:
+    def __reduce__(self) -> tuple[Callable[[], Undefined], tuple]:
         return _undefined, ()
 
 
@@ -99,14 +101,13 @@ class Null:
 
     def __init__(self) -> None:
         if "NULL" in _module_locals:
-            raise DefinitionExistsError(
-                "%s may only be defined once." % repr(self)
-            )
+            message: str = f"{self!r} may only be defined once."
+            raise DefinitionExistsError(message)
 
     def __bool__(self) -> bool:
         return False
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return id(other) == id(self)
 
     def __hash__(self) -> int:
@@ -123,16 +124,16 @@ class Null:
         return (
             "NULL"
             if self.__module__ in ("__main__", "builtins", "__builtin__")
-            else "%s.NULL" % self.__module__
+            else f"{self.__module__}.NULL"
         )
 
-    def __copy__(self) -> "Null":
+    def __copy__(self) -> Null:
         return self
 
-    def __deepcopy__(self, memo: Dict[Hashable, Any]) -> "Null":
+    def __deepcopy__(self, memo: dict[Hashable, Any]) -> Null:
         return self
 
-    def __reduce__(self) -> Tuple[Callable[[], "Null"], Tuple]:
+    def __reduce__(self) -> tuple[Callable[[], Null], tuple]:
         return _null, ()
 
 

@@ -4,10 +4,8 @@ authoring of API models which are readable and introspective, and to expedite
 code and data validation and testing.
 """
 
-from typing import List
-
 # isort: off
-from . import (
+from sob import (
     utilities,
     errors,
     abc,
@@ -23,7 +21,7 @@ from . import (
 
 # isort: on
 
-__all__: List[str] = [
+__all__: list[str] = [
     "utilities",
     "abc",
     "model",

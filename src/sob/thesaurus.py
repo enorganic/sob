@@ -3,6 +3,8 @@ This module provides functionality for creating a data model from a
 set of example structures.
 """
 
+from __future__ import annotations
+
 import binascii
 import collections
 import collections.abc
@@ -10,6 +12,16 @@ import functools
 import os
 import re
 from base64 import b64decode
+from collections.abc import (
+    Collection,
+    ItemsView,
+    Iterable,
+    Iterator,
+    KeysView,
+    Mapping,
+    Sequence,
+    ValuesView,
+)
 from copy import copy, deepcopy
 from datetime import date, datetime
 from itertools import chain
@@ -17,52 +29,39 @@ from types import ModuleType
 from typing import (
     Any,
     Callable,
-    Collection,
-    Dict,
-    ItemsView,
-    Iterable,
-    Iterator,
-    KeysView,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    ValuesView,
+    Self,
 )
 from urllib.parse import quote_plus
 
 from iso8601.iso8601 import ParseError, parse_date
 
-from . import __name__ as _parent_module_name
-from . import abc, meta
-from .abc import MARSHALLABLE_TYPES
-from .errors import IsInstanceAssertionError
-from .meta import escape_reference_token
-from .model import detect_format, from_meta, unmarshal
-from .properties import TYPES_PROPERTIES, Property, has_mutable_types
-from .types import MutableTypes
-from .utilities import get_source, qualified_name
-from .utilities.assertion import (
+from sob import __name__ as _parent_module_name
+from sob import abc, meta
+from sob.abc import MARSHALLABLE_TYPES
+from sob.errors import IsInstanceAssertionError
+from sob.meta import escape_reference_token
+from sob.model import deserialize, from_meta, unmarshal
+from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
+from sob.types import MutableTypes
+from sob.utilities import get_source, qualified_name
+from sob.utilities.assertion import (
     assert_is_instance,
     assert_is_subclass,
     assert_not_is_instance,
 )
-from .utilities.inspect import calling_module_name
-from .utilities.io import read
-from .utilities.string import class_name, property_name, suffix_long_lines
-from .utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
+from sob.utilities.inspect import calling_module_name
+from sob.utilities.io import read
+from sob.utilities.string import class_name, property_name, suffix_long_lines
+from sob.utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
 
-__all__: List[str] = ["Synonyms", "Thesaurus"]
+__all__: list[str] = ["Synonyms", "Thesaurus"]
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
 
 def _read(data: abc.Readable) -> str:
     string_data: str
-    read_data: Union[str, bytes] = read(data)
+    read_data: str | bytes = read(data)
     if isinstance(read_data, (bytes, bytearray)):
         string_data = str(read_data, encoding="utf-8")
     else:
@@ -71,7 +70,7 @@ def _read(data: abc.Readable) -> str:
 
 
 def _update_types(
-    types: abc.MutableTypes, new_types: abc.Types, memo: Dict[str, type]
+    types: abc.MutableTypes, new_types: abc.Types, memo: dict[str, type]
 ) -> None:
     """
     This function updates `types` to incorporate any additional types from
@@ -83,12 +82,12 @@ def _update_types(
     - new_types (sob.properties.types.Types)
     - memo (dict)
     """
-    new_type: Union[type, abc.Property]
+    new_type: type | abc.Property
     for new_type in new_types:
         if isinstance(new_type, type) and issubclass(new_type, abc.Model):
             if type.__name__ in memo:
                 existing_type: type = memo[type.__name__]
-                new_type_meta: Optional[abc.Meta] = meta.read(new_type)
+                new_type_meta: abc.Meta | None = meta.read(new_type)
                 assert isinstance(
                     new_type_meta,
                     (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
@@ -104,7 +103,7 @@ def _update_types(
 def _update_array_meta(
     metadata: abc.ArrayMeta,
     new_metadata: abc.ArrayMeta,
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function updates `metadata` by adding/updating `metadata.item_types`
@@ -117,7 +116,7 @@ def _update_array_meta(
     - memo (dict)
     """
     assert memo is not None
-    new_item_types: Optional[abc.Types] = new_metadata.item_types
+    new_item_types: abc.Types | None = new_metadata.item_types
     if new_item_types is not None:
         item_types: abc.MutableTypes = (
             MutableTypes()
@@ -135,7 +134,7 @@ def _update_array_meta(
 def _update_dictionary_meta(
     metadata: abc.DictionaryMeta,
     new_metadata: abc.DictionaryMeta,
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function updates `metadata` by adding/updating `metadata.value_types`
@@ -148,7 +147,7 @@ def _update_dictionary_meta(
     - memo (dict)
     """
     assert memo is not None
-    new_value_types: Optional[abc.Types] = new_metadata.value_types
+    new_value_types: abc.Types | None = new_metadata.value_types
     if new_value_types is not None:
         value_types: abc.MutableTypes = (
             MutableTypes()
@@ -166,7 +165,7 @@ def _update_dictionary_meta(
 def _update_object_meta(
     metadata: abc.ObjectMeta,
     new_metadata: abc.ObjectMeta,
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function updates `metadata` by adding any properties from
@@ -182,16 +181,16 @@ def _update_object_meta(
     assert memo is not None
     assert metadata.properties is not None
     assert new_metadata.properties is not None
-    metadata_keys: Set[str] = set(metadata.properties.keys())
-    new_metadata_keys: Set[str] = set(new_metadata.properties.keys())
+    metadata_keys: set[str] = set(metadata.properties.keys())
+    new_metadata_keys: set[str] = set(new_metadata.properties.keys())
     # Add properties that don't exist
     key: str
     for key in metadata_keys - new_metadata_keys:
         metadata.properties[key] = new_metadata.properties[key]
     # Update shared properties
     for key in metadata_keys & new_metadata_keys:
-        types_: Optional[abc.Types] = metadata.properties[key].types
-        new_types: Optional[abc.Types] = new_metadata.properties[key].types
+        types_: abc.Types | None = metadata.properties[key].types
+        new_types: abc.Types | None = new_metadata.properties[key].types
         if new_types is not None:
             mutable_types: abc.MutableTypes = (
                 MutableTypes()
@@ -225,7 +224,7 @@ def _update_object_meta(
 def _update_object_class_from_meta(
     object_class: type,
     new_object_metadata: abc.ObjectMeta,
-    memo: Dict[str, type],
+    memo: dict[str, type],
 ) -> None:
     """
     This function merges new metadata into an existing object model's metadata.
@@ -237,7 +236,7 @@ def _update_object_class_from_meta(
     - memo (dict)
     """
     assert isinstance(new_object_metadata, abc.ObjectMeta)
-    object_metadata: Optional[abc.Meta] = meta.read(object_class)
+    object_metadata: abc.Meta | None = meta.read(object_class)
     assert isinstance(object_metadata, (abc.ObjectMeta, NoneType))
     _update_object_meta(object_metadata, new_object_metadata, memo)
     # Recreate the object class
@@ -248,16 +247,14 @@ def _update_object_class_from_meta(
         docstring=object_class.__doc__,
     )
     # Apply the rest of the changes to the existing model class
-    setattr(
-        object_class, "__init__", getattr(updated_object_class, "__init__")
-    )
-    setattr(object_class, "_source", get_source(updated_object_class))
+    object_class.__init__ = updated_object_class.__init__
+    object_class._source = get_source(updated_object_class)  # noqa: SLF001
 
 
 def _update_array_class_from_meta(
     array_class: type,
     new_array_metadata: abc.ArrayMeta,
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function merges new metadata into an existing array model's metadata.
@@ -281,7 +278,7 @@ def _update_array_class_from_meta(
 def _update_dictionary_class_from_meta(
     dictionary_class: type,
     new_dictionary_metadata: abc.DictionaryMeta,
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function merges new metadata into an existing array model's metadata.
@@ -306,8 +303,8 @@ def _update_dictionary_class_from_meta(
 
 def _update_model_class_from_meta(
     model_class: type,
-    new_metadata: Union[abc.ArrayMeta, abc.ObjectMeta, abc.DictionaryMeta],
-    memo: Optional[Dict[str, type]] = None,
+    new_metadata: abc.ArrayMeta | abc.ObjectMeta | abc.DictionaryMeta,
+    memo: dict[str, type] | None = None,
 ) -> None:
     """
     This function merges new metadata into an existing model's metadata.
@@ -362,11 +359,11 @@ def class_name_from_pointer(pointer: str) -> str:
 
 def _get_models_from_meta(
     pointer: str,
-    metadata: Union[abc.ArrayMeta, abc.ObjectMeta, abc.DictionaryMeta],
+    metadata: abc.ArrayMeta | abc.ObjectMeta | abc.DictionaryMeta,
     module: str = "__main__",
-    memo: Optional[Dict[str, type]] = None,
+    memo: dict[str, type] | None = None,
     name: Callable[[str], str] = class_name_from_pointer,
-) -> List[type]:
+) -> list[type]:
     """
     This function generates and updates classes from metadata.
 
@@ -378,7 +375,7 @@ def _get_models_from_meta(
     - memo (dict)
     """
     assert memo is not None
-    new_models: List[type] = []
+    new_models: list[type] = []
     # If the object has no attributes, interpret it an an empty dictionary
     if isinstance(metadata, abc.ObjectMeta) and not metadata.properties:
         metadata = meta.Dictionary()
@@ -463,15 +460,15 @@ class Synonyms:
     __slots__ = ("_type", "_nullable", "_set")
 
     def __init__(
-        self, items: Iterable[Union[abc.Readable, abc.MarshallableTypes]] = ()
+        self, items: Iterable[abc.Readable | abc.MarshallableTypes] = ()
     ) -> None:
-        self._type: Optional[type] = None
+        self._type: type | None = None
         self._nullable: bool = False
-        self._set: Set[abc.MarshallableTypes] = set()
+        self._set: set[abc.MarshallableTypes] = set()
         if items:
             self.__ior__(items)
 
-    def add(self, item: Union[abc.Readable, abc.MarshallableTypes]) -> None:
+    def add(self, item: abc.Readable | abc.MarshallableTypes) -> None:
         """
         This method adds a synonymous item to the set. If the item is a
         file-like (input/output) object, that object is first read,
@@ -483,13 +480,13 @@ class Synonyms:
         """.format(
             "|".join(
                 qualified_name(item_type)
-                for item_type in ((abc.Readable,) + abc.MARSHALLABLE_TYPES)
+                for item_type in ((abc.Readable, *abc.MARSHALLABLE_TYPES))
             )
         )
-        assert isinstance(item, (abc.Readable,) + abc.MARSHALLABLE_TYPES)
+        assert isinstance(item, (abc.Readable, *abc.MARSHALLABLE_TYPES))
         if isinstance(item, abc.Readable):
             # Deserialize and unmarshal file-like objects
-            item = unmarshal(detect_format(_read(item))[0])
+            item = unmarshal(deserialize(_read(item))[0])
         elif isinstance(item, Iterable) and not isinstance(
             item, (str, abc.Model, Mapping)
         ):
@@ -503,38 +500,35 @@ class Synonyms:
         elif item is not None:
             if self._type is None:
                 self._type = type(item)
-            else:
-                # If there is a data type discrepancy between `float` and
-                # `int`, use `float`.
-                if (
-                    issubclass(self._type, (int, float))
-                    and isinstance(item, (int, float))
-                    and (type(item) is not self._type)
-                ):
-                    self._type = float
-                elif not isinstance(item, self._type):
-                    # If there is a discrepancy where a data type can
-                    # be either simple of a container, we infer
-                    # unrestricted polymorphism, and indicate this by
-                    # setting `._type` to `object`
-                    self._type = object
+            elif (
+                issubclass(self._type, (int, float))
+                and isinstance(item, (int, float))
+                and (type(item) is not self._type)
+            ):
+                self._type = float
+            elif not isinstance(item, self._type):
+                # If there is a discrepancy where a data type can
+                # be either simple of a container, we infer
+                # unrestricted polymorphism, and indicate this by
+                # setting `._type` to `object`
+                self._type = object
             assert isinstance(item, MARSHALLABLE_TYPES)
             self._set.add(item)  # type: ignore
 
     def discard(self, item: abc.MarshallableTypes) -> None:
-        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self_set: set[abc.MarshallableTypes] = copy(self._set)
         self_set.discard(item)
         self.clear()
         self.__ior__(self_set)
 
     def remove(self, item: abc.MarshallableTypes) -> None:
-        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self_set: set[abc.MarshallableTypes] = copy(self._set)
         self_set.remove(item)
         self.clear()
         self.__ior__(self_set)
 
     def pop(self) -> abc.MarshallableTypes:
-        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        self_set: set[abc.MarshallableTypes] = copy(self._set)
         item: abc.MarshallableTypes = self_set.pop()
         self.clear()
         self.__ior__(self_set)
@@ -546,8 +540,8 @@ class Synonyms:
         self._set.clear()
 
     def union(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-    ) -> "Synonyms":
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
+    ) -> Synonyms:
         """
         This method returns an instance of `Synonyms` which incorporates
         all (non-redundant) items from both `self` and `other`.
@@ -557,49 +551,47 @@ class Synonyms:
         return new_synonyms
 
     def __ior__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-    ) -> "Synonyms":
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
+    ) -> Self:
         assert_is_instance("other", other, Iterable)
         assert_not_is_instance("other", other, (Mapping, abc.Dictionary))
-        item: Union[abc.Readable, abc.MarshallableTypes]
+        item: abc.Readable | abc.MarshallableTypes
         for item in other:
             self.add(item)
         return self
 
     def __or__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-    ) -> "Synonyms":
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
+    ) -> Synonyms:
         return copy(self).__ior__(other)
 
     @staticmethod
     def _get_set(
-        other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-    ) -> Set[abc.MarshallableTypes]:
+        other: Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> set[abc.MarshallableTypes]:
         return (
-            other._set
+            other._set  # noqa: SLF001
             if isinstance(other, Synonyms)
-            else other if isinstance(other, Set) else Synonyms(other)._set
+            else other
+            if isinstance(other, set)
+            else Synonyms(other)._set  # noqa: SLF001
         )
 
     def __iand__(
         self,
-        other: Union[
-            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-        ],
-    ) -> "Synonyms":
-        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
-        self_set: Set[abc.MarshallableTypes] = copy(self._set)
+        other: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> Self:
+        other_set: set[abc.MarshallableTypes] = self._get_set(other)
+        self_set: set[abc.MarshallableTypes] = copy(self._set)
         self.clear()
         return self.__ior__(self_set & other_set)
 
     def __ixor__(
         self,
-        other: Union[
-            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-        ],
-    ) -> "Synonyms":
-        self_set: Set[abc.MarshallableTypes] = copy(self._set)
-        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        other: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> Synonyms:
+        self_set: set[abc.MarshallableTypes] = copy(self._set)
+        other_set: set[abc.MarshallableTypes] = self._get_set(other)
         self.clear()
         if self_set is not other_set:
             self.__ior__(self_set ^ other_set)
@@ -607,44 +599,40 @@ class Synonyms:
 
     def __isub__(
         self,
-        other: Union[
-            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-        ],
-    ) -> "Synonyms":
-        self_set: Set[abc.MarshallableTypes] = self._set
-        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        other: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> Self:
+        self_set: set[abc.MarshallableTypes] = self._set
+        other_set: set[abc.MarshallableTypes] = self._get_set(other)
         self.clear()
         if self_set is not other_set:
             self.__ior__(self_set.__isub__(other_set))
         return self
 
     def __sub__(
-        self, other: Union["Synonyms", Iterable[abc.MarshallableTypes]]
-    ) -> "Synonyms":
-        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        self, other: Synonyms | Iterable[abc.MarshallableTypes]
+    ) -> Self:
+        other_set: set[abc.MarshallableTypes] = self._get_set(other)
         return self.__class__(self._set.__sub__(other_set))
 
     def __xor__(
         self,
-        other: Union[
-            "Synonyms", Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-        ],
-    ) -> "Synonyms":
-        other_set: Set[abc.MarshallableTypes] = self._get_set(other)
+        other: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> Self:
+        other_set: set[abc.MarshallableTypes] = self._get_set(other)
         return self.__class__(self._set.__xor__(other_set))
 
-    def __copy__(self) -> "Synonyms":
+    def __copy__(self) -> Self:
         new_synonyms: Synonyms = self.__class__()
-        new_synonyms._set = copy(self._set)
-        new_synonyms._type = self._type
-        new_synonyms._nullable = self._nullable
+        new_synonyms._set = copy(self._set)  # noqa: SLF001
+        new_synonyms._type = self._type  # noqa: SLF001
+        new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
-    def __deepcopy__(self, memo: Optional[dict] = None) -> "Synonyms":
+    def __deepcopy__(self, memo: dict | None = None) -> Self:
         new_synonyms: Synonyms = self.__class__()
-        new_synonyms._set = deepcopy(self._set, memo=memo)
-        new_synonyms._type = self._type
-        new_synonyms._nullable = self._nullable
+        new_synonyms._set = deepcopy(self._set, memo=memo)  # noqa: SLF001
+        new_synonyms._type = self._type  # noqa: SLF001
+        new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
     def _get_type(self) -> type:
@@ -670,8 +658,8 @@ class Synonyms:
 
     def _get_property_names_values(
         self,
-    ) -> "abc.OrderedDict[str, List[abc.MarshallableTypes]]":
-        keys_values: "abc.OrderedDict[str, List[abc.MarshallableTypes]]" = (
+    ) -> abc.OrderedDict[str, list[abc.MarshallableTypes]]:
+        keys_values: abc.OrderedDict[str, list[abc.MarshallableTypes]] = (
             collections.OrderedDict()
         )
         item: abc.MarshallableTypes
@@ -679,11 +667,12 @@ class Synonyms:
             try:
                 assert isinstance(item, (Mapping, abc.Dictionary))
             except AssertionError:
+                msg = "item"
                 raise IsInstanceAssertionError(
-                    "item", item, (Mapping, abc.Dictionary)
+                    msg, item, (Mapping, abc.Dictionary)
                 )
             value: abc.MarshallableTypes
-            item_: Tuple[str, Any]
+            item_: tuple[str, Any]
             for key, value in sorted(
                 item.items(),
                 key=lambda item_: (
@@ -701,41 +690,40 @@ class Synonyms:
         pointer: str,
         module: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
-        memo: Optional[Dict[str, type]] = None,
+        memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         metadata: abc.DictionaryMeta = meta.Dictionary()
         metadata.value_types: abc.Types = meta.MutableTypes()  # type: ignore
         key: str
         property_name_: str
-        values: List[abc.MarshallableTypes]
+        values: list[abc.MarshallableTypes]
         model_class: type
-        for model_class in _get_models_from_meta(
+        yield from _get_models_from_meta(
             pointer, metadata, module=module, memo=memo, name=name
-        ):
-            yield model_class
+        )
 
     def _get_object_models(
         self,
         pointer: str,
         module: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
-        memo: Optional[Dict[str, type]] = None,
+        memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         metadata: abc.ObjectMeta = meta.Object()
         metadata.properties = meta.Properties()  # type: ignore
         key: str
         property_name_: str
-        values: List[abc.MarshallableTypes]
-        visited_property_names: Set[str] = set()
+        values: list[abc.MarshallableTypes]
+        visited_property_names: set[str] = set()
         for key, values in self._get_property_names_values().items():
             property_name_ = property_name(key)
             while property_name_ in visited_property_names:
                 property_name_ = f"{property_name_}_"
             visited_property_names.add(property_name_)
-            item_type: Optional[type] = None
+            item_type: type | None = None
             is_model: bool = False
             property_synonyms: Synonyms = type(self)(values)
-            for item_type in property_synonyms._get_types(
+            for item_type in property_synonyms._get_types(  # noqa: SLF001
                 pointer=f"{pointer}/{escape_reference_token(property_name_)}",
                 module=module,
                 memo=memo,
@@ -751,9 +739,13 @@ class Synonyms:
                     metadata.properties[property_name_] = Property(
                         name=key,
                         types=[item_type]
-                        + ([Null] if property_synonyms._nullable else []),
+                        + (
+                            [Null]
+                            if property_synonyms._nullable  # noqa: SLF001
+                            else []
+                        ),
                     )
-                elif property_synonyms._nullable:
+                elif property_synonyms._nullable:  # noqa: SLF001
                     metadata.properties[property_name_] = Property(
                         name=key, types=[TYPES_PROPERTIES[item_type](), Null]
                     )
@@ -764,25 +756,24 @@ class Synonyms:
             else:
                 metadata.properties[property_name_] = Property(name=key)
         model_class: type
-        for model_class in _get_models_from_meta(
+        yield from _get_models_from_meta(
             pointer, metadata, module=module, memo=memo, name=name
-        ):
-            yield model_class
+        )
 
     def _get_array_models(
         self,
         pointer: str,
         module: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
-        memo: Optional[Dict[str, type]] = None,
+        memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         unified_items: Synonyms = type(self)()
         items: abc.MarshallableTypes
         for items in self:
             assert isinstance(items, Iterable)
             unified_items |= items
-        item_type: Optional[type] = None
-        for item_type in unified_items._get_types(
+        item_type: type | None = None
+        for item_type in unified_items._get_types(  # noqa: SLF001
             pointer=f"{pointer}/0", module=module, memo=memo, name=name
         ):
             yield item_type
@@ -790,17 +781,16 @@ class Synonyms:
             item_types=(None if item_type is None else [item_type])
         )
         array_type: type
-        for array_type in _get_models_from_meta(
+        yield from _get_models_from_meta(
             pointer, metadata, module=module, memo=memo, name=name
-        ):
-            yield array_type
+        )
 
     def _get_types(
         self,
         pointer: str,
         module: str = "__main__",
         name: Callable[[str], str] = class_name_from_pointer,
-        memo: Optional[Dict[str, type]] = None,
+        memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         # `_memo` holds a dictionary of all classes which have been created,
         # and is passed recursively to facilitate de-duplication
@@ -831,8 +821,7 @@ class Synonyms:
         if memo_is_new:
             type_iterator = list(type_iterator)
         type_: type
-        for type_ in type_iterator:
-            yield type_
+        yield from type_iterator
 
     def get_models(
         self,
@@ -859,9 +848,8 @@ class Synonyms:
         assert callable(name)
         # This assertion ensures `self` contains data which can be described by
         # a model class.
-        assert self._type and not issubclass(
-            self._type, (str, bytes, bytearray)
-        )
+        assert self._type
+        assert not issubclass(self._type, (str, bytes, bytearray))
         if self._type is not object:
             assert_is_subclass(
                 f"{qualified_name(type(self))}._type",
@@ -886,37 +874,37 @@ class Synonyms:
         return self._set.__contains__(item)
 
     def __le__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> bool:
         return self._set.__le__(self._get_set(other))
 
     def __lt__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> bool:
         return self._set.__lt__(self._get_set(other))
 
     def __gt__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> bool:
         return self._set.__gt__(self._get_set(other))
 
     def __ge__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> bool:
         return self._set.__ge__(self._get_set(other))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return type(other) is type(self) and self._set.__eq__(
             self._get_set(other)
         )
 
     def __and__(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
-    ) -> "Synonyms":
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
+    ) -> Self:
         return copy(self).__iand__(other)
 
     def isdisjoint(
-        self, other: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> bool:
         return self._set.isdisjoint(self._get_set(other))
 
@@ -956,7 +944,7 @@ def get_class_meta_attribute_assignment_source(
         (
             f"{writable_function_name}(  # type: ignore\n"
             f"    {suffix_long_lines(class_name_, -4)}\n"
-            f").{attribute_name} = {repr(getattr(metadata, attribute_name))}"
+            f").{attribute_name} = {getattr(metadata, attribute_name)!r}"
         ),
         -4,
     )
@@ -972,33 +960,21 @@ class Thesaurus:
 
     def __init__(
         self,
-        _items: Union[
-            Mapping[
-                str,
-                Union[
-                    Iterable[Union[abc.Readable, abc.MarshallableTypes]],
-                    Synonyms,
-                ],
-            ],
-            Iterable[
-                Tuple[
-                    str,
-                    Union[
-                        Iterable[Union[abc.Readable, abc.MarshallableTypes]],
-                        Synonyms,
-                    ],
-                ]
-            ],
-            "Thesaurus",
-            None,
-        ] = None,
-        **kwargs: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+        _items: Mapping[
+            str, Iterable[abc.Readable | abc.MarshallableTypes] | Synonyms
+        ]
+        | Iterable[
+            tuple[
+                str, Iterable[abc.Readable | abc.MarshallableTypes] | Synonyms
+            ]
+        ]
+        | Thesaurus
+        | None = None,
+        **kwargs: Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> None:
-        self._dict: "abc.OrderedDict[str, Synonyms]" = (
-            collections.OrderedDict()
-        )
+        self._dict: abc.OrderedDict[str, Synonyms] = collections.OrderedDict()
         key: str
-        value: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        value: Iterable[abc.Readable | abc.MarshallableTypes]
         for key, value in collections.OrderedDict(
             *((_items,) if _items else ()), **kwargs
         ).items():
@@ -1007,7 +983,7 @@ class Thesaurus:
     def __setitem__(
         self,
         key: str,
-        value: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+        value: Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> None:
         if not isinstance(value, Synonyms):
             value = Synonyms(value)
@@ -1017,16 +993,14 @@ class Thesaurus:
         self._dict.__delitem__(key)
 
     def pop(
-        self, key: str, default: Union[Synonyms, Undefined] = UNDEFINED
+        self, key: str, default: Synonyms | Undefined = UNDEFINED
     ) -> Synonyms:
         return self._dict.pop(
             key,
-            **(
-                {} if isinstance(default, Undefined) else dict(default=default)
-            ),
+            **({} if isinstance(default, Undefined) else {"default": default}),
         )
 
-    def popitem(self) -> Tuple[str, Synonyms]:
+    def popitem(self) -> tuple[str, Synonyms]:
         return self._dict.popitem()
 
     def clear(self) -> None:
@@ -1034,14 +1008,14 @@ class Thesaurus:
 
     def update(self, **kwargs: Synonyms) -> None:
         key: str
-        value: Iterable[Union[abc.Readable, abc.MarshallableTypes]]
+        value: Iterable[abc.Readable | abc.MarshallableTypes]
         for key, value in kwargs.items():
             self[key] = value
 
     def setdefault(
         self,
         key: str,
-        default: Iterable[Union[abc.Readable, abc.MarshallableTypes]],
+        default: Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> Synonyms:
         if not isinstance(default, Synonyms):
             default = Synonyms(default)
@@ -1055,13 +1029,11 @@ class Thesaurus:
             return self[key]
 
     def get(
-        self, key: str, default: Union[Undefined, Synonyms] = UNDEFINED
+        self, key: str, default: Undefined | Synonyms = UNDEFINED
     ) -> Synonyms:
         return self._dict.get(  # type: ignore
             key,
-            **(
-                {} if isinstance(default, Undefined) else dict(default=default)
-            ),
+            **({} if isinstance(default, Undefined) else {"default": default}),
         )
 
     def __contains__(self, key: str) -> bool:
@@ -1076,21 +1048,21 @@ class Thesaurus:
     def values(self) -> ValuesView[Synonyms]:
         return self._dict.values()
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._dict == other._dict
         return False
 
-    def __copy__(self) -> "Thesaurus":
+    def __copy__(self) -> Self:
         return self.__class__(copy(self._dict))
 
-    def __reversed__(self) -> "Thesaurus":
+    def __reversed__(self) -> Self:
         return self.__class__(reversed(self._dict.items()))
 
-    def __deepcopy__(self, memo: Optional[dict] = None) -> "Thesaurus":
+    def __deepcopy__(self, memo: dict | None = None) -> Self:
         return self.__class__(deepcopy(self._dict, memo=memo))
 
-    def __iadd__(self, other: "Thesaurus") -> "Thesaurus":
+    def __iadd__(self, other: Thesaurus) -> Self:
         assert isinstance(other, Thesaurus)
         key: str
         value: Synonyms
@@ -1098,7 +1070,7 @@ class Thesaurus:
             self[key] |= value
         return self
 
-    def __add__(self, other: "Thesaurus") -> "Thesaurus":
+    def __add__(self, other: Thesaurus) -> Self:
         return copy(self).__iadd__(other)
 
     def get_models(
@@ -1110,10 +1082,7 @@ class Thesaurus:
         synonyms: Synonyms
         for key, synonyms in self.items():
             model_class: type
-            for model_class in synonyms.get_models(
-                key, module=module, name=name
-            ):
-                yield model_class
+            yield from synonyms.get_models(key, module=module, name=name)
 
     def _get_module_source(
         self,
@@ -1121,11 +1090,11 @@ class Thesaurus:
         name: Callable[[str], str] = class_name_from_pointer,
     ) -> str:
         class_names_metadata: abc.OrderedDict[
-            str, Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
+            str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
         ] = collections.OrderedDict()
-        imports: Set[str] = set()
-        classes: List[str] = []
-        metadatas: List[str] = []
+        imports: set[str] = set()
+        classes: list[str] = []
+        metadatas: list[str] = []
         model_class: type
         for model_class in self.get_models(module=module_name, name=name):
             class_imports: str
@@ -1138,14 +1107,14 @@ class Thesaurus:
                 maxlen=0,
             )
             classes.append(class_source)
-            meta_instance: Optional[abc.Meta] = meta.read(model_class)
+            meta_instance: abc.Meta | None = meta.read(model_class)
             assert isinstance(
                 meta_instance,
                 (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
             )
             class_names_metadata[model_class.__name__] = meta_instance
         class_name_: str
-        metadata: Union[abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta]
+        metadata: abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
         for class_name_, metadata in class_names_metadata.items():
             assert isinstance(
                 metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)

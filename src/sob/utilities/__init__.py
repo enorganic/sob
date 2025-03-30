@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from typing import List
 
 # isort: off
-from . import io, inspect, string, types
+from sob.utilities import io, inspect, string, types
 
 # isort: on
-from .inspect import (
+from sob.utilities.inspect import (
     calling_function_qualified_name,
     calling_functions_qualified_names,
     get_source,
@@ -12,7 +14,7 @@ from .inspect import (
     properties_values,
     qualified_name,
 )
-from .string import (
+from sob.utilities.string import (
     camel,
     camel_split,
     class_name,
@@ -22,7 +24,7 @@ from .string import (
     url_relative_to,
 )
 
-__all__: List[str] = [
+__all__: list[str] = [
     "inspect",
     "io",
     "string",

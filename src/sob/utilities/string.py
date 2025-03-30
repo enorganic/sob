@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import builtins
 import enum
 import re
 import sys
 from keyword import iskeyword
-from typing import List, Match, Optional, Pattern, Tuple
+from re import Match, Pattern
 from unicodedata import normalize
 
 _DIGITS: str = "0123456789"
@@ -24,37 +26,37 @@ def property_name(string: str) -> str:
     with a python keyword, or an otherwise non-compatible string to a PEP-8
     compliant property name.
 
-    >>> print(property_name('theBirdsAndTheBees'))
+    >>> print(property_name("theBirdsAndTheBees"))
     the_birds_and_the_bees
 
-    >>> print(property_name('theBirdsAndTheBEEs'))
+    >>> print(property_name("theBirdsAndTheBEEs"))
     the_birds_and_the_bees
 
-    >>> print(property_name('theBirdsAndTheBEEsEs'))
+    >>> print(property_name("theBirdsAndTheBEEsEs"))
     the_birds_and_the_be_es_es
 
-    >>> print(property_name('FYIThisIsAnAcronym'))
+    >>> print(property_name("FYIThisIsAnAcronym"))
     fyi_this_is_an_acronym
 
-    >>> print(property_name('in'))
+    >>> print(property_name("in"))
     in_
 
-    >>> print(property_name('id'))
+    >>> print(property_name("id"))
     id_
 
-    >>> print(property_name('one2one'))  # No change needed
+    >>> print(property_name("one2one"))  # No change needed
     one2one
 
-    >>> print(property_name('One2One'))
+    >>> print(property_name("One2One"))
     one_2_one
 
-    >>> print(property_name('@One2One'))
+    >>> print(property_name("@One2One"))
     one_2_one
 
-    >>> print(property_name('One2One-ALL'))
+    >>> print(property_name("One2One-ALL"))
     one_2_one_all
 
-    >>> print(property_name('one2one-ALL'))
+    >>> print(property_name("one2one-ALL"))
     one2one_all
     """
     name: str = string
@@ -93,31 +95,31 @@ def class_name(string: str) -> str:
     This function accepts a string and returns a variation of that string
     which is a PEP-8 compatible python class name.
 
-    >>> print(class_name('the birds and the bees'))
+    >>> print(class_name("the birds and the bees"))
     TheBirdsAndTheBees
 
-    >>> print(class_name('the-birds-and-the-bees'))
+    >>> print(class_name("the-birds-and-the-bees"))
     TheBirdsAndTheBees
 
-    >>> print(class_name('**the - birds - and - the - bees**'))
+    >>> print(class_name("**the - birds - and - the - bees**"))
     TheBirdsAndTheBees
 
-    >>> print(class_name('FYI is an acronym'))
+    >>> print(class_name("FYI is an acronym"))
     FYIIsAnAcronym
 
-    >>> print(class_name('in-you-go'))
+    >>> print(class_name("in-you-go"))
     InYouGo
 
-    >>> print(class_name('False'))
+    >>> print(class_name("False"))
     False_
 
-    >>> print(class_name('True'))
+    >>> print(class_name("True"))
     True_
 
-    >>> print(class_name('ABC Acronym'))
+    >>> print(class_name("ABC Acronym"))
     ABCAcronym
 
-    >>> print(class_name('AB CD Efg'))
+    >>> print(class_name("AB CD Efg"))
     ABCdEfg
     """
     name = camel(string, capitalize=True)
@@ -139,55 +141,55 @@ def camel(string: str, capitalize: bool = False) -> str:
 
       If this is `true`, the first letter will be capitalized.
 
-    >>> print(camel('the birds and the bees'))
+    >>> print(camel("the birds and the bees"))
     theBirdsAndTheBees
 
-    >>> print(camel('the birds and the bees', capitalize=True))
+    >>> print(camel("the birds and the bees", capitalize=True))
     TheBirdsAndTheBees
 
-    >>> print(camel('the-birds-and-the-bees'))
+    >>> print(camel("the-birds-and-the-bees"))
     theBirdsAndTheBees
 
-    >>> print(camel('**the - birds - and - the - bees**'))
+    >>> print(camel("**the - birds - and - the - bees**"))
     theBirdsAndTheBees
 
-    >>> print(camel('FYI is an acronym'))
+    >>> print(camel("FYI is an acronym"))
     FYIIsAnAcronym
 
-    >>> print(camel('in-you-go'))
+    >>> print(camel("in-you-go"))
     inYouGo
 
-    >>> print(camel('False'))
+    >>> print(camel("False"))
     false
 
-    >>> print(camel('True'))
+    >>> print(camel("True"))
     true
 
-    >>> print(camel('in'))
+    >>> print(camel("in"))
     in
 
-    >>> print(camel('AB CD Efg', capitalize=True))
+    >>> print(camel("AB CD Efg", capitalize=True))
     ABCdEfg
 
-    >>> print(camel('ABC DEF GHI', capitalize=True))
+    >>> print(camel("ABC DEF GHI", capitalize=True))
     AbcDefGhi
 
-    >>> print(camel('ABC_DEF_GHI', capitalize=True))
+    >>> print(camel("ABC_DEF_GHI", capitalize=True))
     AbcDefGhi
 
-    >>> print(camel('ABC DEF GHI'))
+    >>> print(camel("ABC DEF GHI"))
     abcDefGhi
 
-    >>> print(camel('ABC_DEF_GHI'))
+    >>> print(camel("ABC_DEF_GHI"))
     abcDefGhi
 
-    >>> print(camel('AB_CDEfg'))
+    >>> print(camel("AB_CDEfg"))
     ABCdEfg
     """
     index: int
     character: str
     string = normalize("NFKD", string)
-    characters: List[str] = []
+    characters: list[str] = []
     all_uppercase: bool = string.upper() == string
     capitalize_next: bool = capitalize
     uncapitalize_next: bool = (not capitalize) and (
@@ -230,8 +232,7 @@ def camel(string: str, capitalize: bool = False) -> str:
         else:
             capitalize_next = True
             uncapitalize_next = False
-    character_string = "".join(characters)
-    return character_string
+    return "".join(characters)
 
 
 class _CharacterType(enum.Enum):
@@ -241,47 +242,38 @@ class _CharacterType(enum.Enum):
     OTHER = enum.auto()
 
 
-def camel_split(string: str) -> Tuple[str, ...]:
+def camel_split(string: str) -> tuple[str, ...]:
     """
     Split a string of camelCased words into a tuple.
 
     Examples:
 
     >>> print(
-    ...     '(%s)' % ', '.join(
-    ...         "'%s'" % s for s in camel_split('theBirdsAndTheBees')
-    ...     )
+    ...     "(%s)" % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBees"))
     ... )
     ('the', 'Birds', 'And', 'The', 'Bees')
     >>> print(
-    ...     '(%s)' % ', '.join(
-    ...         "'%s'" % s for s in camel_split('theBirdsAndTheBees123')
-    ...     )
+    ...     "(%s)"
+    ...     % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBees123"))
     ... )
     ('the', 'Birds', 'And', 'The', 'Bees', '123')
     >>> print(
-    ...     '(%s)' % ', '.join(
-    ...         "'%s'" % s for s in camel_split('theBirdsAndTheBeesABC123')
-    ...     )
+    ...     "(%s)"
+    ...     % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBeesABC123"))
     ... )
     ('the', 'Birds', 'And', 'The', 'Bees', 'ABC', '123')
     >>> print(
-    ...     '(%s)' % ', '.join(
-    ...         "'%s'" % s for s in camel_split(
-    ...             'the-Birds-&-The-Bs-ABC--123'
-    ...         )
-    ...     )
+    ...     "(%s)"
+    ...     % ", ".join("'%s'" % s for s in camel_split("the-Birds-&-The-Bs-ABC--123"))
     ... )
     ('the', '-', 'Birds', '-&-', 'The', '-', 'Bs', '-', 'ABC', '--', '123')
     >>> print(
-    ...     '(%s)' % ', '.join(
-    ...         "'%s'" % s for s in camel_split('THEBirdsAndTheBees')
-    ...     )
+    ...     "(%s)" % ", ".join("'%s'" % s for s in camel_split("THEBirdsAndTheBees"))
     ... )
     ('THE', 'Birds', 'And', 'The', 'Bees')
     """
-    words: List[List[str]] = []
-    preceding_character_type: Optional[_CharacterType] = None
+    words: list[list[str]] = []
+    preceding_character_type: _CharacterType | None = None
     for character in string:
         character_type: _CharacterType = (
             _CharacterType.LOWERCASE
@@ -311,7 +303,7 @@ def camel_split(string: str) -> Tuple[str, ...]:
                     # uppercase character was inferred to be part of an,
                     # however now we know it was either following an acronym,
                     # or following a single-character word)
-                    words.append([words[-1].pop()] + [character])
+                    words.append([words[-1].pop(), character])
                 else:
                     # When following an uppercase character, a lowercase
                     # character should be added to the preceding word if that
@@ -336,7 +328,7 @@ def indent(
     string: str,
     number_of_spaces: int = 4,
     start: int = 1,
-    stop: Optional[int] = None,
+    stop: int | None = None,
 ) -> str:
     """
     Indent text by `number_of_spaces` starting at line index `start` and
@@ -344,7 +336,7 @@ def indent(
     """
     indented_text = string
     if ("\n" in string) or start == 0:
-        lines: List[str] = string.split("\n")
+        lines: list[str] = string.split("\n")
         if stop:
             if stop < 0:
                 stop = len(lines) - stop
@@ -359,13 +351,13 @@ def indent(
     return indented_text
 
 
-def url_directory_and_file_name(url: str) -> Tuple[str, str]:
+def url_directory_and_file_name(url: str) -> tuple[str, str]:
     """
     Split a URL into a directory path and file name
     """
     directory: str
     file_name: str
-    matched: Optional[Match] = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
+    matched: Match | None = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
     assert matched is not None
     directory, file_name = matched.groups()
     return directory, file_name
@@ -400,22 +392,24 @@ def split_long_comment_line(
     """
     Split a comment (or docstring) line
 
-    >>> print(split_long_comment_line(
-    ...     '    Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-    ...     'Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.'
-    ... ))
+    >>> print(
+    ...     split_long_comment_line(
+    ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl efficitur."
+    ...     )
+    ... )
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
         odio a urna elementum, eu tempor nisl efficitur.
     """
     if len(line) > max_line_length:
-        matched: Optional[Match] = re.match(
-            (r"^[ ]*(?:%s[ ]*)?" % prefix if prefix else r"^[ ]*"), line
+        matched: Match | None = re.match(
+            (rf"^[ ]*(?:{prefix}[ ]*)?" if prefix else r"^[ ]*"), line
         )
         assert matched is not None
         indent_: str = matched.group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
-        lines: List[str] = []
+        lines: list[str] = []
         wrapped_line: str = ""
         for word in words:
             if (
@@ -439,10 +433,12 @@ def split_long_docstring_lines(
     """
     Split long docstring lines
 
-    >>> print(split_long_docstring_lines(
-    ...     '    Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
-    ...     'Nullam faucibu odio a urna elementum, eu tempor nisl efficitu'
-    ... ))
+    >>> print(
+    ...     split_long_docstring_lines(
+    ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl efficitu"
+    ...     )
+    ... )
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
         odio a urna elementum, eu tempor nisl efficitu
     """
@@ -450,7 +446,7 @@ def split_long_docstring_lines(
     indent_: str = "    "
     if "\t" in docstring:
         docstring = docstring.replace("\t", indent_)
-    lines: List[str] = docstring.split("\n")
+    lines: list[str] = docstring.split("\n")
     indentation_length: int = sys.maxsize
     for line in filter(None, lines):
         matched = re.match(r"^[ ]+", line)
@@ -461,7 +457,7 @@ def split_long_docstring_lines(
             break
     indent_ = " " * (indentation_length or 4)
     if indentation_length < sys.maxsize:
-        wrapped_lines: List[str] = []
+        wrapped_lines: list[str] = []
         for line in lines:
             wrapped_lines.append(
                 split_long_comment_line(
