@@ -536,11 +536,11 @@ QUALIFIED_NAME_ARGUMENT_TYPES: tuple[Any, ...] = (
 
 def get_qualified_name(type_or_module: type | Callable | ModuleType) -> str:
     """
-    >>> print(qualified_name(qualified_name))
-    sob.utilities.qualified_name
+    >>> print(get_qualified_name(get_qualified_name))
+    sob.utilities.get_qualified_name
 
     >>> from sob import model
-    >>> print(qualified_name(model.marshal))
+    >>> print(get_qualified_name(model.marshal))
     sob.model.marshal
     """
     if not isinstance(type_or_module, QUALIFIED_NAME_ARGUMENT_TYPES):

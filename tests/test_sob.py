@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from iso8601.iso8601 import parse_date
 
-from sob import abc, meta, model, properties, test, utilities
+from sob import abc, meta, model, properties, utilities
+from tests import utilities as tests_utilities
 
 
 class A(model.Object):
@@ -475,7 +476,7 @@ def _get_testy_path() -> str:
 
 def test_json_serialization() -> None:
     model.validate(testy)
-    test.model(testy)
+    tests_utilities.model(testy)
     path: str = _get_testy_path()
     if not os.path.exists(path):
         with open(path, mode="w", encoding="utf-8") as file:
@@ -495,7 +496,7 @@ def test_json_serialization() -> None:
         assert cast(dict, model.marshal(testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
-    test.model(testy)
+    tests_utilities.model(testy)
 
 
 def test_json_deserialization() -> None:
@@ -527,53 +528,32 @@ def test_utilities() -> None:
     )
 
     class TestCallingFunctionQualifiedNameA:
-        __module__ = "sob.test"
+        __module__ = "tests.utilities"
 
         def __init__(self) -> None:
-            if hasattr(type(self), "__qualname__"):
-                assert utilities.get_calling_function_qualified_name() == (
-                    "sob.test.test_utilities."
-                    "TestCallingFunctionQualifiedNameA.__init__"
-                )
-            else:
-                assert utilities.get_calling_function_qualified_name() == (
-                    "sob.test.TestCallingFunctionQualifiedNameA.__init__"
-                )
+            assert utilities.get_calling_function_qualified_name() == (
+                "tests.utilities.test_utilities."
+                "TestCallingFunctionQualifiedNameA.__init__"
+            )
 
     TestCallingFunctionQualifiedNameA()
 
     class TestCallingFunctionQualifiedNameB:
         def __init__(self) -> None:
-            if hasattr(type(self), "__qualname__"):
-                assert utilities.get_calling_function_qualified_name() == (
-                    "test_utilities.TestCallingFunctionQualifiedNameB.__init__"
-                    if __name__ == "__main__"
-                    else "test_sob.test_utilities."
-                    "TestCallingFunctionQualifiedNameB.__init__"
-                )
-            else:
-                assert utilities.get_calling_function_qualified_name() == (
-                    "TestCallingFunctionQualifiedNameB.__init__"
-                    if __name__ == "__main__"
-                    else "test_sob.TestCallingFunctionQualifiedNameB.__init__"
-                )
+            assert utilities.get_calling_function_qualified_name() == (
+                "tests.test_sob.test_utilities.TestCallingFunctionQualifie"
+                "dNameB.__init__"
+            )
 
     TestCallingFunctionQualifiedNameB()
 
     class TestCallingFunctionQualifiedNameC:
         class TestCallingFunctionQualifiedNameD:
             def __init__(self) -> None:
-                if hasattr(type(self), "__qualname__"):
-                    assert utilities.get_calling_function_qualified_name() == (
-                        ("" if __name__ == "__main__" else "test_sob.")
-                        + "test_utilities.TestCallingFunctionQualifiedNameC."
-                        + "TestCallingFunctionQualifiedNameD.__init__"
-                    )
-                else:
-                    assert utilities.get_calling_function_qualified_name() == (
-                        ("" if __name__ == "__main__" else "test_sob.")
-                        + "TestCallingFunctionQualifiedNameD.__init__"
-                    )
+                assert utilities.get_calling_function_qualified_name() == (
+                    "tests.test_sob.test_utilities.TestCallingFunctionQualifie"
+                    "dNameC.TestCallingFunctionQualifiedNameD.__init__"
+                )
 
     TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
     if hasattr(
@@ -581,10 +561,11 @@ def test_utilities() -> None:
         "__qualname__",
     ):
         assert utilities.get_qualified_name(
-            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
+            TestCallingFunctionQualifiedNameC(
+                # -
+            ).TestCallingFunctionQualifiedNameD
         ) == (
-            ("" if __name__ == "__main__" else "test_sob.")
-            + "test_utilities.TestCallingFunctionQualifiedNameC."
+            "tests.test_sob.test_utilities.TestCallingFunctionQualifiedNameC."
             "TestCallingFunctionQualifiedNameD"
         )
     else:

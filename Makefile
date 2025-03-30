@@ -68,7 +68,7 @@ requirements:
 # Test & check linting/formatting (for local use only)
 test:
 	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
-	hatch fmt --check && hatch run mypy && hatch test -c && \
+	hatch fmt --check && hatch run mypy && hatch test -c -vv && \
 	echo "Tests Successful"
 
 format:

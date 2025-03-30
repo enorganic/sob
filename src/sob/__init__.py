@@ -14,7 +14,6 @@ from sob import (
     types,
     hooks,
     properties,
-    test,
     thesaurus,
 )
 
@@ -29,7 +28,6 @@ __all__: tuple[str, ...] = (
     "meta",
     "types",
     "hooks",
-    "test",
     "request",
     "thesaurus",
 )

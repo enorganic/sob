@@ -14,7 +14,9 @@ def get_parameters_defaults(function: Callable[..., Any]) -> dict[str, Any]:
     >>> class X:
     ...     def __init__(self, a, b, c, d=1, e=2, f=3):
     ...         pass
-    >>> for parameter_name, default in parameters_defaults(X.__init__).items():
+    >>> for parameter_name, default in get_parameters_defaults(
+    ...     X.__init__  # -
+    ... ).items():
     ...     print((parameter_name, default))
     ('self', UNDEFINED)
     ('a', UNDEFINED)

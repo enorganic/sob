@@ -40,20 +40,21 @@ def test_inspect() -> None:
 
     assert my_function().get_method_name() in (
         # This will be the response if running pytest
-        "test_utilities.test_inspect.my_function.MyClass.get_method_name",
+        "tests.test_utilities.test_inspect.my_function.MyClass.get_method_name",
         # This will be the response if running this module as a script
-        "test_inspect.my_function.MyClass.get_method_name",
+        "tests.test_inspect.my_function.MyClass.get_method_name",
     )
     assert my_function()() in (
-        "test_utilities.test_inspect.my_function.MyClass.get_method_name",
-        "test_inspect.my_function.MyClass.get_method_name",
+        "tests.test_utilities.test_inspect.my_function.MyClass."
+        "get_method_name",
+        "tests.test_inspect.my_function.MyClass.get_method_name",
     )
     # Static methods are defined at the module level...
     assert my_function().get_static_method_name() in (
         "test_utilities.test_utilities.get_static_method_name",
         "test_utilities.get_static_method_name",
     )
-    assert my_function().get_module_name() in ("test_utilities", "__main__")
+    assert my_function().get_module_name() == "tests.test_utilities"
 
 
 def test_io() -> None:
