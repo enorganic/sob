@@ -5,7 +5,7 @@ requires = [
 build-backend = "hatchling.build"
 
 [project]
-name = "oapi"
+name = "sob"
 version = "2.0.0"
 description = "A type-enforced framework for serializing and deserializing JSON"
 readme = "README.md"
@@ -19,6 +19,7 @@ keywords = [
 ]
 dependencies = [
 	"iso8601~=2.1",
+    "typing-extensions"
 ]
 
 [project.urls]
@@ -128,5 +129,13 @@ disallow_incomplete_defs = true
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["src/**/__main__.py"]
+omit = [
+    "src/**/__main__.py",
+    "src/sob/warnings.py",
+    "src/sob/test.py",
+    "src/sob/thesaurus.py",
+    "src/sob/hooks.py",
+    "src/sob/abc.py",
+    "src/sob/utilities/**",
+]
 

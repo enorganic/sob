@@ -29,32 +29,30 @@ from types import ModuleType
 from typing import (
     Any,
     Callable,
-    Self,
+    cast,
 )
 from urllib.parse import quote_plus
 
 from iso8601.iso8601 import ParseError, parse_date
+from typing_extensions import Self
 
 from sob import __name__ as _parent_module_name
 from sob import abc, meta
+from sob._io import read
+from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
 from sob.abc import MARSHALLABLE_TYPES
-from sob.errors import IsInstanceAssertionError
 from sob.meta import escape_reference_token
 from sob.model import deserialize, from_meta, unmarshal
 from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
 from sob.types import MutableTypes
-from sob.utilities import get_source, qualified_name
-from sob.utilities.assertion import (
-    assert_is_instance,
-    assert_is_subclass,
-    assert_not_is_instance,
+from sob.utilities import (
+    class_name,
+    get_calling_module_name,
+    get_qualified_name,
+    get_source,
+    property_name,
+    suffix_long_lines,
 )
-from sob.utilities.inspect import calling_module_name
-from sob.utilities.io import read
-from sob.utilities.string import class_name, property_name, suffix_long_lines
-from sob.utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
-
-__all__: list[str] = ["Synonyms", "Thesaurus"]
 
 lru_cache: Callable[..., Any] = functools.lru_cache
 
@@ -84,18 +82,22 @@ def _update_types(
     """
     new_type: type | abc.Property
     for new_type in new_types:
-        if isinstance(new_type, type) and issubclass(new_type, abc.Model):
-            if type.__name__ in memo:
-                existing_type: type = memo[type.__name__]
-                new_type_meta: abc.Meta | None = meta.read(new_type)
-                assert isinstance(
-                    new_type_meta,
-                    (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
-                )
-                _update_model_class_from_meta(
-                    existing_type, new_type_meta, memo=memo
-                )
-                new_type = existing_type
+        if (
+            isinstance(new_type, type)
+            and issubclass(new_type, abc.Model)
+            and (type.__name__ in memo)
+        ):
+            existing_type: type = memo[type.__name__]
+            new_type_meta: abc.Meta | None = meta.read(new_type)
+            if not isinstance(
+                new_type_meta,
+                (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
+            ):
+                raise TypeError(new_type_meta)
+            _update_model_class_from_meta(
+                existing_type, new_type_meta, memo=memo
+            )
+            new_type = existing_type  # noqa: PLW2901
         if new_type not in types:
             types.append(new_type)
 
@@ -115,7 +117,8 @@ def _update_array_meta(
     - new_metadata (sob.meta.Array)
     - memo (dict)
     """
-    assert memo is not None
+    if memo is None:
+        raise ValueError(memo)
     new_item_types: abc.Types | None = new_metadata.item_types
     if new_item_types is not None:
         item_types: abc.MutableTypes = (
@@ -146,7 +149,8 @@ def _update_dictionary_meta(
     - new_metadata (sob.meta.Dictionary)
     - memo (dict)
     """
-    assert memo is not None
+    if memo is None:
+        raise ValueError(memo)
     new_value_types: abc.Types | None = new_metadata.value_types
     if new_value_types is not None:
         value_types: abc.MutableTypes = (
@@ -178,9 +182,12 @@ def _update_object_meta(
     - new_metadata (sob.meta.Array)
     - memo (dict)
     """
-    assert memo is not None
-    assert metadata.properties is not None
-    assert new_metadata.properties is not None
+    if memo is None:
+        raise ValueError(memo)
+    if metadata.properties is None:
+        raise ValueError(metadata.properties)
+    if new_metadata.properties is None:
+        raise ValueError(new_metadata.properties)
     metadata_keys: set[str] = set(metadata.properties.keys())
     new_metadata_keys: set[str] = set(new_metadata.properties.keys())
     # Add properties that don't exist
@@ -207,22 +214,22 @@ def _update_object_meta(
                 memo=memo,
             )
             types_ = mutable_types
-        property: abc.Property = metadata.properties[key]
-        if has_mutable_types(property):
+        property_: abc.Property = metadata.properties[key]
+        if has_mutable_types(property_):
             metadata.properties[key].types = types_  # type: ignore
         else:
             # If a property's types are immutable, we need to replace
             # it with a generic property
             metadata.properties[key] = Property(
                 types=types_,
-                name=property.name,
-                required=property.required,
-                versions=property.versions,
+                name=property_.name,
+                required=property_.required,
+                versions=property_.versions,
             )
 
 
 def _update_object_class_from_meta(
-    object_class: type,
+    object_class: type[abc.Model],
     new_object_metadata: abc.ObjectMeta,
     memo: dict[str, type],
 ) -> None:
@@ -235,9 +242,11 @@ def _update_object_class_from_meta(
     - new_object_metadata (sob.meta.Object)
     - memo (dict)
     """
-    assert isinstance(new_object_metadata, abc.ObjectMeta)
+    if not isinstance(new_object_metadata, abc.ObjectMeta):
+        raise TypeError(new_object_metadata)
     object_metadata: abc.Meta | None = meta.read(object_class)
-    assert isinstance(object_metadata, (abc.ObjectMeta, NoneType))
+    if not isinstance(object_metadata, (abc.ObjectMeta, NoneType)):
+        raise TypeError(object_metadata)
     _update_object_meta(object_metadata, new_object_metadata, memo)
     # Recreate the object class
     updated_object_class: type = from_meta(
@@ -247,14 +256,14 @@ def _update_object_class_from_meta(
         docstring=object_class.__doc__,
     )
     # Apply the rest of the changes to the existing model class
-    object_class.__init__ = updated_object_class.__init__
+    object_class.__init__ = updated_object_class.__init__  # type: ignore
     object_class._source = get_source(updated_object_class)  # noqa: SLF001
 
 
 def _update_array_class_from_meta(
     array_class: type,
     new_array_metadata: abc.ArrayMeta,
-    memo: dict[str, type] | None = None,
+    memo: dict[str, type],
 ) -> None:
     """
     This function merges new metadata into an existing array model's metadata.
@@ -265,10 +274,11 @@ def _update_array_class_from_meta(
     - new_array_metadata (sob.meta.Array)
     - memo (dict)
     """
-    assert memo is not None
-    assert isinstance(new_array_metadata, abc.ArrayMeta)
+    if not isinstance(new_array_metadata, abc.ArrayMeta):
+        raise TypeError(new_array_metadata)
     array_metadata: abc.Meta = meta.writable(array_class)
-    assert isinstance(array_metadata, abc.ArrayMeta)
+    if not isinstance(array_metadata, abc.ArrayMeta):
+        raise TypeError(array_metadata)
     _update_array_meta(array_metadata, new_array_metadata, memo=memo)
     # Since the two array classes have the same name--the class
     # definition/declaration won't change, so updating the metadata is all that
@@ -278,7 +288,7 @@ def _update_array_class_from_meta(
 def _update_dictionary_class_from_meta(
     dictionary_class: type,
     new_dictionary_metadata: abc.DictionaryMeta,
-    memo: dict[str, type] | None = None,
+    memo: dict[str, type],
 ) -> None:
     """
     This function merges new metadata into an existing array model's metadata.
@@ -289,10 +299,11 @@ def _update_dictionary_class_from_meta(
     - new_array_metadata (sob.meta.Array)
     - memo (dict)
     """
-    assert memo is not None
-    assert isinstance(new_dictionary_metadata, abc.ArrayMeta)
+    if not isinstance(new_dictionary_metadata, abc.ArrayMeta):
+        raise TypeError(new_dictionary_metadata)
     dictionary_metadata: abc.Meta = meta.writable(dictionary_class)
-    assert isinstance(dictionary_metadata, abc.DictionaryMeta)
+    if not isinstance(dictionary_metadata, abc.DictionaryMeta):
+        raise TypeError(dictionary_metadata)
     _update_dictionary_meta(
         dictionary_metadata, new_dictionary_metadata, memo=memo
     )
@@ -304,7 +315,7 @@ def _update_dictionary_class_from_meta(
 def _update_model_class_from_meta(
     model_class: type,
     new_metadata: abc.ArrayMeta | abc.ObjectMeta | abc.DictionaryMeta,
-    memo: dict[str, type] | None = None,
+    memo: dict[str, type],
 ) -> None:
     """
     This function merges new metadata into an existing model's metadata.
@@ -315,19 +326,24 @@ def _update_model_class_from_meta(
     - new_metadata (sob.meta.Array|sob.meta.Object)
     - memo (dict)
     """
-    assert memo is not None
-    assert issubclass(model_class, (abc.Array, abc.Object, abc.Dictionary))
+    if not issubclass(model_class, (abc.Array, abc.Object, abc.Dictionary)):
+        raise TypeError(model_class)
     # Update the model metadata in-place
     if issubclass(model_class, abc.Array):
-        assert isinstance(new_metadata, abc.ArrayMeta)
+        if not isinstance(new_metadata, abc.ArrayMeta):
+            raise TypeError(new_metadata)
         _update_array_class_from_meta(model_class, new_metadata, memo=memo)
     elif issubclass(model_class, abc.Object):
-        assert issubclass(model_class, abc.Object)
-        assert isinstance(new_metadata, abc.ObjectMeta)
+        if not issubclass(model_class, abc.Object):
+            raise TypeError(model_class)
+        if not isinstance(new_metadata, abc.ObjectMeta):
+            raise TypeError(new_metadata)
         _update_object_class_from_meta(model_class, new_metadata, memo=memo)
     else:
-        assert issubclass(model_class, abc.Dictionary)
-        assert isinstance(new_metadata, abc.DictionaryMeta)
+        if not issubclass(model_class, abc.Dictionary):
+            raise TypeError(model_class)
+        if not isinstance(new_metadata, abc.DictionaryMeta):
+            raise TypeError(new_metadata)
         _update_dictionary_class_from_meta(
             model_class, new_metadata, memo=memo
         )
@@ -360,21 +376,21 @@ def class_name_from_pointer(pointer: str) -> str:
 def _get_models_from_meta(
     pointer: str,
     metadata: abc.ArrayMeta | abc.ObjectMeta | abc.DictionaryMeta,
-    module: str = "__main__",
-    memo: dict[str, type] | None = None,
+    module: str,
+    memo: dict[str, type] | None,
     name: Callable[[str], str] = class_name_from_pointer,
 ) -> list[type]:
     """
     This function generates and updates classes from metadata.
 
     Parameters:
-
-    - pointer (str)
-    - metadata (sob.meta.Array|sob.meta.Object)
-    - module (str)
-    - memo (dict)
+        pointer:
+        metadata:
+        module:
+        memo:
     """
-    assert memo is not None
+    if memo is None:
+        memo = {}
     new_models: list[type] = []
     # If the object has no attributes, interpret it an an empty dictionary
     if isinstance(metadata, abc.ObjectMeta) and not metadata.properties:
@@ -397,9 +413,10 @@ def _is_base64(value: Any) -> bool:
     if isinstance(value, str):
         try:
             b64decode(bytes(value, encoding="utf-8"), validate=True)
-            return True
         except binascii.Error:
             pass
+        else:
+            return True
     return False
 
 
@@ -421,10 +438,10 @@ def _str_date_or_datetime(value: str) -> type:
             or "Z" in value
         ):
             return datetime
-        else:
-            return date
     except ParseError:
         return str
+    else:
+        return date
 
 
 def _is_datetime_str(value: Any) -> bool:
@@ -468,7 +485,9 @@ class Synonyms:
         if items:
             self.__ior__(items)
 
-    def add(self, item: abc.Readable | abc.MarshallableTypes) -> None:
+    def add(  # noqa: C901
+        self, item: abc.Readable | abc.MarshallableTypes
+    ) -> None:
         """
         This method adds a synonymous item to the set. If the item is a
         file-like (input/output) object, that object is first read,
@@ -479,11 +498,12 @@ class Synonyms:
         - item ({}): A file-like or a JSON-serializable python object.
         """.format(
             "|".join(
-                qualified_name(item_type)
+                get_qualified_name(item_type)
                 for item_type in ((abc.Readable, *abc.MARSHALLABLE_TYPES))
             )
         )
-        assert isinstance(item, (abc.Readable, *abc.MARSHALLABLE_TYPES))
+        if not isinstance(item, (abc.Readable, *abc.MARSHALLABLE_TYPES)):
+            raise TypeError(item)
         if isinstance(item, abc.Readable):
             # Deserialize and unmarshal file-like objects
             item = unmarshal(deserialize(_read(item))[0])
@@ -512,7 +532,8 @@ class Synonyms:
                 # unrestricted polymorphism, and indicate this by
                 # setting `._type` to `object`
                 self._type = object
-            assert isinstance(item, MARSHALLABLE_TYPES)
+            if not isinstance(item, MARSHALLABLE_TYPES):
+                raise TypeError(item)
             self._set.add(item)  # type: ignore
 
     def discard(self, item: abc.MarshallableTypes) -> None:
@@ -553,8 +574,10 @@ class Synonyms:
     def __ior__(
         self, other: Iterable[abc.Readable | abc.MarshallableTypes]
     ) -> Self:
-        assert_is_instance("other", other, Iterable)
-        assert_not_is_instance("other", other, (Mapping, abc.Dictionary))
+        if not isinstance(other, Iterable):
+            raise TypeError(other)
+        if isinstance(other, (Mapping, abc.Dictionary)):
+            raise TypeError(other)
         item: abc.Readable | abc.MarshallableTypes
         for item in other:
             self.add(item)
@@ -589,7 +612,7 @@ class Synonyms:
     def __ixor__(
         self,
         other: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
-    ) -> Synonyms:
+    ) -> Self:
         self_set: set[abc.MarshallableTypes] = copy(self._set)
         other_set: set[abc.MarshallableTypes] = self._get_set(other)
         self.clear()
@@ -622,38 +645,40 @@ class Synonyms:
         return self.__class__(self._set.__xor__(other_set))
 
     def __copy__(self) -> Self:
-        new_synonyms: Synonyms = self.__class__()
+        new_synonyms: Self = self.__class__()
         new_synonyms._set = copy(self._set)  # noqa: SLF001
         new_synonyms._type = self._type  # noqa: SLF001
         new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
     def __deepcopy__(self, memo: dict | None = None) -> Self:
-        new_synonyms: Synonyms = self.__class__()
+        new_synonyms: Self = self.__class__()
         new_synonyms._set = deepcopy(self._set, memo=memo)  # noqa: SLF001
         new_synonyms._type = self._type  # noqa: SLF001
         new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
     def _get_type(self) -> type:
-        assert self._type is not None
-        data_type: type = self._type
-        # Determine if this is a string encoded to represent a `date`,
-        # `datetime`, or base-64 encoded `bytes`.
-        if issubclass(self._type, str):
-            if all(map(_is_base64, filter(_is_not_null_or_none, self))):
-                data_type = bytes
-            elif all(
-                map(_is_datetime_str, filter(_is_not_null_or_none, self))
-            ):
-                data_type = datetime
-            elif all(map(_is_date_str, filter(_is_not_null_or_none, self))):
-                data_type = date
-        else:
-            # This function should only be invoked for simple types, so we
-            # first verify the data type is not a container
-            assert not issubclass(self._type, (abc.Model, Mapping, Collection))
-        assert data_type is not None
+        data_type: type = cast(type, self._type)
+        if self._type is not None:
+            # Determine if this is a string encoded to represent a `date`,
+            # `datetime`, or base-64 encoded `bytes`.
+            if issubclass(self._type, str):
+                if all(map(_is_base64, filter(_is_not_null_or_none, self))):
+                    data_type = bytes
+                elif all(
+                    map(_is_datetime_str, filter(_is_not_null_or_none, self))
+                ):
+                    data_type = datetime
+                elif all(
+                    map(_is_date_str, filter(_is_not_null_or_none, self))
+                ):
+                    data_type = date
+            elif issubclass(self._type, (abc.Model, Mapping, Collection)):
+                raise TypeError(self._type)
+        if data_type is None:
+            message: str = "A data type could not be identified"
+            raise RuntimeError(message)
         return data_type
 
     def _get_property_names_values(
@@ -664,13 +689,8 @@ class Synonyms:
         )
         item: abc.MarshallableTypes
         for item in self:
-            try:
-                assert isinstance(item, (Mapping, abc.Dictionary))
-            except AssertionError:
-                msg = "item"
-                raise IsInstanceAssertionError(
-                    msg, item, (Mapping, abc.Dictionary)
-                )
+            if not isinstance(item, (Mapping, abc.Dictionary)):
+                raise TypeError(item)
             value: abc.MarshallableTypes
             item_: tuple[str, Any]
             for key, value in sorted(
@@ -770,7 +790,8 @@ class Synonyms:
         unified_items: Synonyms = type(self)()
         items: abc.MarshallableTypes
         for items in self:
-            assert isinstance(items, Iterable)
+            if not isinstance(items, Iterable):
+                raise TypeError(items)
             unified_items |= items
         item_type: type | None = None
         for item_type in unified_items._get_types(  # noqa: SLF001
@@ -845,23 +866,27 @@ class Synonyms:
           "key#/body/items/0") and which returns a `str` which will be the
           resulting class name (for example: "KeyBodyItemsItem").
         """
-        assert callable(name)
+        if not callable(name):
+            raise TypeError(name)
         # This assertion ensures `self` contains data which can be described by
         # a model class.
-        assert self._type
-        assert not issubclass(self._type, (str, bytes, bytearray))
-        if self._type is not object:
-            assert_is_subclass(
-                f"{qualified_name(type(self))}._type",
-                self._type,
-                (Mapping, abc.Dictionary, Iterable),
-            )
+        message: str
+        if not self._type:
+            message = "No type could be identified"
+            raise RuntimeError(message)
+        if issubclass(self._type, (str, bytes, bytearray)):
+            raise TypeError(self._type)
+        if (self._type is not object) and not issubclass(
+            self._type, (Mapping, abc.Dictionary, Iterable)
+        ):
+            raise TypeError(self._type)
         for model_class in self._get_types(
             pointer="{}#".format(quote_plus(pointer, safe="/+")),
             module=module,
             name=name,
         ):
-            assert_is_subclass("model_class", model_class, abc.Model)
+            if not issubclass(model_class, abc.Model):
+                raise TypeError(model_class)
             yield model_class
 
     def __len__(self) -> int:
@@ -894,8 +919,10 @@ class Synonyms:
         return self._set.__ge__(self._get_set(other))
 
     def __eq__(self, other: object) -> bool:
-        return type(other) is type(self) and self._set.__eq__(
-            self._get_set(other)
+        return (
+            isinstance(other, Synonyms)
+            and (type(other) is type(self))
+            and self._set.__eq__(self._get_set(other))
         )
 
     def __and__(
@@ -1063,7 +1090,8 @@ class Thesaurus:
         return self.__class__(deepcopy(self._dict, memo=memo))
 
     def __iadd__(self, other: Thesaurus) -> Self:
-        assert isinstance(other, Thesaurus)
+        if not isinstance(other, Thesaurus):
+            raise TypeError(other)
         key: str
         value: Synonyms
         for key, value in other.items():
@@ -1108,17 +1136,19 @@ class Thesaurus:
             )
             classes.append(class_source)
             meta_instance: abc.Meta | None = meta.read(model_class)
-            assert isinstance(
+            if not isinstance(
                 meta_instance,
                 (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
-            )
+            ):
+                raise TypeError(meta_instance)
             class_names_metadata[model_class.__name__] = meta_instance
         class_name_: str
         metadata: abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
         for class_name_, metadata in class_names_metadata.items():
-            assert isinstance(
+            if not isinstance(
                 metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)
-            )
+            ):
+                raise TypeError(metadata)
             if isinstance(metadata, abc.ObjectMeta):
                 metadatas.append(
                     get_class_meta_attribute_assignment_source(
@@ -1188,9 +1218,11 @@ class Thesaurus:
         """
         # For pickling to work, the `__module__` variable needs to be set to
         # the calling module.
-        module_name: str = calling_module_name(2)
+        module_name: str = get_calling_module_name(2)
         module: ModuleType = ModuleType(module_name)
-        exec(self._get_module_source(module_name, name=name), module.__dict__)
+        exec(  # noqa: S102
+            self._get_module_source(module_name, name=name), module.__dict__
+        )
         return module
 
     def save_module(

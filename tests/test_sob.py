@@ -8,11 +8,12 @@ from collections.abc import Iterable, Reversible
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import IO
+from typing import TYPE_CHECKING, cast
 
+import pytest
 from iso8601.iso8601 import parse_date
+
 from sob import abc, meta, model, properties, test, utilities
-from sob.utilities.assertion import assert_equals
 
 
 class A(model.Object):
@@ -154,11 +155,11 @@ class Tesstee(model.Object):
 
     def __init__(
         self,
-        _data: str | bytes | dict | abc.Readable | abc.Object = None,
+        _data: str | bytes | dict | abc.Readable | abc.Object | None = None,
         boolean: bool | None = None,
         string: str | None = None,
-        number: float | int | Decimal | None = None,
-        decimal: float | int | Decimal | None = None,
+        number: float | Decimal | None = None,
+        decimal: float | Decimal | None = None,
         integer: int | None = None,
         rainbow: bytes | None = None,
         a: A | None = None,
@@ -171,12 +172,7 @@ class Tesstee(model.Object):
         integer_array: Iterable[int] | None = None,
         rainbow_array: Iterable[bytes] | None = None,
         testy_array: Iterable[Tesstee] | None = None,
-        string_number_boolean: str
-        | float
-        | int
-        | Decimal
-        | bool
-        | None = None,
+        string_number_boolean: str | float | Decimal | bool | None = None,
         a_b_c: A | B | C | None = None,
         c_b_a: C | B | A | None = None,
         string2testy: dict[str, Tesstee] | None = None,
@@ -372,6 +368,12 @@ testy.testy = deepcopy(testy)
 
 testy.testy_array = [deepcopy(testy_deep_copy) for i in range(10)]
 
+if TYPE_CHECKING:
+    assert isinstance(testy.string2testy, dict)
+    assert isinstance(testy.string2string2testy, dict)
+    assert isinstance(testy.string2a_b_c, dict)
+    assert isinstance(testy.string2string2a_b_c, dict)
+
 testy.string2testy["A"] = deepcopy(testy_deep_copy)
 testy.string2testy["B"] = deepcopy(testy_deep_copy)
 testy.string2testy["C"] = deepcopy(testy_deep_copy)
@@ -386,34 +388,70 @@ testy.string2string2testy["C"]["A"] = deepcopy(testy_deep_copy)
 testy.string2string2testy["C"]["B"] = deepcopy(testy_deep_copy)
 testy.string2string2testy["C"]["C"] = deepcopy(testy_deep_copy)
 
-testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)
-testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)
-testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)
-testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)
-testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)
-testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)
+testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
+testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
 
-testy.string2string2a_b_c["one"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2a_b_c["one"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2a_b_c["one"]["C"] = deepcopy(testy_deep_copy.c)
-testy.string2string2a_b_c["two"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2a_b_c["two"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2a_b_c["two"]["C"] = deepcopy(testy_deep_copy.c)
-testy.string2string2a_b_c["three"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2a_b_c["three"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2a_b_c["three"]["C"] = deepcopy(testy_deep_copy.c)
-testy.string2string2c_b_a["one"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2c_b_a["one"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2c_b_a["one"]["C"] = deepcopy(testy_deep_copy.c)
-testy.string2string2c_b_a["two"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2c_b_a["two"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2c_b_a["two"]["C"] = deepcopy(testy_deep_copy.c)
-testy.string2string2c_b_a["three"]["A"] = deepcopy(testy_deep_copy.a)
-testy.string2string2c_b_a["three"]["B"] = deepcopy(testy_deep_copy.b)
-testy.string2string2c_b_a["three"]["C"] = deepcopy(testy_deep_copy.c)
+testy.string2string2a_b_c["one"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2a_b_c["one"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2a_b_c["one"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
+testy.string2string2a_b_c["two"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2a_b_c["two"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2a_b_c["two"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
+testy.string2string2a_b_c["three"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2a_b_c["three"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2a_b_c["three"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
+testy.string2string2c_b_a["one"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2c_b_a["one"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2c_b_a["one"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
+testy.string2string2c_b_a["two"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2c_b_a["two"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2c_b_a["two"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
+testy.string2string2c_b_a["three"]["A"] = deepcopy(  # type: ignore
+    testy_deep_copy.a
+)
+testy.string2string2c_b_a["three"]["B"] = deepcopy(  # type: ignore
+    testy_deep_copy.b
+)
+testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
+    testy_deep_copy.c
+)
 
 
-def test_object():
+def test_object() -> None:
     # Test deletions
     testy_deep_copy = deepcopy(testy)
     assert testy_deep_copy.string2string2c_b_a is not None
@@ -437,16 +475,15 @@ def _get_testy_path() -> str:
 
 def test_json_serialization() -> None:
     model.validate(testy)
-    test.json(testy)
+    test.model(testy)
     path: str = _get_testy_path()
     if not os.path.exists(path):
         with open(path, mode="w", encoding="utf-8") as file:
-            file.write(model.serialize(testy, "json"))
+            file.write(model.serialize(testy))
     with open(path, encoding="utf-8") as file:
-        serialized_testy = model.serialize(testy, "json").strip()
+        serialized_testy = model.serialize(testy).strip()
         file_testy = file.read().strip()
-        assert_equals("serialized_testy", serialized_testy, file_testy)
-    file: IO[bytes]
+        assert serialized_testy == file_testy
     with open(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
@@ -455,13 +492,13 @@ def test_json_serialization() -> None:
     ) as file:
         rainbow_bytes = file.read()
         assert testy.rainbow == rainbow_bytes
-        assert model.marshal(testy)["rainbow"] == str(
+        assert cast(dict, model.marshal(testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
-    test.json(testy)
+    test.model(testy)
 
 
-def test_json_deserialization():
+def test_json_deserialization() -> None:
     """
     TODO
     """
@@ -469,7 +506,7 @@ def test_json_deserialization():
         _get_testy_path(),
         encoding="utf-8",
     ) as f:
-        assert Tesstee(f) == testy
+        assert Tesstee(cast(abc.Readable, f)) == testy
         error = None
         try:
             Tesstee("[]")
@@ -478,44 +515,44 @@ def test_json_deserialization():
         assert isinstance(error, TypeError)
 
 
-def test_validation():
+def test_validation() -> None:
     """
     TODO
     """
 
 
-def test_utilities():
-    assert utilities.calling_function_qualified_name() == (
+def test_utilities() -> None:
+    assert utilities.get_calling_function_qualified_name() == (
         "test_sob.test_utilities"
     )
 
     class TestCallingFunctionQualifiedNameA:
         __module__ = "sob.test"
 
-        def __init__(self):
+        def __init__(self) -> None:
             if hasattr(type(self), "__qualname__"):
-                assert utilities.calling_function_qualified_name() == (
+                assert utilities.get_calling_function_qualified_name() == (
                     "sob.test.test_utilities."
                     "TestCallingFunctionQualifiedNameA.__init__"
                 )
             else:
-                assert utilities.calling_function_qualified_name() == (
+                assert utilities.get_calling_function_qualified_name() == (
                     "sob.test.TestCallingFunctionQualifiedNameA.__init__"
                 )
 
     TestCallingFunctionQualifiedNameA()
 
     class TestCallingFunctionQualifiedNameB:
-        def __init__(self):
+        def __init__(self) -> None:
             if hasattr(type(self), "__qualname__"):
-                assert utilities.calling_function_qualified_name() == (
+                assert utilities.get_calling_function_qualified_name() == (
                     "test_utilities.TestCallingFunctionQualifiedNameB.__init__"
                     if __name__ == "__main__"
                     else "test_sob.test_utilities."
                     "TestCallingFunctionQualifiedNameB.__init__"
                 )
             else:
-                assert utilities.calling_function_qualified_name() == (
+                assert utilities.get_calling_function_qualified_name() == (
                     "TestCallingFunctionQualifiedNameB.__init__"
                     if __name__ == "__main__"
                     else "test_sob.TestCallingFunctionQualifiedNameB.__init__"
@@ -525,15 +562,15 @@ def test_utilities():
 
     class TestCallingFunctionQualifiedNameC:
         class TestCallingFunctionQualifiedNameD:
-            def __init__(self):
+            def __init__(self) -> None:
                 if hasattr(type(self), "__qualname__"):
-                    assert utilities.calling_function_qualified_name() == (
+                    assert utilities.get_calling_function_qualified_name() == (
                         ("" if __name__ == "__main__" else "test_sob.")
                         + "test_utilities.TestCallingFunctionQualifiedNameC."
                         + "TestCallingFunctionQualifiedNameD.__init__"
                     )
                 else:
-                    assert utilities.calling_function_qualified_name() == (
+                    assert utilities.get_calling_function_qualified_name() == (
                         ("" if __name__ == "__main__" else "test_sob.")
                         + "TestCallingFunctionQualifiedNameD.__init__"
                     )
@@ -543,7 +580,7 @@ def test_utilities():
         TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD,
         "__qualname__",
     ):
-        assert utilities.qualified_name(
+        assert utilities.get_qualified_name(
             TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
         ) == (
             ("" if __name__ == "__main__" else "test_sob.")
@@ -551,17 +588,14 @@ def test_utilities():
             "TestCallingFunctionQualifiedNameD"
         )
     else:
-        assert utilities.qualified_name(
+        assert utilities.get_qualified_name(
             TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
         ) == (
             ("" if __name__ == "__main__" else "test_sob.")
             + "TestCallingFunctionQualifiedNameD"
         )
-    assert utilities.qualified_name(model.Object) == "sob.model.Object"
+    assert utilities.get_qualified_name(model.Object) == "sob.model.Object"
 
 
 if __name__ == "__main__":
-    test_json_serialization()
-    test_json_deserialization()
-    test_validation()
-    test_utilities()
+    pytest.main([__file__, "-s", "-vv"])

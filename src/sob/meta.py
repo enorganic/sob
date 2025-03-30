@@ -21,16 +21,15 @@ from typing import (
 )
 
 from sob import abc, errors
+from sob._types import UNDEFINED, NoneType, Undefined
 from sob.types import MutableTypes
 from sob.utilities import (
-    calling_function_qualified_name,
+    get_calling_function_qualified_name,
+    get_qualified_name,
     indent,
-    properties_values,
-    qualified_name,
+    iter_properties_values,
+    represent,
 )
-from sob.utilities.assertion import assert_is_instance
-from sob.utilities.inspect import represent
-from sob.utilities.types import UNDEFINED, NoneType, Undefined
 
 if TYPE_CHECKING:
     from sob.abc import MarshallableTypes
@@ -77,7 +76,7 @@ class Meta(abc.Meta):
 
     def __deepcopy__(self, memo: dict | None = None) -> abc.Meta:
         new_instance: Meta = self.__class__()
-        for a, v in properties_values(self):
+        for a, v in iter_properties_values(self):
             # noinspection PyArgumentList
             setattr(new_instance, a, deepcopy(v, memo=memo))
         return cast(abc.Meta, new_instance)
@@ -86,12 +85,12 @@ class Meta(abc.Meta):
         return True
 
     def __repr__(self) -> str:
-        lines: list[str] = [f"{qualified_name(type(self))}("]
+        lines: list[str] = [f"{get_qualified_name(type(self))}("]
         property_name: str
         value: Any
-        for property_name, value in properties_values(self):
+        for property_name, value in iter_properties_values(self):
             if isinstance(value, type):
-                value_representation = qualified_name(value)
+                value_representation = get_qualified_name(value)
             else:
                 value_representation = repr(value)
             lines.append(
@@ -256,7 +255,9 @@ class Properties(abc.Properties):
     @staticmethod
     def _repr_item(key: str, value: Any) -> str:
         value_representation: str = (
-            qualified_name(value) if isinstance(value, type) else repr(value)
+            get_qualified_name(value)
+            if isinstance(value, type)
+            else repr(value)
         )
         value_representation_lines: list[str] = value_representation.split(
             "\n"
@@ -279,7 +280,7 @@ class Properties(abc.Properties):
         return representation
 
     def __repr__(self) -> str:
-        representation = [qualified_name(type(self)) + "("]
+        representation = [get_qualified_name(type(self)) + "("]
         items = tuple(self.items())
         if len(items) > 0:
             representation[0] += "["
@@ -313,10 +314,12 @@ class Properties(abc.Properties):
     def __contains__(self, key: str) -> bool:
         return self._dict.__contains__(key)
 
-    def pop(self, key: str, default: Undefined = UNDEFINED) -> abc.Property:
+    def pop(
+        self, key: str, default: abc.Property | Undefined = UNDEFINED
+    ) -> abc.Property:
         return (
             self._dict.pop(key)
-            if default is UNDEFINED
+            if isinstance(default, Undefined)
             else self._dict.pop(key, default=default)
         )
 
@@ -387,17 +390,18 @@ def read(model: type | abc.Model) -> Any:
         if issubclass(model, abc.Model):
             return model._meta  # noqa: SLF001
         message = (
-            f"{calling_function_qualified_name()} "
+            f"{get_calling_function_qualified_name()} "
             "requires a parameter which is an instance or sub-class of "
-            f"`{qualified_name(abc.Model)}`, not `{qualified_name(model)}`"
+            f"`{get_qualified_name(abc.Model)}`, not "
+            f"`{get_qualified_name(model)}`"
         )
         raise TypeError(message)
     repr_model: str = repr(model)
     message = (
         "{} requires a parameter which is an instance or sub-class of "
         "`{}`, not{}".format(
-            calling_function_qualified_name(),
-            qualified_name(abc.Model),
+            get_calling_function_qualified_name(),
+            get_qualified_name(abc.Model),
             (f":\n{repr_model}" if "\n" in repr_model else f" `{repr_model}`"),
         )
     )
@@ -434,6 +438,8 @@ def writable(model: type | abc.Model) -> Any:
     elif isinstance(model, type) and issubclass(
         model, (abc.Object, abc.Dictionary, abc.Array)
     ):
+        if TYPE_CHECKING:
+            assert model._meta is not None  # noqa: SLF001
         model_meta: abc.ObjectMeta | abc.DictionaryMeta | abc.ArrayMeta = (
             model._meta  # noqa: SLF001
         )
@@ -454,7 +460,7 @@ def writable(model: type | abc.Model) -> Any:
             for base in model.__bases__:
                 base_meta: abc.Meta | None = None
                 with contextlib.suppress(AttributeError):
-                    base_meta = base._meta  # noqa: SLF001
+                    base_meta = cast(abc.Model, base)._meta  # noqa: SLF001
                 if (base_meta is not None) and (model_meta is base_meta):
                     model._meta = deepcopy(model_meta)  # noqa: SLF001
                     break
@@ -463,8 +469,8 @@ def writable(model: type | abc.Model) -> Any:
         msg = (
             "{} requires a parameter which is an instance or sub-class of "
             "`{}`, not{}".format(
-                calling_function_qualified_name(),
-                qualified_name(abc.Model),
+                get_calling_function_qualified_name(),
+                get_qualified_name(abc.Model),
                 (
                     ":\n" + repr_model
                     if "\n" in repr_model
@@ -511,7 +517,8 @@ def dictionary_writable(
     return writable(model)
 
 
-def write(model: type | abc.Model, meta: abc.Meta | None) -> None:
+def write(model: type[abc.Model] | abc.Model, meta: abc.Meta | None) -> None:
+    message: str
     if meta is not None:
         model_type: type
         if isinstance(model, abc.Model):
@@ -520,11 +527,11 @@ def write(model: type | abc.Model, meta: abc.Meta | None) -> None:
             model_type = model
         else:
             repr_model = repr(model)
-            msg = (
+            message = (
                 "{} requires a value for the parameter `model` which is an "
                 "instance or sub-class of `{}`, not{}".format(
-                    calling_function_qualified_name(),
-                    qualified_name(abc.Model),
+                    get_calling_function_qualified_name(),
+                    get_qualified_name(abc.Model),
                     (
                         ":\n" + repr_model
                         if "\n" in repr_model
@@ -532,7 +539,7 @@ def write(model: type | abc.Model, meta: abc.Meta | None) -> None:
                     ),
                 )
             )
-            raise TypeError(msg)
+            raise TypeError(message)
         metadata_type: type = (
             Object
             if issubclass(model_type, abc.Object)
@@ -547,11 +554,13 @@ def write(model: type | abc.Model, meta: abc.Meta | None) -> None:
             )
         )
         if not isinstance(meta, metadata_type):
-            message: str = (
-                f"Metadata assigned to `{qualified_name(model_type)}` must be "
-                f"of type `{qualified_name(metadata_type)}`"
+            message = (
+                f"Metadata assigned to `{get_qualified_name(model_type)}` "
+                f"must be of type `{get_qualified_name(metadata_type)}`"
             )
             raise ValueError(message)
+    if TYPE_CHECKING:
+        assert (meta is None) or isinstance(meta, abc.Meta)
     model._meta = meta  # noqa: SLF001
 
 
@@ -587,7 +596,6 @@ def escape_reference_token(reference_token: str) -> str:
 def set_pointer(model: abc.Model, pointer_: str) -> None:
     key: str
     value: Any
-    assert_is_instance("pointer_", pointer_, str)
     model._pointer = pointer_  # noqa: SLF001
     if isinstance(model, abc.Dictionary):
         for key, value in model.items():
@@ -642,11 +650,8 @@ def pointer(model: abc.Model, pointer_: str | None = None) -> str | None:
     """
     Get or set a model's pointer
     """
-    assert_is_instance(
-        "model",
-        model,
-        (abc.Object, abc.Dictionary, abc.Array),
-    )
+    if not isinstance(model, (abc.Object, abc.Dictionary, abc.Array)):
+        raise TypeError(model)
     if pointer_ is not None:
         set_pointer(model, pointer_)
     return get_pointer(model)
@@ -683,15 +688,11 @@ def _traverse_models(
                 yield value
 
 
-# noinspection PyShadowingNames
 def set_url(model_instance: abc.Model, source_url: str | None) -> None:
-    assert_is_instance(
-        "model",
-        model_instance,
-        (abc.Object, abc.Dictionary, abc.Array),
-    )
-    if source_url is not None:
-        assert_is_instance("url_", source_url, str)
+    if not isinstance(model_instance, (abc.Object, abc.Dictionary, abc.Array)):
+        raise TypeError(model_instance)
+    if (source_url is not None) and not isinstance(source_url, str):
+        raise TypeError(source_url)
     model_instance._url = source_url  # noqa: SLF001
     child_model: abc.Model
     for child_model in _traverse_models(model_instance):
@@ -840,7 +841,7 @@ def _version_object(  # noqa: C901
                 version_ = getattr(data, property_name)
                 if version_ is not None:
                     message: str = (
-                        f"{qualified_name(type(data))} - the property "
+                        f"{get_qualified_name(type(data))} - the property "
                         f"`{property_name}` is not applicable in "
                         f"{specification} version {version_number}:\n{data!s}"
                     )
@@ -866,7 +867,9 @@ def _version_dictionary(
         if new_value_types:
             if instance_meta is class_meta:
                 instance_meta = writable(data)
-            instance_meta.value_types = new_value_types
+                if TYPE_CHECKING:
+                    assert isinstance(instance_meta, abc.DictionaryMeta)
+            instance_meta.value_types = new_value_types  # type: ignore
     for value in data.values():
         if isinstance(value, (abc.Object, abc.Dictionary, abc.Array)):
             version(value, specification, version_number)
@@ -912,7 +915,16 @@ def version(
       (in the form of integers separated by periods), an integer, or a
       sequence of integers.
     """
-    assert_is_instance("data", data, abc.Model)
+    if not (
+        isinstance(version_number, (str, float))
+        or (
+            isinstance(version_number, Sequence)
+            and isinstance(next(iter(version_number)), int)
+        )
+    ):
+        raise TypeError(version_number)
+    if not isinstance(data, abc.Model):
+        raise TypeError(data)
     if isinstance(data, abc.Object):
         _version_object(data, specification, version_number)
     elif isinstance(data, abc.Dictionary):
@@ -965,15 +977,10 @@ def copy_to(source: abc.Model, target: abc.Model) -> None:  # noqa: C901
     This function copies metadata from one model instance to another
     """
     # Verify both arguments are models
-    argument_name: str
-    value: MarshallableTypes
-    target_value: MarshallableTypes
-    argument_value: abc.Model
-    for argument_name, argument_value in (
-        ("source", source),
-        ("target", target),
-    ):
-        assert_is_instance(argument_name, argument_value, abc.Model)
+    if not isinstance(source, abc.Model):
+        raise TypeError(source)
+    if not isinstance(target, abc.Model):
+        raise TypeError(target)
     # Verify both arguments are of of the same `type`
     if type(source) is not type(target):
         raise TypeError(source, target)

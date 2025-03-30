@@ -23,12 +23,12 @@ from typing import (
     Union,
 )
 
-from sob.utilities.types import UNDEFINED, NoneType, Null, Undefined
+from sob._types import UNDEFINED, NoneType, Null, Undefined
 
 if TYPE_CHECKING:
     from types import TracebackType
 
-__all__: list[str] = [
+__all__: tuple[str, ...] = (
     "OrderedDict",
     "Types",
     "MutableTypes",
@@ -62,7 +62,7 @@ __all__: list[str] = [
     "JSON_TYPES",
     "JSONTypes",
     "MarshallableTypes",
-]
+)
 
 if typing.TYPE_CHECKING:
     import collections
@@ -568,6 +568,7 @@ class Properties(Meta, metaclass=ABCMeta):
 
 
 class Model(metaclass=ABCMeta):
+    _source: str | None
     _meta: Meta | None
     _hooks: Hooks | None
     _pointer: str | None
@@ -1069,7 +1070,6 @@ class Version(metaclass=ABCMeta):
     greater_than: Sequence[str | float | int | Decimal] | None
     greater_than_or_equal_to: Sequence[str | float | int | Decimal] | None
 
-    # noinspection PyUnusedLocal
     @abstractmethod
     def __init__(
         self,

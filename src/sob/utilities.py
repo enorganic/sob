@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 import builtins
+import collections
 import enum
 import re
 import sys
+from inspect import (
+    FrameInfo,
+    getargvalues,
+    getmodulename,
+    getsource,
+    stack,
+)
 from keyword import iskeyword
 from re import Match, Pattern
+from types import ModuleType
+from typing import TYPE_CHECKING, Any, Callable
 from unicodedata import normalize
+
+from sob._types import UNDEFINED, Undefined
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 _DIGITS: str = "0123456789"
 # noinspection SpellCheckingInspection
@@ -128,7 +143,7 @@ def class_name(string: str) -> str:
     return name
 
 
-def camel(string: str, capitalize: bool = False) -> str:
+def camel(string: str, *, capitalize: bool = False) -> str:
     """
     This function returns a camelCased representation of the input string.
     When/if an input string corresponds to a python keyword,
@@ -193,7 +208,7 @@ def camel(string: str, capitalize: bool = False) -> str:
     all_uppercase: bool = string.upper() == string
     capitalize_next: bool = capitalize
     uncapitalize_next: bool = (not capitalize) and (
-        len(string) < 2
+        len(string) < 2  # noqa: PLR2004
         or all_uppercase
         or not (
             string[0] in _UPPERCASE_ALPHABET
@@ -211,12 +226,12 @@ def camel(string: str, capitalize: bool = False) -> str:
                     # not be possible to identify if caps were kept for both)
                     if characters and (characters[-1] in _UPPERCASE_ALPHABET):
                         uncapitalize_next = True
-                    character = character.upper()
+                    character = character.upper()  # noqa: PLW2901
             elif uncapitalize_next and character:
                 if character in _LOWERCASE_ALPHABET:
                     uncapitalize_next = False
                 else:
-                    character = character.lower()
+                    character = character.lower()  # noqa: PLW2901
                     # Halt lowercasing if the next character starts a
                     # camelCased word
                     next_index: int = index + 1
@@ -248,28 +263,15 @@ def camel_split(string: str) -> tuple[str, ...]:
 
     Examples:
 
-    >>> print(
-    ...     "(%s)" % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBees"))
-    ... )
+    >>> camel_split("theBirdsAndTheBees")
     ('the', 'Birds', 'And', 'The', 'Bees')
-    >>> print(
-    ...     "(%s)"
-    ...     % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBees123"))
-    ... )
+    >>> camel_split("theBirdsAndTheBees123")
     ('the', 'Birds', 'And', 'The', 'Bees', '123')
-    >>> print(
-    ...     "(%s)"
-    ...     % ", ".join("'%s'" % s for s in camel_split("theBirdsAndTheBeesABC123"))
-    ... )
+    >>> camel_split("theBirdsAndTheBeesABC123")
     ('the', 'Birds', 'And', 'The', 'Bees', 'ABC', '123')
-    >>> print(
-    ...     "(%s)"
-    ...     % ", ".join("'%s'" % s for s in camel_split("the-Birds-&-The-Bs-ABC--123"))
-    ... )
+    >>> camel_split("the-Birds-&-The-Bs-ABC--123")
     ('the', '-', 'Birds', '-&-', 'The', '-', 'Bs', '-', 'ABC', '--', '123')
-    >>> print(
-    ...     "(%s)" % ", ".join("'%s'" % s for s in camel_split("THEBirdsAndTheBees"))
-    ... )
+    >>> camel_split("THEBirdsAndTheBees")
     ('THE', 'Birds', 'And', 'The', 'Bees')
     """
     words: list[list[str]] = []
@@ -351,26 +353,27 @@ def indent(
     return indented_text
 
 
-def url_directory_and_file_name(url: str) -> tuple[str, str]:
+def _url_directory_and_file_name(url: str) -> tuple[str, str]:
     """
     Split a URL into a directory path and file name
     """
     directory: str
     file_name: str
     matched: Match | None = _URL_DIRECTORY_AND_FILE_NAME_RE.match(url)
-    assert matched is not None
+    if matched is None:
+        raise ValueError(url)
     directory, file_name = matched.groups()
     return directory, file_name
 
 
-def url_relative_to(absolute_url: str, base_url: str) -> str:
+def get_url_relative_to(absolute_url: str, base_url: str) -> str:
     """
     Returns a relative URL given an absolute URL and a base URL
     """
     # If no portion of the absolute URL is shared with the base URL--the
     # absolute URL will be returned
     relative_url: str = absolute_url
-    base_url = url_directory_and_file_name(base_url)[0]
+    base_url = _url_directory_and_file_name(base_url)[0]
     if base_url:
         relative_url = ""
         # URLs are not case-sensitive
@@ -380,13 +383,13 @@ def url_relative_to(absolute_url: str, base_url: str) -> str:
             base_url.lower() != lowercase_absolute_url[: len(base_url)]
         ):
             relative_url = "../" + relative_url
-            base_url = url_directory_and_file_name(base_url[:-1])[0]
+            base_url = _url_directory_and_file_name(base_url[:-1])[0]
         base_url_length: int = len(base_url)
         relative_url += absolute_url[base_url_length:]
     return relative_url
 
 
-def split_long_comment_line(
+def _split_long_comment_line(
     line: str, max_line_length: int = MAX_LINE_LENGTH, prefix: str = "#"
 ) -> str:
     """
@@ -395,7 +398,8 @@ def split_long_comment_line(
     >>> print(
     ...     split_long_comment_line(
     ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl efficitur."
+    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl "
+    ...         "efficitur."
     ...     )
     ... )
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
@@ -405,7 +409,8 @@ def split_long_comment_line(
         matched: Match | None = re.match(
             (rf"^[ ]*(?:{prefix}[ ]*)?" if prefix else r"^[ ]*"), line
         )
-        assert matched is not None
+        if matched is None:
+            raise ValueError(line)
         indent_: str = matched.group()
         indent_length = len(indent_)
         words = re.split(r'([\w]*[\w,/"\'.;\-?`])', line[indent_length:])
@@ -457,16 +462,14 @@ def split_long_docstring_lines(
             break
     indent_ = " " * (indentation_length or 4)
     if indentation_length < sys.maxsize:
-        wrapped_lines: list[str] = []
-        for line in lines:
-            wrapped_lines.append(
-                split_long_comment_line(
-                    indent_ + line[indentation_length:],
-                    max_line_length,
-                    prefix="",
-                )
+        docstring = "\n".join(
+            _split_long_comment_line(
+                indent_ + line[indentation_length:],
+                max_line_length,
+                prefix="",
             )
-        docstring = "\n".join(wrapped_lines)
+            for line in lines
+        )
     # Strip trailing whitespace and empty lines
     return re.sub(r"[ ]+(\n|$)", r"\1", docstring)
 
@@ -497,3 +500,354 @@ def suffix_long_lines(
         return line
 
     return "\n".join(map(suffix_line_if_long, text.split("\n")))
+
+
+def _is_public(name: str) -> bool:
+    return not name.startswith("_")
+
+
+def iter_properties_values(
+    object_: object, *, include_private: bool = False
+) -> Iterable[tuple[str, Any]]:
+    """
+    This function iterates over an object's public (non-callable)
+    properties, yielding a tuple comprised of each attribute/property name and
+    value
+    """
+    names: Iterable[str] = dir(object_)
+    if not include_private:
+        names = filter(_is_public, names)
+
+    def get_name_value(name: str) -> tuple[str, str] | None:
+        value: Any = getattr(object_, name, lambda: None)
+        if callable(value):
+            return None
+        return name, value
+
+    return filter(None, map(get_name_value, names))
+
+
+QUALIFIED_NAME_ARGUMENT_TYPES: tuple[Any, ...] = (
+    type,
+    collections.abc.Callable,
+    ModuleType,
+)
+
+
+def get_qualified_name(type_or_module: type | Callable | ModuleType) -> str:
+    """
+    >>> print(qualified_name(qualified_name))
+    sob.utilities.qualified_name
+
+    >>> from sob import model
+    >>> print(qualified_name(model.marshal))
+    sob.model.marshal
+    """
+    if not isinstance(type_or_module, QUALIFIED_NAME_ARGUMENT_TYPES):
+        raise TypeError(type_or_module)
+    type_name: str
+    # noinspection SpellCheckingInspection
+    if isinstance(type_or_module, ModuleType):
+        type_name = type_or_module.__name__
+    else:
+        type_name = getattr(
+            type_or_module,
+            "__qualname__",
+            getattr(type_or_module, "__name__", ""),
+        )
+        if "<" in type_name:
+            name_part: str
+            type_name = ".".join(
+                filter(
+                    lambda name_part: not name_part.startswith("<"),
+                    type_name.split("."),
+                )
+            )
+        if (not type_name) and hasattr(type_or_module, "__origin__"):
+            # If this is a generic alias, we can use `repr`
+            # to get the qualified type name
+            type_name = repr(type_or_module)
+        if not type_name:
+            msg = (
+                "A qualified type name could not be inferred for "
+                f"`{type_or_module!r}` "
+                f"(an instance of {type(type_or_module).__name__})"
+            )
+            raise TypeError(msg)
+        if type_or_module.__module__ not in (
+            "builtins",
+            "__builtin__",
+            "__main__",
+            "__init__",
+        ):
+            type_name = type_or_module.__module__ + "." + type_name
+    return type_name
+
+
+def _get_module_name(file_name: str) -> str:
+    """
+    Given a frame info's file name, find the module name
+    """
+    module_name = getmodulename(file_name)
+    if module_name is None:
+        # Check to see if this is a doctest
+        doc_test_prefix: str = "<doctest "
+        if file_name.startswith(doc_test_prefix):
+            doc_test_prefix_length: int = len(doc_test_prefix)
+            module_name = file_name[doc_test_prefix_length:]
+            module_name = module_name.rstrip(">")
+            if "[" in module_name:
+                module_name = "[".join(module_name.split("[")[:-1])
+        else:
+            msg = f'The path "{file_name}" is not a python module'
+            raise ValueError(msg)
+    return module_name
+
+
+def _get_frame_info_names(frame_info: FrameInfo) -> list[str]:
+    names: list[str] = []
+    if frame_info.function != "<module>":
+        names.append(frame_info.function)
+        arguments, _, _, frame_locals = getargvalues(frame_info.frame)
+        if arguments:
+            argument = arguments[0]
+            argument_value = frame_locals[argument]
+            argument_value_type = type(argument_value)
+            if (
+                hasattr(argument_value_type, "__name__")
+                and hasattr(argument_value_type, "__module__")
+                and (
+                    (argument_value_type.__name__ not in builtins.__dict__)
+                    or (
+                        builtins.__dict__[argument_value_type.__name__]
+                        is not argument_value_type
+                    )
+                )
+            ):
+                names.append(get_qualified_name(argument_value_type))
+    if len(names) < 2:  # noqa: PLR2004
+        module_name = _get_module_name(frame_info.filename)
+        if module_name in sys.modules:
+            qualified_module_name = get_qualified_name(
+                sys.modules[module_name]
+            )
+            names.append(qualified_module_name)
+        elif module_name:
+            names.append(module_name)
+    return names
+
+
+def get_calling_module_name(depth: int = 1) -> str:
+    """
+    This function returns the name of the module from which the function
+    which invokes this function was called.
+
+    Parameters:
+        depth: This defaults to `1`, indicating we want to return the name
+            of the module wherein `get_calling_module_name` is being called.
+            If set to `2`, it would instead indicate the module.
+
+    Examples:
+
+    >>> print(get_calling_module_name())
+    sob.utilities
+
+    >>> print(get_calling_module_name(2))
+    doctest
+    """
+    name: str
+    try:
+        name = sys._getframe(  # noqa: SLF001
+            depth
+        ).f_globals.get("__name__", "__main__")
+    except (AttributeError, ValueError):
+        name = "__main__"
+    return name
+
+
+def get_calling_function_qualified_name(depth: int = 1) -> str | None:
+    """
+    Return the fully qualified name of the function from within which this is
+    being called
+
+    >>> def my_function() -> str:
+    ...     return get_calling_function_qualified_name()
+    >>> print(my_function())
+    sob.utilities.get_calling_function_qualified_name.my_function
+
+    >>> class MyClass:
+    ...     def __call__(self) -> None:
+    ...         return self.my_method()
+    ...
+    ...     def my_method(self) -> str:
+    ...         return get_calling_function_qualified_name()
+    >>> print(MyClass()())
+    sob.utilities.MyClass.my_method
+    """
+    if not isinstance(depth, int):
+        raise TypeError(depth)
+    try:
+        stack_ = stack()
+    except IndexError:
+        return None
+    if len(stack_) < (depth + 1):
+        return None
+    names: list[str] = _get_frame_info_names(stack_[depth])
+    return ".".join(reversed(names))
+
+
+def get_source(object_: type | Callable | ModuleType) -> str:
+    """
+    Get the source code which defined an object.
+    """
+    object_source: str = getattr(object_, "_source", "")
+    if not object_source:
+        object_source = getsource(object_)
+    return object_source
+
+
+def _repr_items(items: Iterable) -> str:
+    """
+    Returns a string representation of the items in a `list`, `tuple`,
+    `set`, or `collections.OrderedDict().items()`.
+    """
+    return ",\n".join(indent(represent(item), start=0) for item in items)
+
+
+def _repr_dict_items(items: Iterable[tuple[Any, Any]]) -> str:
+    """
+    Returns a string representation of dictionary items.
+    """
+    key: Any
+    value: Any
+    lines: list[str] = []
+    for key, value in items:
+        lines.append(
+            f"{indent(represent(key), start=0)}: {indent(represent(value))}"
+        )
+    return ",\n".join(lines)
+
+
+def _repr_list(list_instance: list) -> str:
+    """
+    Returns a string representation of `list` argument values
+    """
+    if list_instance:
+        return f"[\n{_repr_items(list_instance)}\n]"
+    return "[]"
+
+
+def _repr_tuple(tuple_instance: tuple) -> str:
+    """
+    Returns a string representation of `tuple` argument values
+    """
+    if tuple_instance:
+        comma: str = "," if len(tuple_instance) == 1 else ""
+        return f"(\n{_repr_items(tuple_instance)}{comma}\n)"
+    return "()"
+
+
+def _repr_set(set_instance: set) -> str:
+    """
+    Returns a string representation of `set` argument values
+    """
+    if set_instance:
+        items: str = _repr_items(
+            sorted(set_instance, key=lambda item: represent(item))
+        )
+        return f"{{\n{items}\n}}"
+    return "set()"
+
+
+def _repr_dict(dict_instance: dict) -> str:
+    """
+    Returns a string representation of `dict` argument values
+    """
+    items: tuple[tuple[Any, Any], ...] = tuple(dict_instance.items())
+    if items:
+        return f"{{\n{_repr_dict_items(items)}\n}}"
+    return "{}"
+
+
+def _repr_ordered_dict(ordered_dict_instance: collections.OrderedDict) -> str:
+    """
+    Returns a string representation of `collections.OrderedDict` argument
+    values
+    """
+    items: tuple[tuple[Any, Any], ...] = tuple(ordered_dict_instance.items())
+    if items:
+        return f"collections.OrderedDict([\n{_repr_items(items)}\n])"
+    return "collections.OrderedDict()"
+
+
+def represent(value: Any) -> str:
+    """
+    Returns a string representation of a value, formatted to minimize
+    character width, and utilizing fully qualified class/function names
+    (including module) where applicable.
+
+    Parameters:
+
+    - value
+    """
+    value_representation: str
+    if isinstance(value, type):
+        value_representation = get_qualified_name(value)
+    else:
+        value_type: type = type(value)
+        if value_type is list:
+            value_representation = _repr_list(value)
+        elif value_type is tuple:
+            value_representation = _repr_tuple(value)
+        elif value_type is set:
+            value_representation = _repr_set(value)
+        elif value_type is dict:
+            value_representation = _repr_dict(value)
+        elif value_type is collections.OrderedDict:
+            value_representation = _repr_ordered_dict(value)
+        else:
+            value_representation = repr(value)
+            if (
+                value_type is str
+                and '"' not in value_representation
+                and value_representation.startswith("'")
+                and value_representation.endswith("'")
+            ):
+                value_representation = f'"{value_representation[1:-1]}"'
+    return value_representation
+
+
+def get_method(
+    object_instance: object,
+    method_name: str,
+    default: Callable | Undefined | None = UNDEFINED,
+) -> Callable[..., Any] | None:
+    """
+    This function attempts to retrieve a method, by name.
+
+    Parameters:
+
+    - object_instance (object)
+    - method_name (str)
+    - default (collections.Callable|None) = None
+
+    This function returns an object's method, if the method exists.
+    If the object does not have a method with the given name, this
+    function returns `None`.
+    """
+    method: Callable
+    try:
+        method = getattr(object_instance, method_name)
+    except AttributeError:
+        if isinstance(default, Undefined):
+            raise
+        return default
+    if callable(method):
+        return method
+    if isinstance(default, Undefined):
+        message: str = (
+            f"{get_qualified_name(type(object_instance))}.{method_name} "
+            "is not callable."
+        )
+        raise AttributeError(message)  # noqa: TRY004
+    return method

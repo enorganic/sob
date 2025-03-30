@@ -35,36 +35,33 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Self,
     SupportsBytes,
     cast,
 )
 from urllib.parse import urljoin
 
+from typing_extensions import Self
+
 from sob import __name__ as _parent_module_name
 from sob import abc, errors, hooks, meta, utilities
+from sob._datetime import date2str, datetime2str
+from sob._io import read
+from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
 from sob.errors import (
     DeserializeError,
-    IsInstanceAssertionError,
     append_exception_text,
     get_exception_text,
 )
-from sob.utilities.assertion import assert_is_instance
-from sob.utilities.datetime import date2str, datetime2str
-from sob.utilities.inspect import (
-    calling_module_name,
-    get_method,
-    qualified_name,
-    represent,
-)
-from sob.utilities.io import read
-from sob.utilities.string import (
+from sob.utilities import (
     MAX_LINE_LENGTH,
+    get_calling_module_name,
+    get_method,
+    get_qualified_name,
+    represent,
     split_long_docstring_lines,
     suffix_long_lines,
 )
-from sob.utilities.string import indent as indent_
-from sob.utilities.types import NULL, UNDEFINED, NoneType, Null, Undefined
+from sob.utilities import indent as indent_
 
 
 class Model(abc.Model):
@@ -75,6 +72,7 @@ class Model(abc.Model):
     `Array` and/or `Dictionary` as a superclass instead.
     """
 
+    _source: str | None = None
     _meta: abc.Meta | None = None
     _hooks: abc.Hooks | None = None
 
@@ -131,16 +129,15 @@ class Model(abc.Model):
                 raise TypeError(data_read)
             deserialized_data = data_read
         else:
-            assert_is_instance(
-                "data",
+            if (data is not None) and not isinstance(
                 data,
                 (
                     Iterable,
                     Mapping,
                     abc.Model,
-                    NoneType,
                 ),
-            )
+            ):
+                raise TypeError(data)
             deserialized_data = data
         return deserialized_data
 
@@ -348,7 +345,7 @@ class Array(Model, abc.Array):
         return self
 
     def __add__(self, values: Iterable[abc.MarshallableTypes]) -> Self:
-        new_array: abc.Array = copy(self)
+        new_array: Self = copy(self)
         return new_array.__iadd__(values)
 
     def __copy__(self) -> abc.Array:
@@ -427,7 +424,7 @@ class Array(Model, abc.Array):
         recreate the item
         """
         item_representation = (
-            qualified_name(item) if isinstance(item, type) else repr(item)
+            get_qualified_name(item) if isinstance(item, type) else repr(item)
         )
         item_lines = item_representation.split("\n")
         if len(item_lines) > 1:
@@ -441,7 +438,7 @@ class Array(Model, abc.Array):
         """
         instance_meta: abc.ArrayMeta | None = meta.array_read(self)
         class_meta: abc.ArrayMeta | None = meta.array_read(type(self))
-        representation_lines = [qualified_name(type(self)) + "("]
+        representation_lines = [get_qualified_name(type(self)) + "("]
         if len(self) > 0:
             representation_lines.append("    [")
             representation_lines.extend(map(self._repr_item, self))
@@ -474,10 +471,15 @@ class Array(Model, abc.Array):
             representation = "".join(representation_lines)
         return representation
 
+    def __len__(self) -> int:
+        return self._list.__len__()
+
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
-        length = len(self)
+        length: int = len(self)
+        if TYPE_CHECKING:
+            assert isinstance(other, Sequence)
         if length != len(other):
             return False
         index: int
@@ -488,9 +490,6 @@ class Array(Model, abc.Array):
 
     def __str__(self) -> str:
         return serialize(self)
-
-    def __len__(self) -> int:
-        return self._list.__len__()
 
 
 class Dictionary(Model, abc.Dictionary):
@@ -587,11 +586,11 @@ class Dictionary(Model, abc.Dictionary):
             deserialized_items = collections.OrderedDict(
                 deserialized_items  # type: ignore
             )
-        assert_is_instance(
-            "deserialized_items",
+        if (deserialized_items is not None) and not isinstance(
             deserialized_items,
             (abc.Dictionary, Mapping, NoneType),
-        )
+        ):
+            raise TypeError(deserialized_items)
         return deserialized_items
 
     def _init_items(
@@ -646,6 +645,7 @@ class Dictionary(Model, abc.Dictionary):
         return id(self)
 
     def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
+        message: str
         instance_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
             self
         )
@@ -660,7 +660,7 @@ class Dictionary(Model, abc.Dictionary):
                 value, types=value_types or ()
             )
         except TypeError as error:
-            message = f"\n - {qualified_name(type(self))}['{key}']: {{}}"
+            message = f"\n - {get_qualified_name(type(self))}['{key}']: {{}}"
             if error.args and isinstance(error.args[0], str):
                 error.args = tuple(
                     chain((message.format(error.args[0]),), error.args[1:])
@@ -669,7 +669,7 @@ class Dictionary(Model, abc.Dictionary):
                 error.args = (message.format(repr(value)),)
             raise
         if unmarshalled_value is None:
-            message: str = f"{key} = {unmarshalled_value!r}"
+            message = f"{key} = {unmarshalled_value!r}"
             raise RuntimeError(message)
         self._dict.__setitem__(key, unmarshalled_value)
         if instance_hooks and instance_hooks.after_setitem:
@@ -770,7 +770,8 @@ class Dictionary(Model, abc.Dictionary):
                     after_marshal_data.items()
                 )
             else:
-                assert isinstance(after_marshal_data, Mapping)
+                if not isinstance(after_marshal_data, Mapping):
+                    raise TypeError(after_marshal_data)
                 after_marshal_dictionary = collections.OrderedDict(
                     sorted(
                         after_marshal_data.items(), key=lambda item: item[0]
@@ -779,7 +780,7 @@ class Dictionary(Model, abc.Dictionary):
             marshalled_data = after_marshal_dictionary
         return marshalled_data
 
-    def _validate(self, raise_errors: bool = True) -> list[str]:
+    def _validate(self, *, raise_errors: bool = True) -> list[str]:
         """
         Recursively validate
         """
@@ -788,11 +789,13 @@ class Dictionary(Model, abc.Dictionary):
         data: abc.Model = self
         if hooks_ and hooks_.before_validate:
             data = hooks_.before_validate(data)
-        assert isinstance(data, (NoneType, abc.Dictionary))
+        if not isinstance(data, (NoneType, abc.Dictionary)):
+            raise TypeError(data)
         meta_: abc.DictionaryMeta | None = meta.dictionary_read(data)
         value_types: abc.Types | None = meta_.value_types if meta_ else None
         if value_types is not None:
-            assert isinstance(data, abc.Dictionary)
+            if not isinstance(data, abc.Dictionary):
+                raise TypeError(data)
             value: abc.MarshallableTypes
             for value in data.values():
                 value_validation_errors = validate(
@@ -808,13 +811,18 @@ class Dictionary(Model, abc.Dictionary):
     @staticmethod
     def _repr_item(key: str, value: Any) -> str:
         value_representation = (
-            qualified_name(value) if isinstance(value, type) else repr(value)
+            get_qualified_name(value)
+            if isinstance(value, type)
+            else repr(value)
         )
         value_representation_lines = value_representation.split("\n")
         if len(value_representation_lines) > 1:
             indented_lines = [value_representation_lines[0]]
-            for line in value_representation_lines[1:]:
-                indented_lines.append(f"            {line}")
+            line: str
+            indented_lines.extend(
+                f"            {line}"
+                for line in value_representation_lines[1:]
+            )
             value_representation = "\n".join(indented_lines)
             representation = "\n".join(
                 [
@@ -837,7 +845,9 @@ class Dictionary(Model, abc.Dictionary):
             type(self)
         )
         instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(self)
-        representation_lines: list[str] = [qualified_name(type(self)) + "("]
+        representation_lines: list[str] = [
+            get_qualified_name(type(self)) + "("
+        ]
         items: tuple[tuple[str, abc.MarshallableTypes], ...] = tuple(
             self.items()
         )
@@ -870,7 +880,7 @@ class Dictionary(Model, abc.Dictionary):
                 "    value_types=" + indent_(repr(instance_meta.value_types)),
             )
         representation_lines.append(")")
-        if len(representation_lines) > 2:
+        if len(representation_lines) > 2:  # noqa: PLR2004
             representation = "\n".join(representation_lines)
         else:
             representation = "".join(representation_lines)
@@ -879,6 +889,8 @@ class Dictionary(Model, abc.Dictionary):
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
+        if TYPE_CHECKING:
+            assert isinstance(other, Mapping)
         keys = tuple(self.keys())
         other_keys = tuple(other.keys())
         if keys != other_keys:
@@ -997,15 +1009,8 @@ class Object(Model, abc.Object):
             | abc.Model
             | None
         ) = self._init_format(_data)
-        try:
-            assert isinstance(deserialized_data, (abc.Object, dict, NoneType))
-        except AssertionError:
-            attribute_name: str = "deserialized_data"
-            raise IsInstanceAssertionError(
-                attribute_name,
-                deserialized_data,
-                (abc.Object, dict, NoneType),
-            )
+        if not isinstance(deserialized_data, (abc.Object, dict, NoneType)):
+            raise TypeError(deserialized_data)
         self._data_init(deserialized_data)
         self._init_pointer()
 
@@ -1035,16 +1040,16 @@ class Object(Model, abc.Object):
         value: abc.MarshallableTypes
         for key, value in dictionary.items():
             if value is None:
-                value = NULL
+                value = NULL  # noqa: PLW2901
             try:
                 self.__setitem__(key, value)
             except KeyError as error:
                 message: str = (
                     f"{errors.get_exception_text()}\n\n"
-                    f"{qualified_name(type(self))}."
+                    f"{get_qualified_name(type(self))}."
                     f"{error.args[0]}: {represent(dictionary)}"
                 )
-                raise errors.UnmarshalKeyError(message)
+                raise errors.UnmarshalKeyError(message) from error
 
     def _copy_init(self, other: abc.Object) -> None:
         """
@@ -1064,7 +1069,7 @@ class Object(Model, abc.Object):
                     )
                 except TypeError as error:
                     label: str = (
-                        f"\n - {qualified_name(type(self))}."
+                        f"\n - {get_qualified_name(type(self))}."
                         f"{property_name_}: "
                     )
                     if error.args:
@@ -1094,7 +1099,7 @@ class Object(Model, abc.Object):
             except (KeyError, AttributeError):
                 pass
         message: str = (
-            f"`{qualified_name(type(self))}` has no attribute "
+            f"`{get_qualified_name(type(self))}` has no attribute "
             f'"{property_name_}".'
         )
         raise KeyError(message)
@@ -1113,7 +1118,7 @@ class Object(Model, abc.Object):
                 value = _unmarshal_property_value(property_definition, value)
             except (TypeError, ValueError) as error:
                 message: str = (
-                    f"\n - {qualified_name(type(self))}.{property_name_}: "
+                    f"\n - {get_qualified_name(type(self))}.{property_name_}: "
                 )
                 if error.args and isinstance(error.args[0], str):
                     error.args = tuple(
@@ -1173,7 +1178,7 @@ class Object(Model, abc.Object):
                     )
                     found_in = f", found in {type_module_file}, "
             message: str = (
-                f"`{qualified_name(type(self))}`{found_in}"
+                f"`{get_qualified_name(type(self))}`{found_in}"
                 f'has no property mapped to the name "{key}"'
             )
             raise KeyError(message)
@@ -1237,7 +1242,7 @@ class Object(Model, abc.Object):
                     value = deepcopy(value, memo=memo)
                 setattr(other, property_name_, value)
         except TypeError as error:
-            label: str = f"{qualified_name(type(self))}.{property_name_}: "
+            label: str = f"{get_qualified_name(type(self))}.{property_name_}: "
             if error.args:
                 error.args = tuple(
                     chain((label + error.args[0],), error.args[1:])
@@ -1294,19 +1299,18 @@ class Object(Model, abc.Object):
     def _repr_argument(parameter: str, value: abc.MarshallableTypes) -> str:
         value_representation: str
         if isinstance(value, type):
-            value_representation = qualified_name(value)
+            value_representation = get_qualified_name(value)
         else:
             value_representation = repr(value)
         lines = value_representation.split("\n")
         if len(lines) > 1:
             indented_lines = [lines[0]]
-            for line in lines[1:]:
-                indented_lines.append("    " + line)
+            indented_lines.extend(f"    {line}" for line in lines[1:])
             value_representation = "\n".join(indented_lines)
         return f"    {parameter}={value_representation},"
 
     def __repr__(self) -> str:
-        representation = [f"{qualified_name(type(self))}("]
+        representation = [f"{get_qualified_name(type(self))}("]
         instance_meta: abc.ObjectMeta | None = meta.object_read(self)
         if instance_meta and instance_meta.properties:
             property_name_: str
@@ -1321,10 +1325,9 @@ class Object(Model, abc.Object):
             if representation:
                 representation[-1] = representation[-1].rstrip(",")
         representation.append(")")
-        if len(representation) > 2:
+        if len(representation) > 2:  # noqa: PLR2004
             return "\n".join(representation)
-        else:
-            return "".join(representation)
+        return "".join(representation)
 
     def __eq__(self, other: abc.Any) -> bool:
         if type(self) is not type(other):
@@ -1375,20 +1378,21 @@ class Object(Model, abc.Object):
         if value is None:
             if property_.required:
                 yield (
-                    f"The property `{property_name_}` is required for `{qualified_name(type(self))}`:\n{self!s}"
+                    f"The property `{property_name_}` is required for "
+                    f"`{get_qualified_name(type(self))}`:\n{self!s}"
                 )
         elif value is NULL:
             if (property_.types is not None) and (Null not in property_.types):
                 yield (
                     "Null values are not allowed in `{}.{}`, "
                     "permitted types include: {}.".format(
-                        qualified_name(type(self)),
+                        get_qualified_name(type(self)),
                         property_name_,
                         ", ".join(
                             "`{}`".format(
-                                qualified_name(type_)
+                                get_qualified_name(type_)
                                 if isinstance(type_, type)
-                                else qualified_name(type(type_))
+                                else get_qualified_name(type(type_))
                             )
                             for type_ in property_.types
                         ),
@@ -1401,10 +1405,10 @@ class Object(Model, abc.Object):
             ):
                 yield (
                     "Error encountered while attempting to validate "
-                    f"`{qualified_name(type(self))}.{property_name_}`:\n\n{error_message}"
+                    f"`{get_qualified_name(type(self))}.{property_name_}`:\n\n{error_message}"
                 )
 
-    def _validate(self, raise_errors: bool = True) -> list[str]:
+    def _validate(self, *, raise_errors: bool = True) -> list[str]:
         """
         This method verifies that all required properties are present, and
         that all property values are of the correct type.
@@ -1428,14 +1432,15 @@ class Object(Model, abc.Object):
                 property_name_,
                 property_,
             ) in instance_meta.properties.items():
-                for error_message in (  # noqa: SLF001
-                    validated_object
-                )._get_property_validation_error_messages(
-                    property_name_,
-                    property_,
-                    getattr(validated_object, property_name_),
-                ):
-                    validation_error_messages.append(error_message)
+                validation_error_messages.extend(
+                    (  # noqa: SLF001
+                        validated_object
+                    )._get_property_validation_error_messages(
+                        property_name_,
+                        property_,
+                        getattr(validated_object, property_name_),
+                    )
+                )
             if instance_hooks and instance_hooks.after_validate:
                 instance_hooks.after_validate(validated_object)
             if raise_errors and validation_error_messages:
@@ -1457,12 +1462,8 @@ def _marshal_collection(
 ) -> Mapping[str, abc.MarshallableTypes] | list[abc.MarshallableTypes]:
     if isinstance(data, (Mapping, abc.Dictionary)):
         return _marshal_mapping(data, value_types)
-    else:
-        value: abc.MarshallableTypes
-        marshalled_data: list[abc.MarshallableTypes] = []
-        for value in data:
-            marshalled_data.append(marshal(value, types=item_types))
-        return marshalled_data
+    value: abc.MarshallableTypes
+    return [marshal(value, types=item_types) for value in data]
 
 
 def _marshal_mapping(
@@ -1480,7 +1481,8 @@ def _marshal_mapping(
     ):
         items = data.items()
     else:
-        assert isinstance(data, Mapping)
+        if not isinstance(data, Mapping):
+            raise TypeError(data)
         # This gives consistent sorting for non-ordered mappings
         items = sorted(data.items(), key=lambda item: item[0])
     for key, value in items:
@@ -1706,7 +1708,7 @@ class _Unmarshal:
         error_messages: list[str] = []
         # Attempt to un-marshal the data as each type, in the order
         # provided
-        assert self.types
+        type_: type | abc.Property
         for type_ in self.types:
             try:
                 unmarshalled_data = self.as_type(type_)
@@ -1726,7 +1728,7 @@ class _Unmarshal:
                     value_types=self.value_types,
                     item_types=self.item_types,
                 )
-            elif isinstance(first_error, ValueError):
+            if isinstance(first_error, ValueError):
                 raise errors.UnmarshalValueError(
                     "\n".join(error_messages),
                     data=self.data,
@@ -1734,8 +1736,7 @@ class _Unmarshal:
                     value_types=self.value_types,
                     item_types=self.item_types,
                 )
-            else:
-                raise first_error
+            raise first_error
         return unmarshalled_data
 
     def get_dictionary_type(self, type_: type) -> type | None:
@@ -1807,10 +1808,11 @@ class _Unmarshal:
         return type_
 
     def as_array_type(self, type_: type) -> abc.Array:
+        unmarshalled_data: abc.Array
         type_ = self.get_array_type(type_)
         if "item_types" in signature(type_).parameters:
             unmarshalled_data = type_(
-                self.data,
+                cast(abc.Array, self.data),
                 item_types=self.item_types or None,  # type: ignore
             )
         else:
@@ -1843,12 +1845,12 @@ class _Unmarshal:
     def represent_function_call(self) -> str:
         return (
             "sob.model.unmarshal(\n"
-            f"    data={indent_(utilities.inspect.represent(self.data))},\n"
-            f"    types={indent_(utilities.inspect.represent(self.types))},\n"
+            f"    data={indent_(utilities.represent(self.data))},\n"
+            f"    types={indent_(utilities.represent(self.types))},\n"
             "    value_types="
-            f"{indent_(utilities.inspect.represent(self.value_types))},\n"
+            f"{indent_(utilities.represent(self.value_types))},\n"
             "    item_types="
-            f"{indent_(utilities.inspect.represent(self.item_types))},\n"
+            f"{indent_(utilities.represent(self.item_types))},\n"
             ")"
         )
 
@@ -1927,7 +1929,8 @@ def serialize(
         if after_serialize is not None:
             string_data = after_serialize(string_data)
     else:
-        assert isinstance(data, abc.JSON_TYPES)
+        if not isinstance(data, abc.JSON_TYPES):
+            raise TypeError(data)
         string_data = json.dumps(data, indent=indent)
     return string_data
 
@@ -1985,14 +1988,19 @@ def deserialize(
 # region validate
 
 
+def _default_validate_method(
+    raise_errors: bool,  # noqa: ARG001 FBT001
+) -> Iterable[str]:
+    return ()
+
+
 def _call_validate_method(data: abc.Model) -> Iterable[str]:
     error_message: str
     error_messages: set[str] = set()
-    validate_method: Callable[[bool], Iterable[str]] | None = get_method(
-        data, "_validate", lambda *args, **kwargs: []
-    )
-    assert validate_method is not None
-    for error_message in validate_method(False):
+    validate_method: Callable[..., Iterable[str]] = get_method(
+        data, "_validate", _default_validate_method
+    )  # type: ignore
+    for error_message in validate_method(raise_errors=False):
         if error_message not in error_messages:
             yield error_message
             error_messages.add(error_message)
@@ -2008,7 +2016,7 @@ def _validate_typed(
         if isinstance(type_, type) and isinstance(data, type_):
             valid = True
             break
-        elif isinstance(type_, abc.Property):
+        if isinstance(type_, abc.Property):
             if type_.types is None:
                 valid = True
                 break
@@ -2036,6 +2044,7 @@ def _validate_typed(
 def validate(
     data: Any,
     types: abc.Types | Iterable[type | abc.Property] | None = None,
+    *,
     raise_errors: bool = True,
 ) -> Sequence[str]:
     """
@@ -2081,8 +2090,8 @@ class _UnmarshalProperty:
     `_unmarshal_property_value`.
     """
 
-    def __init__(self, property: abc.Property) -> None:
-        self.property = property
+    def __init__(self, property_: abc.Property) -> None:
+        self.property = property_
 
     def validate_enumerated(self, value: abc.MarshallableTypes) -> None:
         """
@@ -2121,26 +2130,31 @@ class _UnmarshalProperty:
     def parse_date(self, value: str | None) -> date | None:
         if value is None:
             return value
+        if not isinstance(value, (date, str)):
+            raise TypeError(value)
+        if isinstance(value, date):
+            date_instance = value
         else:
-            assert_is_instance("value", value, (date, str))
-            if isinstance(value, date):
-                date_instance = value
-            else:
-                assert isinstance(self.property, abc.Date)
-                date_instance = self.property.str2date(value)
-            assert isinstance(date_instance, date)
-            return date_instance
+            if not isinstance(self.property, abc.Date):
+                raise TypeError(self.property)
+            date_instance = self.property.str2date(value)
+        if not isinstance(date_instance, date):
+            raise TypeError(date_instance)
+        return date_instance
 
     def parse_datetime(self, value: str | datetime | None) -> datetime | None:
         datetime_instance: datetime | None = None
         if value is not None:
-            assert_is_instance("value", value, (datetime, str))
+            if not isinstance(value, (datetime, str)):
+                raise TypeError(value)
             if isinstance(value, datetime):
                 datetime_instance = value
             else:
-                assert isinstance(self.property, abc.DateTime)
+                if not isinstance(self.property, abc.DateTime):
+                    raise TypeError(self.property)
                 datetime_instance = self.property.str2datetime(value)
-            assert isinstance(datetime_instance, datetime)
+            if not isinstance(datetime_instance, datetime):
+                raise TypeError(datetime_instance)
         return datetime_instance
 
     @staticmethod
@@ -2158,7 +2172,7 @@ class _UnmarshalProperty:
         else:
             msg = (
                 "`data` must be a base64 encoded `str` or `bytes`--not "
-                f"`{qualified_name(type(data))}`"
+                f"`{get_qualified_name(type(data))}`"
             )
             raise TypeError(msg)
         return unmarshalled_data
@@ -2166,7 +2180,8 @@ class _UnmarshalProperty:
     def unmarshall_array(
         self, value: abc.MarshallableTypes
     ) -> abc.MarshallableTypes:
-        assert isinstance(self.property, abc.ArrayProperty)
+        if not isinstance(self.property, abc.ArrayProperty):
+            raise TypeError(self.property)
         return unmarshal(
             value,
             types=self.property.types or (),
@@ -2176,7 +2191,8 @@ class _UnmarshalProperty:
     def unmarshall_dictionary(
         self, value: abc.MarshallableTypes
     ) -> abc.MarshallableTypes:
-        assert isinstance(self.property, abc.DictionaryProperty)
+        if not isinstance(self.property, abc.DictionaryProperty):
+            raise TypeError(self.property)
         return unmarshal(
             value,
             types=self.property.types or (),
@@ -2186,8 +2202,8 @@ class _UnmarshalProperty:
     def represent_function_call(self, value: abc.MarshallableTypes) -> str:
         return (
             "sob.model._unmarshal_property_value(\n"
-            f"    {indent_(utilities.inspect.represent(self.property))},\n"
-            f"    {indent_(utilities.inspect.represent(value))}\n"
+            f"    {indent_(utilities.represent(self.property))},\n"
+            f"    {indent_(utilities.represent(value))}\n"
             ")"
         )
 
@@ -2215,7 +2231,8 @@ class _UnmarshalProperty:
                 and not isinstance(value, abc.Model)
             ):
                 if isinstance(value, (Mapping, abc.Dictionary)):
-                    assert isinstance(value, (MutableMapping, abc.Dictionary))
+                    if not isinstance(value, (MutableMapping, abc.Dictionary)):
+                        raise TypeError(value)
                     unmarshalled_value = copy(value)
                     for key, item_value in value.items():
                         if item_value is None:
@@ -2269,7 +2286,8 @@ class _MarshalProperty:
     def parse_date(self, value: date | None) -> str | None:
         date_string: str | None = None
         if value is not None:
-            assert isinstance(self.property, abc.Date)
+            if not isinstance(self.property, abc.Date):
+                raise TypeError(self.property)
             date_string = self.property.date2str(value)
             if not isinstance(date_string, str):
                 msg = (
@@ -2283,7 +2301,8 @@ class _MarshalProperty:
     def parse_datetime(self, value: datetime | None) -> str | None:
         datetime_string: str | None = None
         if value is not None:
-            assert isinstance(self.property, abc.DateTime)
+            if not isinstance(self.property, abc.DateTime):
+                raise TypeError(self.property)
             datetime_string = self.property.datetime2str(value)
             if not isinstance(datetime_string, str):
                 msg = (
@@ -2300,22 +2319,27 @@ class _MarshalProperty:
         """
         if (value is None) or isinstance(value, str):
             return value
-        elif isinstance(value, bytes):
+        if isinstance(value, bytes):
             return str(b64encode(value), "ascii")
-        else:
-            msg = f"`data` must be a base64 encoded `str` or `bytes`--not `{qualified_name(type(value))}`"
-            raise TypeError(msg)
+        message: str = (
+            f"`data` must be a base64 encoded `str` or `bytes`--not "
+            f"`{get_qualified_name(type(value))}`"
+        )
+        raise TypeError(message)
 
     def __call__(self, value: abc.MarshallableTypes) -> abc.JSONTypes:
         if value is not None:
             if isinstance(self.property, abc.Date):
-                assert isinstance(value, date)
+                if not isinstance(value, date):
+                    raise TypeError(value)
                 value = self.parse_date(value)
             elif isinstance(self.property, abc.DateTime):
-                assert isinstance(value, datetime)
+                if not isinstance(value, datetime):
+                    raise TypeError(value)
                 value = self.parse_datetime(value)
             elif isinstance(self.property, abc.Bytes):
-                assert isinstance(value, bytes)
+                if not isinstance(value, bytes):
+                    raise TypeError(value)
                 value = self.parse_bytes(value)
             elif isinstance(self.property, abc.ArrayProperty):
                 value = marshal(
@@ -2353,7 +2377,7 @@ def _replace_object_nulls(
 ) -> None:
     property_name_: str
     value: abc.MarshallableTypes
-    for property_name_, value in utilities.inspect.properties_values(
+    for property_name_, value in utilities.iter_properties_values(
         object_instance
     ):
         if value is NULL:
@@ -2436,7 +2460,7 @@ def _type_hint_from_property_types(
 
 def _type_hint_from_type(type_: type, module: str) -> str:
     type_hint: str
-    type_hint = qualified_name(type_)
+    type_hint = get_qualified_name(type_)
     # If this class was declared in the same module, we put it in
     # quotes since it won't necessarily have been declared already
     if (("." not in type_hint) and not hasattr(builtins, type_hint)) or (
@@ -2506,7 +2530,7 @@ def _get_class_declaration(name: str, superclass_: type) -> str:
     Construct a class declaration
     """
     class_declaration: str
-    qualified_superclass_name: str = qualified_name(superclass_)
+    qualified_superclass_name: str = get_qualified_name(superclass_)
     # If the class declaration line is longer than 79 characters--break it
     # up (attempt to conform to PEP8)
     if 9 + len(name) + len(qualified_superclass_name) <= MAX_LINE_LENGTH:
@@ -2657,7 +2681,7 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
         out.extend(property_assignments)
         out.append("        super().__init__(_data)\n\n")
     else:
-        raise ValueError(metadata)
+        raise TypeError(metadata)
     return "\n".join(out)
 
 
@@ -2665,7 +2689,7 @@ def _class_definition_from_meta(
     name: str,
     metadata: abc.Meta,
     docstring: str | None = None,
-    module: str | None = None,
+    module: str = "__main__",
     pre_init_source: str = "",
     post_init_source: str = "",
 ) -> str:
@@ -2673,7 +2697,6 @@ def _class_definition_from_meta(
     This returns a `str` defining a model class, as determined by an
     instance of `sob.meta.Meta`.
     """
-    assert module is not None
     repr_docstring: str | None = (
         None if docstring is None else _repr_class_docstring(docstring)
     )
@@ -2683,10 +2706,10 @@ def _class_definition_from_meta(
     if repr_docstring:
         out.append(repr_docstring)
     if pre_init_source:
-        out.append("\n" + utilities.string.indent(pre_init_source, start=0))
+        out.append("\n" + utilities.indent(pre_init_source, start=0))
     out.append(_repr_class_init_from_meta(metadata, module))
     if post_init_source:
-        out.append(f"\n{utilities.string.indent(post_init_source, start=0)}")
+        out.append(f"\n{utilities.indent(post_init_source, start=0)}")
     return "\n".join(out)
 
 
@@ -2709,7 +2732,7 @@ def from_meta(
     - module (str): Specify the value for the class definition's
       `__module__` property. The invoking module will be
       used if this is not specified. Note: If using the result of this
-      function with `sob.utilities.inspect.get_source` to generate static
+      function with `sob.utilities.get_source` to generate static
       code--this should be set to "__main__". The default behavior is only
       appropriate when using this function as a factory.
     - docstring (str): A docstring to associate with the class definition.
@@ -2719,7 +2742,7 @@ def from_meta(
       function in the class definition.
     """
     # For pickling to work, the __module__ variable needs to be set...
-    module = module or calling_module_name(2)
+    module = module or get_calling_module_name(2)
     class_definition: str = _class_definition_from_meta(
         name,
         metadata,
@@ -2747,11 +2770,11 @@ def from_meta(
     )
     error: Exception
     try:
-        exec(source, namespace)
+        exec(source, namespace)  # noqa: S102
     except Exception as error:
         append_exception_text(error, f"\n\n{source}")
         raise
-    model_class: type = namespace[name]
+    model_class: type[abc.Model] = namespace[name]
     model_class._source = source  # noqa: SLF001
     model_class.__module__ = module
     model_class._meta = metadata  # noqa: SLF001

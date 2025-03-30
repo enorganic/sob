@@ -15,13 +15,12 @@ from sob import (
     hooks,
     properties,
     test,
-    request,
     thesaurus,
 )
 
 # isort: on
 
-__all__: list[str] = [
+__all__: tuple[str, ...] = (
     "utilities",
     "abc",
     "model",
@@ -33,4 +32,4 @@ __all__: list[str] = [
     "test",
     "request",
     "thesaurus",
-]
+)

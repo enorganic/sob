@@ -18,39 +18,23 @@ from typing import (
 )
 
 from sob import abc
+from sob._datetime import date2str as _date2str
+from sob._datetime import datetime2str as _datetime2str
+from sob._datetime import str2date as _str2date
+from sob._datetime import str2datetime as _str2datetime
+from sob._inspect import get_parameters_defaults
+from sob._types import UNDEFINED, NoneType, Undefined
 from sob.types import MutableTypes, Types
 from sob.utilities import (
+    get_qualified_name,
     indent,
-    parameters_defaults,
-    properties_values,
-    qualified_name,
+    iter_properties_values,
+    represent,
 )
-from sob.utilities.assertion import assert_is_instance
-from sob.utilities.datetime import date2str as _date2str
-from sob.utilities.datetime import datetime2str as _datetime2str
-from sob.utilities.datetime import str2date as _str2date
-from sob.utilities.datetime import str2datetime as _str2datetime
-from sob.utilities.inspect import represent
-from sob.utilities.types import UNDEFINED, NoneType, Undefined
 from sob.version import Version
 
 if TYPE_CHECKING:
     from sob.abc import MarshallableTypes
-
-__all__: list[str] = [
-    "Property",
-    "Array",
-    "Boolean",
-    "Bytes",
-    "Date",
-    "Dictionary",
-    "Enumerated",
-    "Integer",
-    "Number",
-    "String",
-    "TYPES_PROPERTIES",
-    "has_mutable_types",
-]
 
 
 def _repr_keyword_argument_assignment(
@@ -71,7 +55,7 @@ def _repr_keyword_argument_assignment(
     return f"    {argument}={indent(represent(value))},"
 
 
-def has_mutable_types(property: abc.Property | type) -> bool:
+def has_mutable_types(property_: abc.Property | type) -> bool:
     """
     This function returns `True` if modification of the `.types` member of a
     property class or instance is permitted.
@@ -81,11 +65,12 @@ def has_mutable_types(property: abc.Property | type) -> bool:
     - property (sob.properties.Property|type)
     """
     property_type: type
-    if isinstance(property, abc.Property):
-        property_type = type(property)
+    if isinstance(property_, abc.Property):
+        property_type = type(property_)
     else:
-        assert issubclass(property, abc.Property)
-        property_type = property
+        if not issubclass(property_, abc.Property):
+            raise TypeError(property_)
+        property_type = property_
     return property_type._types is None  # noqa: SLF001
 
 
@@ -134,7 +119,7 @@ class Property(abc.Property):
           be incompatible with well-formatted python code due to various
           reasons such as being camelCased, or being python keywords. To
           infer an appropriate property name programmatically, use the utility
-          function `sob.utilities.string.property_name`.
+          function `sob.utilities.property_name`.
     """
 
     _types: abc.Types | None = None
@@ -149,6 +134,7 @@ class Property(abc.Property):
         | Undefined
         | None = UNDEFINED,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -157,12 +143,12 @@ class Property(abc.Property):
     ) -> None:
         self._types: abc.Types | None = type(self)._types  # noqa: SLF001
         if types is not UNDEFINED:
-            self.types = types
+            self.types = types  # type: ignore
         self.name: str | None = name
         self.required: bool = required
         self._versions: Sequence[abc.Version] | None = None
         if versions is not None:
-            self.versions = versions
+            self.versions = versions  # type: ignore
 
     @property  # type: ignore
     def types(self) -> abc.Types | None:
@@ -179,15 +165,19 @@ class Property(abc.Property):
     ) -> None:
         # If types are set at the class-level, don't touch them
         if type(self)._types is not None:  # noqa: SLF001
-            message: str = f"`{qualified_name(type(self))}.types` is immutable"
+            message: str = (
+                f"`{get_qualified_name(type(self))}.types` is immutable"
+            )
             raise TypeError(message)
         if (types_or_properties is not None) and not isinstance(
             types_or_properties, abc.Types
         ):
             types_or_properties = MutableTypes(types_or_properties)
-        assert (types_or_properties is None) or isinstance(
-            types_or_properties, abc.Types
-        )
+        if not (
+            (types_or_properties is None)
+            or isinstance(types_or_properties, abc.Types)
+        ):
+            raise TypeError(types_or_properties)
         self._types = types_or_properties
 
     @property  # type: ignore
@@ -204,11 +194,10 @@ class Property(abc.Property):
     ) -> None:
         versions_tuple: tuple[abc.Version, ...] | None = None
         if versions is not None:
-            assert_is_instance(
-                "versions",
-                versions,
-                (str, abc.Version, collections.abc.Iterable),
-            )
+            if not isinstance(
+                versions, (str, abc.Version, collections.abc.Iterable)
+            ):
+                raise TypeError(versions)
             version: str | abc.Version
             if isinstance(versions, str):
                 version = Version(versions)
@@ -219,15 +208,17 @@ class Property(abc.Property):
                 versions_list: list[abc.Version] = []
                 for version in versions:
                     if not isinstance(version, abc.Version):
-                        version = Version(version)
+                        version = Version(version)  # noqa: PLW2901
                     versions_list.append(version)
                 versions_tuple = tuple(versions_list)
         self._versions = versions_tuple
 
     def __repr__(self) -> str:
-        lines = [qualified_name(type(self)) + "("]
-        defaults: dict[str, Any] = parameters_defaults(self.__init__)
-        for property_name, value in properties_values(self):
+        lines = [get_qualified_name(type(self)) + "("]
+        defaults: dict[str, Any] = get_parameters_defaults(
+            self.__init__  # type: ignore
+        )
+        for property_name, value in iter_properties_values(self):
             argument_representation = _repr_keyword_argument_assignment(
                 property_name, value, defaults
             )
@@ -235,12 +226,11 @@ class Property(abc.Property):
                 lines.append(argument_representation)
         lines[-1] = lines[-1].rstrip(",")
         lines.append(")")
-        if len(lines) > 2:
+        if len(lines) > 2:  # noqa: PLR2004
             return "\n".join(lines)
-        else:
-            return "".join(lines)
+        return "".join(lines)
 
-    def _copy(self, deep: bool, memo: dict | None = None) -> abc.Property:
+    def _copy(self, *, deep: bool, memo: dict | None = None) -> abc.Property:
         new_instance = self.__class__()
         attribute_name: str
         for attribute_name in dir(self):
@@ -291,6 +281,7 @@ class String(Property, abc.String):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -325,6 +316,7 @@ class Date(Property, abc.Date):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -368,6 +360,7 @@ class DateTime(Property, abc.DateTime):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -403,6 +396,7 @@ class Bytes(Property, abc.Bytes):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -441,6 +435,7 @@ class Enumerated(Property, abc.Enumerated):
         | None = UNDEFINED,
         values: Iterable[MarshallableTypes] | None = None,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -451,7 +446,7 @@ class Enumerated(Property, abc.Enumerated):
         super().__init__(
             types=types, name=name, required=required, versions=versions
         )
-        self.values = values
+        self.values = values  # type: ignore
 
     @property  # type: ignore
     def values(self) -> set[MarshallableTypes] | None:
@@ -462,7 +457,8 @@ class Enumerated(Property, abc.Enumerated):
         if values is None:
             self._values = None
         else:
-            assert_is_instance("values", values, collections.abc.Iterable)
+            if not isinstance(values, collections.abc.Iterable):
+                raise TypeError(values)
             self._values = set(values)
 
 
@@ -476,6 +472,7 @@ class Number(Property, abc.Number):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -495,6 +492,7 @@ class Integer(Property, abc.Integer):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -518,6 +516,7 @@ class Boolean(Property, abc.Boolean):
     def __init__(
         self,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -554,6 +553,7 @@ class Array(Property, abc.ArrayProperty):
         | abc.Types
         | None = UNDEFINED,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -590,12 +590,15 @@ class Array(Property, abc.ArrayProperty):
             if isinstance(item_types, (type, abc.Property)):
                 item_types_list.append(item_types)
             else:
-                assert isinstance(item_types, Sequence)
+                if not isinstance(item_types, Sequence):
+                    raise TypeError(item_types)
                 for item_type in item_types:
-                    assert isinstance(item_type, (type, abc.Property))
+                    if not isinstance(item_type, (type, abc.Property)):
+                        raise TypeError(item_type)
                     item_types_list.append(item_type)
             item_types = MutableTypes(item_types_list)
-        assert isinstance(item_types, (abc.Types, NoneType))
+        if not isinstance(item_types, (abc.Types, NoneType)):
+            raise TypeError(item_types)
         self._item_types = item_types
 
 
@@ -622,6 +625,7 @@ class Dictionary(Property, abc.DictionaryProperty):
         | abc.Types
         | None = UNDEFINED,
         name: str | None = None,
+        *,
         required: bool = False,
         versions: str
         | abc.Version
@@ -662,17 +666,18 @@ class Dictionary(Property, abc.DictionaryProperty):
             value_types, abc.MutableTypes
         ):
             value_types = MutableTypes(value_types)
-        assert isinstance(value_types, (abc.Types, NoneType))
+        if not isinstance(value_types, (abc.Types, NoneType)):
+            raise TypeError(value_types)
         self._value_types = value_types
 
 
 # This constant maps data types to their corresponding properties
 TYPES_PROPERTIES: dict[type, type] = dict(
     chain(
-        *(
+        *(  # type: ignore
             (
                 (type_, property_class)
-                for type_ in property_class._types  # noqa: SLF001
+                for type_ in (property_class._types or ())  # noqa: SLF001
             )
             for property_class in (
                 property_class

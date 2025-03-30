@@ -1,18 +1,14 @@
 from __future__ import annotations
 
-import collections
 import operator
 import re
+from collections.abc import Sequence
 from decimal import Decimal
 from itertools import chain
 from typing import TYPE_CHECKING, Callable
 
 from sob import abc
-from sob.utilities.assertion import assert_is_instance
-from sob.utilities.inspect import represent
-
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+from sob.utilities import represent
 
 _DOT_SYNTAX_RE = re.compile(r"^\d+(\.\d+)*$")
 
@@ -81,12 +77,13 @@ _VERSION_PROPERTIES_REPR_OPERATORS: tuple[tuple[str, str], ...] = (
 
 
 def _version_string_as_tuple(version_string: str) -> tuple[int, ...]:
-    assert _DOT_SYNTAX_RE.match(version_string)
+    if not _DOT_SYNTAX_RE.match(version_string):
+        raise ValueError(version_string)
     return tuple(int(item) for item in version_string.split("."))
 
 
 def _version_number_as_tuple(
-    version_number: float | int | Decimal,
+    version_number: float | Decimal,
 ) -> tuple[int, ...]:
     return _version_string_as_tuple(str(version_number))
 
@@ -109,14 +106,11 @@ def _version_sequence_as_tuple(
 
 
 def _version_as_tuple(
-    version_: str | int | float | Decimal | Sequence[int],
+    version_: str | float | Decimal | Sequence[int],
 ) -> tuple[int, ...]:
     version_tuple: tuple[int, ...]
-    assert_is_instance(
-        "version_",
-        version_,
-        (str, int, float, Decimal, collections.abc.Sequence),
-    )
+    if not isinstance(version_, (str, int, float, Decimal, Sequence)):
+        raise TypeError(version_)
     if isinstance(version_, str):
         version_tuple = _version_string_as_tuple(version_)
     elif isinstance(version_, (int, float, Decimal)):
@@ -152,7 +146,8 @@ class Version(abc.Version):
         self.greater_than = greater_than
         self.greater_than_or_equal_to = greater_than_or_equal_to
         if version_string is not None:
-            assert isinstance(version_string, str)
+            if not isinstance(version_string, str):
+                raise TypeError(version_string)
             self._update_version_parameters_from_string(version_string)
 
     def _update_version_parameters_from_string(self, version_: str) -> None:
@@ -196,8 +191,11 @@ class Version(abc.Version):
             compare_value: (
                 int | float | Decimal | str | tuple[int, ...] | None
             ) = getattr(self, compare_property_name)
+            if TYPE_CHECKING:
+                assert isinstance(other, (Decimal, str, float, Sequence))
             if compare_value is not None and not compare_function(
-                _version_as_tuple(other), _version_as_tuple(compare_value)
+                _version_as_tuple(other),
+                _version_as_tuple(compare_value),
             ):
                 return False
         return True
@@ -222,7 +220,9 @@ class Version(abc.Version):
                         str(item) for item in _version_as_tuple(version_)
                     )
                 )
-        assert self.specification is not None
+        if self.specification is None:
+            message: str = "No specification identified"
+            raise RuntimeError(message)
         return self.specification + ",".join(version_specifiers)
 
     def __repr__(self) -> str:

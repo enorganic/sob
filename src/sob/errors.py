@@ -5,29 +5,10 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, Any
 
 from sob import abc
-from sob.utilities.inspect import represent
-from sob.utilities.string import indent
+from sob.utilities import get_qualified_name, indent, represent
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
-
-__all__: list[str] = [
-    "ValidationError",
-    "VersionError",
-    "DeserializeError",
-    "UnmarshalError",
-    "UnmarshalTypeError",
-    "UnmarshalValueError",
-    "UnmarshalKeyError",
-    "ObjectDiscrepancyError",
-    "get_exception_text",
-    "append_exception_text",
-    "IsSubClassAssertionError",
-    "IsInstanceAssertionError",
-    "IsInAssertionError",
-    "NotIsInstanceAssertionError",
-    "EqualsAssertionError",
-]
 
 
 class ValidationError(Exception):
@@ -318,4 +299,28 @@ class EqualsAssertionError(AssertionError, ValueError):
             "    {}".format(
                 name, repr(value).replace("\n", r"\n"), repr(other)
             )
+        )
+
+
+class UndefinedObjectPropertiesError(ValidationError):
+    """
+    This is an error raised when an object is found to have been deserialized
+    from JSON having properties not defined by the class or instance metadata.
+    """
+
+    def __init__(
+        self, object_instance: abc.Object, property_names: tuple[str, ...]
+    ) -> None:
+        if not property_names:
+            raise ValueError(property_names)
+        self.object_instance: abc.Object = object_instance
+        self.object_type: type[abc.Object] = type(object_instance)
+        self.property_names: tuple[str, ...] = property_names
+        super().__init__(
+            f"The property {property_names[0]!r} is not defined for "
+            f"`{get_qualified_name(self.object_type)}`"
+            if len(property_names) == 1
+            else f"The properties {', '.join(map(repr, property_names[:-1]))} "
+            f"and {property_names[-1]!r} are not defined for "
+            f"`{get_qualified_name(self.object_type)}`"
         )

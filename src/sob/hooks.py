@@ -4,10 +4,9 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Callable
 
 from sob import abc
-from sob.utilities.assertion import assert_is_instance
-from sob.utilities.inspect import (
-    calling_function_qualified_name,
-    qualified_name,
+from sob.utilities import (
+    get_calling_function_qualified_name,
+    get_qualified_name,
 )
 
 if TYPE_CHECKING:
@@ -209,9 +208,10 @@ def read(model: type | abc.Model) -> Any:
                 return None
         else:
             message = (
-                f"{calling_function_qualified_name()} requires a parameter "
-                "which is an instance or sub-class of "
-                f"`{qualified_name(abc.Model)}`, not `{qualified_name(model)}`"
+                f"{get_calling_function_qualified_name()} requires a "
+                "parameter which is an instance or sub-class of "
+                f"`{get_qualified_name(abc.Model)}`, not "
+                f"`{get_qualified_name(model)}`"
             )
             raise TypeError(message)
     else:
@@ -219,8 +219,8 @@ def read(model: type | abc.Model) -> Any:
         message = (
             "{} requires a parameter which is an instance or sub-class of "
             "`{}`, not{}".format(
-                calling_function_qualified_name(),
-                qualified_name(abc.Model),
+                get_calling_function_qualified_name(),
+                get_qualified_name(abc.Model),
                 (
                     f":\n{repr_model}"
                     if "\n" in repr_model
@@ -260,7 +260,7 @@ def dictionary_read(
     return read(model)
 
 
-def writable(model: type | abc.Model) -> Any:
+def writable(model: type[abc.Model] | abc.Model) -> Any:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
@@ -287,7 +287,10 @@ def writable(model: type | abc.Model) -> Any:
             )
             writable_hooks = new_hooks
         else:
-            for base in model.__bases__:
+            base: type[abc.Model]
+            for base in filter(
+                lambda base: issubclass(base, abc.Model), model.__bases__
+            ):
                 base_hooks: abc.Hooks | None
                 try:
                     base_hooks = base._hooks  # noqa: SLF001
@@ -340,11 +343,8 @@ def type_(model: type | abc.Model) -> type:
     Get the type of metadata required for an object
     """
     hooks_type: type
-    assert_is_instance(
-        "model",
-        model,
-        (type, abc.Object, abc.Dictionary, abc.Array),
-    )
+    if not isinstance(model, (type, abc.Object, abc.Dictionary, abc.Array)):
+        raise TypeError(model)
     if isinstance(model, type):
         hooks_type = (
             Object
@@ -364,17 +364,17 @@ def type_(model: type | abc.Model) -> type:
     return hooks_type
 
 
-def write(model: type | abc.Model, hooks: abc.Hooks | None) -> None:
+def write(model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None) -> None:
     """
     Write metadata to a class or instance
     """
     if hooks is not None:
         # Verify that the metadata is of the correct type
-        hooks_type: type = type_(model)
+        hooks_type: type[abc.Hooks] = type_(model)
         if not isinstance(hooks, hooks_type):
             message: str = (
-                f"Hooks assigned to `{qualified_name(type(model))}` "
-                f"must be of type `{qualified_name(hooks_type)}`"
+                f"Hooks assigned to `{get_qualified_name(type(model))}` "
+                f"must be of type `{get_qualified_name(hooks_type)}`"
             )
             raise ValueError(message)
     model._hooks = hooks  # noqa: SLF001

@@ -3,9 +3,21 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING, NoReturn
 
+from typing_extensions import Self
+
 from sob import abc
-from sob.utilities.inspect import qualified_name
-from sob.utilities.types import Null
+from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
+from sob.utilities import get_qualified_name
+
+__all__: tuple[str, ...] = (
+    "Null",
+    "NULL",
+    "Undefined",
+    "UNDEFINED",
+    "Types",
+    "MutableTypes",
+    "NoneType",
+)
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Iterator
@@ -29,7 +41,7 @@ class Types(abc.Types):
     @classmethod
     def _raise_immutable_type_error(cls) -> NoReturn:
         message: str = (
-            f"Instances of `{qualified_name(cls)}` cannot be " "modified."
+            f"Instances of `{get_qualified_name(cls)}` cannot be " "modified."
         )
         raise TypeError(message)
 
@@ -44,7 +56,7 @@ class Types(abc.Types):
 
     def __repr__(self) -> str:
         # Represent the class by it's fully-qualified type name
-        representation = [qualified_name(type(self)) + "("]
+        representation = [get_qualified_name(type(self)) + "("]
         # If it is not empty--we represent the values as a `list`
         if self:
             representation[0] += "["
@@ -52,7 +64,7 @@ class Types(abc.Types):
                 value_representation: str = "\n".join(
                     "    " + line
                     for line in (
-                        qualified_name(value)
+                        get_qualified_name(value)
                         if isinstance(value, type)
                         else repr(value)
                     ).split("\n")
@@ -65,7 +77,7 @@ class Types(abc.Types):
         # types, otherwise--break it into multiple lines
         return (
             "\n".join(representation)
-            if len(representation) > 2
+            if len(representation) > 2  # noqa: PLR2004
             else "".join(representation)
         )
 
@@ -126,9 +138,7 @@ class MutableTypes(Types, abc.MutableTypes):
     def pop(self, index: int = -1) -> type | abc.Property:
         return self._list.pop(index)
 
-    def __iadd__(
-        self, other: Iterable[type | abc.Property]
-    ) -> abc.MutableTypes:
+    def __iadd__(self, other: Iterable[type | abc.Property]) -> Self:
         self.extend(other)
         return self
 
@@ -136,7 +146,8 @@ class MutableTypes(Types, abc.MutableTypes):
         self, other: Iterable[type | abc.Property]
     ) -> abc.MutableTypes:
         new_instance: abc.Types = copy.copy(self)
-        assert isinstance(new_instance, abc.MutableTypes)
+        if not isinstance(new_instance, abc.MutableTypes):
+            raise TypeError(new_instance)
         new_instance.extend(other)
         return new_instance
 

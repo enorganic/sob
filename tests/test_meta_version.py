@@ -7,6 +7,8 @@ from __future__ import annotations
 
 from typing import IO, TYPE_CHECKING
 
+import pytest
+
 import sob
 
 if TYPE_CHECKING:
@@ -139,7 +141,7 @@ class VersionedObject(sob.model.Object):
     def __init__(
         self,
         _data: str | None = None,
-        version: str | int | float | None = None,
+        version: str | float | Sequence[int] | None = None,
         versioned_simple_type: str | int | None = None,
         versioned_container: MemberObjectA
         | MemberObjectB
@@ -152,7 +154,7 @@ class VersionedObject(sob.model.Object):
         | MemberDictionaryC
         | None = None,
     ) -> None:
-        self.version: str | None = None
+        self.version: str | float | Sequence[int] | None = None
         self.versioned_simple_type: str | int | None = None
         self.versioned_container: (
             MemberObjectA
@@ -167,7 +169,7 @@ class VersionedObject(sob.model.Object):
             | None
         ) = None
         super().__init__(_data)
-        sob.meta.version(self, "test-specification", version)
+        sob.meta.version(self, "test-specification", str(version))  # type: ignore
         self.version = version
         self.versioned_simple_type = versioned_simple_type
         self.versioned_container = versioned_container
@@ -209,37 +211,24 @@ sob.meta.writable(MemberObjectA).properties = [
 # endregion
 
 
-def test_version_1():
+def test_version_1() -> None:
     versioned_object: VersionedObject
     caught_error: Exception
     error: Exception | None = None
     # Verify that setting the version to a non-string raises an error
     # when the version is < 1.2
     try:
-        VersionedObject(version=1.0)
+        VersionedObject(version=1.0)  # type: ignore
     except TypeError as caught_error:
         error = caught_error
-    assert isinstance(error, TypeError)
+    else:
+        message: str = "A float version should raise a TypeError"
+        raise RuntimeError(message)
+    assert isinstance(error, TypeError), type(error).__name__
     # Verify that setting the version to a non-string raises no error
     # when the version is >= 1.2
     VersionedObject(version=1.2)
 
 
-def test_version_2():
-    pass
-
-
-def test_version_3():
-    pass
-
-
-def test_version_4():
-    pass
-
-
-def test_version_5():
-    pass
-
-
 if __name__ == "__main__":
-    test_version_1()
+    pytest.main([__file__, "-s", "-vv"])
