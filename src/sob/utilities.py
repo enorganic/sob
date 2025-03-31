@@ -394,7 +394,7 @@ def _split_long_comment_line(
     Split a comment (or docstring) line
 
     >>> print(
-    ...     split_long_comment_line(
+    ...     _split_long_comment_line(
     ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
     ...         "Nullam faucibu odio a urna elementum, eu tempor nisl "
     ...         "efficitur."
