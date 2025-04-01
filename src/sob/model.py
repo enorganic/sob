@@ -72,13 +72,20 @@ class Model(abc.Model):
     `Array` and/or `Dictionary` as a superclass instead.
     """
 
+    __slots__: tuple[str, ...] = (
+        "_instance_meta",
+        "_instance_hooks",
+        "_url",
+        "_pointer",
+    )
+
     _source: str | None = None
-    _meta: abc.Meta | None = None
-    _hooks: abc.Hooks | None = None
+    _class_meta: abc.Meta | None = None
+    _class_hooks: abc.Hooks | None = None
 
     def __init__(self) -> None:
-        self._meta: abc.Meta | None = None
-        self._hooks: abc.Meta | None = None
+        self._instance_meta: abc.Meta | None = None
+        self._instance_hooks: abc.Hooks | None = None
         self._url: str | None = None
         self._pointer: str | None = None
 
@@ -158,7 +165,7 @@ class Model(abc.Model):
         pass
 
 
-class Array(Model, abc.Array):
+class Array(Model, abc.Array, abc.Model):
     """
     This can serve as either a base-class for typed (or untyped) sequences, or
     can be instantiated directly.
@@ -190,8 +197,16 @@ class Array(Model, abc.Array):
     ```
     """
 
-    _hooks: abc.ArrayHooks | None
-    _meta: abc.ArrayMeta | None
+    __slots__: tuple[str, ...] = (
+        "_list",
+        "_instance_meta",
+        "_instance_hooks",
+        "_url",
+        "_pointer",
+    )
+
+    _class_meta: abc.ArrayMeta | None = None
+    _class_hooks: abc.ArrayHooks | None = None
 
     def __init__(
         self,
@@ -208,6 +223,8 @@ class Array(Model, abc.Array):
         | None = None,
     ) -> None:
         Model.__init__(self)
+        self._instance_meta: abc.ArrayMeta | None = None
+        self._instance_hooks: abc.ArrayHooks | None = None
         self._list: list[abc.MarshallableTypes] = []
         self._init_url(items)
         deserialized_items: (
@@ -492,7 +509,7 @@ class Array(Model, abc.Array):
         return serialize(self)
 
 
-class Dictionary(Model, abc.Dictionary):
+class Dictionary(Model, abc.Dictionary, abc.Model):
     """
     This can serve as either a base-class for typed (or untyped) dictionaries,
     or can be instantiated directly.
@@ -524,8 +541,16 @@ class Dictionary(Model, abc.Dictionary):
     ```
     """
 
-    _hooks: abc.DictionaryHooks | None
-    _meta: abc.DictionaryMeta | None
+    __slots__: tuple[str, ...] = (
+        "_dict",
+        "_instance_meta",
+        "_instance_hooks",
+        "_url",
+        "_pointer",
+    )
+
+    _class_hooks: abc.DictionaryHooks | None = None
+    _class_meta: abc.DictionaryMeta | None = None
 
     def __init__(
         self,
@@ -543,11 +568,11 @@ class Dictionary(Model, abc.Dictionary):
         | None = None,
     ) -> None:
         Model.__init__(self)
+        self._instance_hooks: abc.DictionaryHooks | None = None
+        self._instance_meta: abc.DictionaryMeta | None = None
         self._dict: abc.OrderedDict[str, abc.MarshallableTypes] = (
             collections.OrderedDict()
         )
-        self._meta: abc.DictionaryMeta | None
-        self._hooks: abc.DictionaryHooks | None
         self._init_url(items)
         deserialized_items: (
             Iterable[abc.MarshallableTypes]
@@ -636,7 +661,7 @@ class Dictionary(Model, abc.Dictionary):
                 if meta_ is not values_meta:
                     meta.write(self, deepcopy(values_meta))
         else:
-            writable_meta: abc.Meta = meta.writable(self)
+            writable_meta: abc.Meta = meta.dictionary_writable(self)
             if not isinstance(writable_meta, abc.DictionaryMeta):
                 raise TypeError(writable_meta)
             writable_meta.value_types = value_types  # type: ignore
@@ -980,13 +1005,22 @@ class Dictionary(Model, abc.Dictionary):
         return reversed(self._dict)  # type: ignore
 
 
-class Object(Model, abc.Object):
+class Object(Model, abc.Object, abc.Model):
     """
     This serves as a base class for representing deserialized and un-marshalled
     data for which a discrete set of properties are known in advance, and for
     which enforcing adherence to a predetermined attribution and type
     requirements is desirable.
     """
+
+    __slots__: tuple[str, ...] = (
+        "_instance_meta",
+        "_instance_hooks",
+        "_url",
+        "_pointer",
+    )
+    _class_meta: abc.ObjectMeta | None = None
+    _class_hooks: abc.ObjectHooks | None = None
 
     def __init__(
         self,
@@ -999,9 +1033,9 @@ class Object(Model, abc.Object):
         | bytes
         | None = None,
     ) -> None:
+        self._instance_meta: abc.ObjectMeta | None = None
+        self._instance_hooks: abc.ObjectHooks | None = None
         Model.__init__(self)
-        self._meta: abc.ObjectMeta | None = None
-        self._hooks: abc.ObjectHooks | None = None
         self._init_url(_data)
         deserialized_data: (
             Iterable[abc.MarshallableTypes]
@@ -2685,6 +2719,22 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
     return "\n".join(out)
 
 
+def _iter_represent_object_metadata_slots(
+    metadata: abc.ObjectMeta,
+) -> Iterable[str]:
+    """
+    Yield lines in a representation of the slots for a class
+    """
+    if metadata.properties is not None:
+        yield ""
+        yield "    __slots__: tuple[str, ...] = ("
+        property_name: str
+        for property_name in metadata.properties:
+            yield f'        "{property_name}",'
+        yield "    )"
+        yield ""
+
+
 def _class_definition_from_meta(
     name: str,
     metadata: abc.Meta,
@@ -2705,8 +2755,10 @@ def _class_definition_from_meta(
     ]
     if repr_docstring:
         out.append(repr_docstring)
+    if isinstance(metadata, abc.ObjectMeta):
+        out.extend(_iter_represent_object_metadata_slots(metadata))
     if pre_init_source:
-        out.append("\n" + utilities.indent(pre_init_source, start=0))
+        out.append(f"\n{utilities.indent(pre_init_source, start=0)}")
     out.append(_repr_class_init_from_meta(metadata, module))
     if post_init_source:
         out.append(f"\n{utilities.indent(post_init_source, start=0)}")
@@ -2777,7 +2829,7 @@ def from_meta(
     model_class: type[abc.Model] = namespace[name]
     model_class._source = source  # noqa: SLF001
     model_class.__module__ = module
-    model_class._meta = metadata  # noqa: SLF001
+    model_class._class_meta = metadata  # noqa: SLF001
     return model_class
 
 

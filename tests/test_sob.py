@@ -22,6 +22,18 @@ class A(model.Object):
     TODO
     """
 
+    __slots__: tuple[str, ...] = (
+        "is_a_class",
+        "boolean",
+        "string",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
+
     def __init__(
         self,
         _data: str | None = None,
@@ -64,6 +76,19 @@ class B(model.Object):
     """
     TODO
     """
+
+    __slots__: tuple[str, ...] = (
+        "is_b_class",
+        "boolean",
+        "string",
+        "integer",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
 
     def __init__(
         self,
@@ -111,6 +136,18 @@ class C(model.Object):
     TODO
     """
 
+    __slots__: tuple[str, ...] = (
+        "is_c_class",
+        "string",
+        "integer",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
+
     def __init__(
         self,
         _: str | None = None,
@@ -153,6 +190,37 @@ class Tesstee(model.Object):
     """
     TODO
     """
+
+    __slots__: tuple[str, ...] = (
+        "boolean",
+        "string",
+        "number",
+        "decimal",
+        "integer",
+        "rainbow",
+        "a",
+        "b",
+        "c",
+        "testy",
+        "boolean_array",
+        "string_array",
+        "number_array",
+        "integer_array",
+        "rainbow_array",
+        "testy_array",
+        "string_number_boolean",
+        "a_b_c",
+        "c_b_a",
+        "string2testy",
+        "string2string2testy",
+        "string2a_b_c",
+        "string2c_b_a",
+        "string2string2a_b_c",
+        "string2string2c_b_a",
+        "version_switch",
+        "version_1",
+        "version_2",
+    )
 
     def __init__(
         self,

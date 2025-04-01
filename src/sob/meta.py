@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import contextlib
 from collections.abc import (
     ItemsView,
     Iterable,
@@ -379,21 +378,23 @@ class Properties(abc.Properties):
         return self._dict.__len__()
 
 
-def read(model: type | abc.Model) -> Any:
+def read(model: type | abc.Model) -> abc.Meta | None:
     message: str
     if isinstance(model, abc.Model):
-        return model._meta or read(type(model))  # noqa: SLF001
-    if isinstance(model, type):
-        if issubclass(model, abc.Model):
-            return model._meta  # noqa: SLF001
-        message = (
-            f"{get_calling_function_qualified_name()} "
-            "requires a parameter which is an instance or sub-class of "
-            f"`{get_qualified_name(abc.Model)}`, not "
-            f"`{get_qualified_name(model)}`"
-        )
-        raise TypeError(message)
-    repr_model: str = repr(model)
+        return getattr(model, "_instance_meta", None) or read(type(model))
+    if isinstance(model, type) and issubclass(model, abc.Model):
+        base: type | None
+        try:
+            return next(
+                getattr(base, "_class_meta", None)
+                for base in filter(
+                    lambda base: issubclass(base, abc.Model),
+                    model.__mro__,
+                )
+            )
+        except StopIteration:
+            return None
+    repr_model: str = represent(model)
     message = (
         "{} requires a parameter which is an instance or sub-class of "
         "`{}`, not{}".format(
@@ -406,20 +407,20 @@ def read(model: type | abc.Model) -> Any:
 
 
 def object_read(model: type | abc.Object) -> abc.ObjectMeta | None:
-    return read(model)
+    return read(model)  # type: ignore
 
 
 def array_read(model: type | abc.Array) -> abc.ArrayMeta | None:
-    return read(model)
+    return read(model)  # type: ignore
 
 
 def dictionary_read(
-    model: type | abc.Dictionary,
+    model: type[abc.Dictionary] | abc.Dictionary,
 ) -> abc.DictionaryMeta | None:
-    return read(model)
+    return read(model)  # type: ignore
 
 
-def writable(model: type | abc.Model) -> Any:
+def writable(model: type | abc.Model) -> abc.Meta:
     """
     This function returns an instance of [sob.meta.Meta](#Meta) which can
     be safely modified. If the class or model instance inherits its metadata
@@ -430,53 +431,43 @@ def writable(model: type | abc.Model) -> Any:
     if not _is_model(model):
         raise TypeError(model)
     if isinstance(model, abc.Model):
-        if model._meta is None:  # noqa: SLF001
-            model._meta = deepcopy(writable(type(model)))  # noqa: SLF001
-    elif isinstance(model, type) and issubclass(
-        model, (abc.Object, abc.Dictionary, abc.Array)
-    ):
-        if TYPE_CHECKING:
-            assert model._meta is not None  # noqa: SLF001
-        model_meta: abc.ObjectMeta | abc.DictionaryMeta | abc.ArrayMeta = (
-            model._meta  # noqa: SLF001
-        )
-        if model_meta is None:
-            # If this model doesn't have any metadata yet--create an
-            # appropriate metadata instance
-            model._meta = (  # noqa: SLF001
+        if model._instance_meta is None:  # noqa: SLF001
+            model._instance_meta = deepcopy(  # noqa: SLF001
+                read(type(model))
+            )
+        if model._instance_meta is None:  # noqa: SLF001
+            model._instance_meta = (  # noqa: SLF001
+                Object()
+                if isinstance(model, abc.Object)
+                else Array()
+                if isinstance(model, abc.Array)
+                else Dictionary()
+            )
+        return model._instance_meta  # noqa: SLF001
+    if isinstance(model, type) and issubclass(model, abc.Model):
+        if model._class_meta is None:  # noqa: SLF001
+            model._class_meta = deepcopy(  # noqa: SLF001
+                read(model)
+            )
+        if model._class_meta is None:  # noqa: SLF001
+            model._class_meta = (  # noqa: SLF001
                 Object()
                 if issubclass(model, abc.Object)
                 else Array()
                 if issubclass(model, abc.Array)
                 else Dictionary()
             )
-        else:
-            # Ensure that the metadata is not being inherited from a base
-            # class by copying the metadata if it has the same ID as any
-            # base class
-            for base in model.__bases__:
-                base_meta: abc.Meta | None = None
-                with contextlib.suppress(AttributeError):
-                    base_meta = cast(abc.Model, base)._meta  # noqa: SLF001
-                if (base_meta is not None) and (model_meta is base_meta):
-                    model._meta = deepcopy(model_meta)  # noqa: SLF001
-                    break
-    else:
-        repr_model = represent(model)
-        msg = (
-            "{} requires a parameter which is an instance or sub-class of "
-            "`{}`, not{}".format(
-                get_calling_function_qualified_name(),
-                get_qualified_name(abc.Model),
-                (
-                    ":\n" + repr_model
-                    if "\n" in repr_model
-                    else f" `{repr_model}`"
-                ),
-            )
+        return model._class_meta  # noqa: SLF001
+    repr_model: str = represent(model)
+    message: str = (
+        "{} requires a parameter which is an instance or sub-class of "
+        "`{}`, not{}".format(
+            get_calling_function_qualified_name(),
+            get_qualified_name(abc.Model),
+            (":\n" + repr_model if "\n" in repr_model else f" `{repr_model}`"),
         )
-        raise TypeError(msg)
-    return model._meta  # noqa: SLF001
+    )
+    raise TypeError(message)
 
 
 def object_writable(model: type | abc.Object) -> abc.ObjectMeta:
@@ -487,7 +478,7 @@ def object_writable(model: type | abc.Object) -> abc.ObjectMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def array_writable(model: type | abc.Array) -> abc.ArrayMeta:
@@ -498,7 +489,7 @@ def array_writable(model: type | abc.Array) -> abc.ArrayMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def dictionary_writable(
@@ -511,78 +502,82 @@ def dictionary_writable(
     class, this function will create and return a duplicate of that metadata
     assigned directly to the class or instance represented by `model`.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def write(model: type[abc.Model] | abc.Model, meta: abc.Meta | None) -> None:
     message: str
-    if meta is not None:
-        model_type: type
-        if isinstance(model, abc.Model):
-            model_type = type(model)
-        elif isinstance(model, type) and issubclass(model, abc.Model):
-            model_type = model
-        else:
-            repr_model = repr(model)
-            message = (
-                "{} requires a value for the parameter `model` which is an "
-                "instance or sub-class of `{}`, not{}".format(
-                    get_calling_function_qualified_name(),
-                    get_qualified_name(abc.Model),
-                    (
-                        ":\n" + repr_model
-                        if "\n" in repr_model
-                        else f" `{repr_model}`"
-                    ),
-                )
-            )
-            raise TypeError(message)
-        metadata_type: type = (
-            Object
-            if issubclass(model_type, abc.Object)
-            else (
-                Array
-                if issubclass(model_type, abc.Array)
-                else (
-                    Dictionary
-                    if issubclass(model_type, abc.Dictionary)
-                    else Meta
-                )
+    model_type: type
+    if isinstance(model, abc.Model):
+        model_type = type(model)
+    elif isinstance(model, type) and issubclass(model, abc.Model):
+        model_type = model
+    else:
+        repr_model: str = repr(model)
+        message = (
+            "{} requires a value for the parameter `model` which is an "
+            "instance or sub-class of `{}`, not{}".format(
+                get_calling_function_qualified_name(),
+                get_qualified_name(abc.Model),
+                (
+                    ":\n" + repr_model
+                    if "\n" in repr_model
+                    else f" `{repr_model}`"
+                ),
             )
         )
-        if not isinstance(meta, metadata_type):
-            message = (
-                f"Metadata assigned to `{get_qualified_name(model_type)}` "
-                f"must be of type `{get_qualified_name(metadata_type)}`"
+        raise TypeError(message)
+    metadata_type: type = (
+        Object
+        if issubclass(model_type, abc.Object)
+        else (
+            Array
+            if issubclass(model_type, abc.Array)
+            else (
+                Dictionary if issubclass(model_type, abc.Dictionary) else Meta
             )
-            raise ValueError(message)
+        )
+    )
+    if (meta is not None) and not isinstance(meta, metadata_type):
+        message = (
+            f"Metadata assigned to `{get_qualified_name(model_type)}` "
+            f"must be of type `{get_qualified_name(metadata_type)}`"
+        )
+        raise TypeError(message)
     if TYPE_CHECKING:
-        assert (meta is None) or isinstance(meta, abc.Meta)
-    model._meta = meta  # noqa: SLF001
+        assert meta is None or isinstance(meta, abc.Meta)
+    if isinstance(model, abc.Model):
+        model._instance_meta = meta  # noqa: SLF001
+    else:
+        model._class_meta = meta  # noqa: SLF001
 
 
 def get_pointer(model: abc.Model) -> str | None:
     return model._pointer  # noqa: SLF001
 
 
-def _read_object(model: abc.Object | type) -> abc.ObjectMeta:
+def _read_object(model: abc.Object | type) -> abc.ObjectMeta | None:
     metadata: abc.Meta | None = read(model)
-    if not isinstance(metadata, abc.ObjectMeta):
+    if (metadata is not None) and not isinstance(metadata, abc.ObjectMeta):
         raise TypeError(metadata)
     return metadata
 
 
 def _read_object_properties(
     model: abc.Object | type,
-) -> Iterable[tuple[str, abc.Property]]:
-    metadata: abc.ObjectMeta = _read_object(model)
+) -> Iterable[tuple[str, abc.Property]] | None:
+    metadata: abc.ObjectMeta | None = _read_object(model)
+    if metadata is None:
+        return None
     return (metadata.properties or collections.OrderedDict()).items()
 
 
 def _read_object_property_names(
     model: abc.Object | type,
-) -> Iterable[str]:
-    metadata: abc.ObjectMeta = _read_object(model)
+) -> Iterable[str] | None:
+    metadata: abc.ObjectMeta | None = _read_object(model)
+    if metadata is None:
+        return None
     return (metadata.properties or collections.OrderedDict()).keys()
 
 
@@ -614,7 +609,7 @@ def set_pointer(model: abc.Model, pointer_: str) -> None:
     elif isinstance(model, abc.Object):
         property_name: str
         property_: abc.Property
-        for property_name, property_ in _read_object_properties(model):
+        for property_name, property_ in _read_object_properties(model) or ():
             key = property_.name or property_name
             value = getattr(model, property_name)
             if isinstance(
@@ -669,7 +664,7 @@ def _traverse_models(
                 yield value
     elif isinstance(model_instance, abc.Object):
         property_name: str
-        for property_name in _read_object_property_names(model_instance):
+        for property_name in _read_object_property_names(model_instance) or ():
             value = getattr(model_instance, property_name)
             if isinstance(
                 value,
@@ -805,39 +800,39 @@ def _version_object(  # noqa: C901
     specification: str,
     version_number: str | int | Sequence[int],
 ) -> None:
-    instance_meta: abc.ObjectMeta = cast(abc.ObjectMeta, read(data))
+    message: str
+    meta_: abc.ObjectMeta | None = object_read(data)
+    if meta_ is None:
+        message = f"Unable to read metadata for {represent(data)}"
+        raise RuntimeError(message)
     if TYPE_CHECKING:
-        assert isinstance(instance_meta.properties, abc.Properties)
-    if instance_meta.properties:
+        assert isinstance(meta_.properties, abc.Properties)
+    if meta_.properties:
         class_meta = read(type(data))
         property_name: str
         property_: abc.Property
-        for property_name, property_ in tuple(
-            instance_meta.properties.items()
-        ):
+        for property_name, property_ in tuple(meta_.properties.items()):
             if _version_match(property_, specification, version_number):
                 new_property = _version_property(
                     property_, specification, version_number
                 )
                 if new_property is not property_:
-                    if instance_meta is class_meta:
-                        instance_meta = writable(data)
+                    if meta_ is class_meta:
+                        meta_ = object_writable(data)
                     if TYPE_CHECKING:
-                        assert isinstance(instance_meta, abc.ObjectMeta)
-                        assert isinstance(
-                            instance_meta.properties, abc.Properties
-                        )
-                    instance_meta.properties[property_name] = new_property
+                        assert isinstance(meta_, abc.ObjectMeta)
+                        assert isinstance(meta_.properties, abc.Properties)
+                    meta_.properties[property_name] = new_property
             else:
-                if instance_meta is class_meta:
-                    instance_meta = writable(data)
+                if meta_ is class_meta:
+                    meta_ = object_writable(data)
                 if TYPE_CHECKING:
-                    assert isinstance(instance_meta, abc.ObjectMeta)
-                    assert isinstance(instance_meta.properties, abc.Properties)
-                del instance_meta.properties[property_name]
+                    assert isinstance(meta_, abc.ObjectMeta)
+                    assert isinstance(meta_.properties, abc.Properties)
+                del meta_.properties[property_name]
                 version_ = getattr(data, property_name)
                 if version_ is not None:
-                    message: str = (
+                    message = (
                         f"{get_qualified_name(type(data))} - the property "
                         f"`{property_name}` is not applicable in "
                         f"{specification} version {version_number}:\n{data!s}"
@@ -885,8 +880,8 @@ def _version_array(
         )
         if new_item_types:
             if instance_meta is class_meta:
-                instance_meta = writable(data)
-            instance_meta.item_types = new_item_types
+                instance_meta = array_writable(data)
+            instance_meta.item_types = new_item_types  # type: ignore
     for item in data:
         if isinstance(item, abc.Model):
             version(item, specification, version_number)

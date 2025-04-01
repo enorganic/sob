@@ -138,6 +138,12 @@ class VersionedObject(sob.model.Object):
     object's polymorphic potential, based on a specification + version.
     """
 
+    __slots__: tuple[str, ...] = (
+        "version",
+        "versioned_simple_type",
+        "versioned_container",
+    )
+
     def __init__(
         self,
         _data: str | None = None,
@@ -169,7 +175,7 @@ class VersionedObject(sob.model.Object):
             | None
         ) = None
         super().__init__(_data)
-        sob.meta.version(self, "test-specification", str(version))  # type: ignore
+        sob.meta.version(self, "test-specification", str(version))
         self.version = version
         self.versioned_simple_type = versioned_simple_type
         self.versioned_container = versioned_container
@@ -178,35 +184,43 @@ class VersionedObject(sob.model.Object):
 # endregion
 # region Metadata
 
-sob.meta.writable(VersionedObject).properties = [
-    (
-        "version",
-        sob.properties.Property(
-            types=[
-                # For versions prior to 1.2, the property value *must* be a
-                # string
-                sob.properties.String(versions=["test-specification<1.2"]),
-                # For versions greater than or equal to 1.2 and less than 2.0,
-                # the property value can be a string, float, or integer.
-                sob.properties.Number(versions=["test-specification~=1.2"]),
-            ]
-        ),
-    ),
-    (
-        "versioned_simple_type",
-        # Simple types can be identified with either an instance of
-        # `sob.properties.Property`, *or* the `type` itself.
-        sob.properties.Property(name="versionedSimpleType", types=[str, int]),
-    ),
-    (
-        "versioned_container",
-        sob.properties.Property(name="versionedContainer"),
-    ),
-]
 
-sob.meta.writable(MemberObjectA).properties = [
-    ("property_a", sob.properties.Integer(name="propertyA"))
-]
+sob.meta.object_writable(VersionedObject).properties = sob.meta.Properties(
+    [
+        (
+            "version",
+            sob.properties.Property(
+                types=[
+                    # For versions prior to 1.2, the property value *must* be a
+                    # string
+                    sob.properties.String(versions=["test-specification<1.2"]),
+                    # For versions greater than or equal to 1.2 and less than
+                    # 2.0, the property value can be a string, float, or
+                    # integer.
+                    sob.properties.Number(
+                        versions=["test-specification~=1.2"]
+                    ),
+                ]
+            ),
+        ),
+        (
+            "versioned_simple_type",
+            # Simple types can be identified with either an instance of
+            # `sob.properties.Property`, *or* the `type` itself.
+            sob.properties.Property(
+                name="versionedSimpleType", types=[str, int]
+            ),
+        ),
+        (
+            "versioned_container",
+            sob.properties.Property(name="versionedContainer"),
+        ),
+    ]
+)
+
+sob.meta.object_writable(MemberObjectA).properties = sob.meta.Properties(
+    [("property_a", sob.properties.Integer(name="propertyA"))]
+)
 
 # endregion
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Callable, cast
 
 from sob import abc
 from sob.utilities import (
@@ -182,53 +182,36 @@ class Dictionary(Hooks, abc.DictionaryHooks):
         self.after_setitem = after_setitem
 
 
-def read(model: type | abc.Model) -> Any:
+def read(model: type | abc.Model) -> abc.Hooks | None:
     """
     Read metadata from a model class or instance (the returned metadata may be
     inherited, and therefore should not be written to)
     """
     message: str
     if isinstance(model, abc.Model):
-        return model._hooks or read(type(model))  # noqa: SLF001
-    if isinstance(model, type):
-        if issubclass(model, abc.Model):
-            # return getattr(model, "_hooks")
-            base: type
-            try:
-                return next(
-                    filter(
-                        None,
-                        (
-                            getattr(base, "_hooks", None)
-                            for base in model.__mro__
-                        ),
-                    )
+        return getattr(model, "_instance_hooks", None) or read(type(model))
+    if isinstance(model, type) and issubclass(model, abc.Model):
+        base: type
+        try:
+            return next(
+                getattr(base, "_class_hooks", None)
+                for base in filter(
+                    lambda base: issubclass(base, abc.Model),
+                    model.__mro__,
                 )
-            except StopIteration:
-                return None
-        else:
-            message = (
-                f"{get_calling_function_qualified_name()} requires a "
-                "parameter which is an instance or sub-class of "
-                f"`{get_qualified_name(abc.Model)}`, not "
-                f"`{get_qualified_name(model)}`"
             )
-            raise TypeError(message)
-    else:
-        repr_model: str = repr(model)
-        message = (
-            "{} requires a parameter which is an instance or sub-class of "
-            "`{}`, not{}".format(
-                get_calling_function_qualified_name(),
-                get_qualified_name(abc.Model),
-                (
-                    f":\n{repr_model}"
-                    if "\n" in repr_model
-                    else f" `{repr_model}`"
-                ),
-            )
+        except StopIteration:
+            return None
+    repr_model: str = repr(model)
+    message = (
+        "{} requires a parameter which is an instance or sub-class of "
+        "`{}`, not{}".format(
+            get_calling_function_qualified_name(),
+            get_qualified_name(abc.Model),
+            (f":\n{repr_model}" if "\n" in repr_model else f" `{repr_model}`"),
         )
-        raise TypeError(message)
+    )
+    raise TypeError(message)
 
 
 def object_read(model: type | abc.Object) -> abc.ObjectHooks | None:
@@ -237,7 +220,7 @@ def object_read(model: type | abc.Object) -> abc.ObjectHooks | None:
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)
+    return read(model)  # type: ignore
 
 
 def array_read(model: type | abc.Array) -> abc.ArrayHooks | None:
@@ -246,7 +229,7 @@ def array_read(model: type | abc.Array) -> abc.ArrayHooks | None:
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)
+    return read(model)  # type: ignore
 
 
 def dictionary_read(
@@ -257,21 +240,21 @@ def dictionary_read(
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)
+    return read(model)  # type: ignore
 
 
-def writable(model: type[abc.Model] | abc.Model) -> Any:
+def writable(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    hooks: abc.Hooks | None = model._hooks  # noqa: SLF001
+    instance_hooks: abc.Hooks | None = model._instance_hooks  # noqa: SLF001
     writable_hooks: abc.Hooks | None = None
     if isinstance(model, type):
         if not issubclass(model, abc.Model):
             raise TypeError(model)
-        if hooks is None:
+        if instance_hooks is None:
             new_hooks: Hooks | None = (
                 Object()
                 if issubclass(model, abc.Object)
@@ -287,26 +270,28 @@ def writable(model: type[abc.Model] | abc.Model) -> Any:
             )
             writable_hooks = new_hooks
         else:
-            base: type[abc.Model]
+            base: type[abc.Model] | None
             for base in filter(
-                lambda base: issubclass(base, abc.Model), model.__bases__
+                lambda base: isinstance(base, type)
+                and issubclass(base, abc.Model),
+                model.__bases__,
             ):
                 base_hooks: abc.Hooks | None
                 try:
-                    base_hooks = base._hooks  # noqa: SLF001
+                    base_hooks = base._class_hooks  # noqa: SLF001
                 except AttributeError:
                     base_hooks = None
-                if hooks and (hooks is base_hooks):
-                    writable_hooks = deepcopy(hooks)
+                if instance_hooks and (instance_hooks is base_hooks):
+                    writable_hooks = deepcopy(instance_hooks)
                     break
     elif isinstance(model, abc.Model):
-        if hooks is None:
+        if instance_hooks is None:
             writable_hooks = deepcopy(writable(type(model)))
     if writable_hooks:
-        model._hooks = writable_hooks  # noqa: SLF001
+        model._instance_hooks = writable_hooks  # noqa: SLF001
     else:
-        writable_hooks = hooks
-    return writable_hooks
+        writable_hooks = instance_hooks
+    return cast(abc.Hooks, writable_hooks)
 
 
 def object_writable(model: type | abc.Object) -> abc.ObjectHooks:
@@ -315,7 +300,7 @@ def object_writable(model: type | abc.Object) -> abc.ObjectHooks:
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def array_writable(model: type | abc.Array) -> abc.ArrayHooks:
@@ -324,7 +309,7 @@ def array_writable(model: type | abc.Array) -> abc.ArrayHooks:
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def dictionary_writable(
@@ -335,7 +320,7 @@ def dictionary_writable(
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)
+    return writable(model)  # type: ignore
 
 
 def type_(model: type | abc.Model) -> type:
@@ -377,4 +362,9 @@ def write(model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None) -> None:
                 f"must be of type `{get_qualified_name(hooks_type)}`"
             )
             raise ValueError(message)
-    model._hooks = hooks  # noqa: SLF001
+    if isinstance(model, abc.Model):
+        model._instance_hooks = hooks  # noqa: SLF001
+    else:
+        if not issubclass(model, abc.Model):
+            raise TypeError(model)
+        model._class_hooks = hooks  # noqa: SLF001

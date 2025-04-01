@@ -560,10 +560,12 @@ class Properties(Meta, metaclass=ABCMeta):
 
 class Model(metaclass=ABCMeta):
     _source: str | None
-    _meta: Meta | None
-    _hooks: Hooks | None
     _pointer: str | None
     _url: str | None
+    _class_meta: Meta | None
+    _class_hooks: Hooks | None
+    _instance_meta: Meta | None
+    _instance_hooks: Hooks | None
 
     @abstractmethod
     def _init_url(
@@ -608,7 +610,10 @@ class Model(metaclass=ABCMeta):
 
 
 class Dictionary(Model, metaclass=ABCMeta):
-    _meta: DictionaryMeta | None
+    _class_meta: DictionaryMeta | None
+    _class_hooks: DictionaryHooks | None
+    _instance_meta: DictionaryMeta | None
+    _instance_hooks: DictionaryHooks | None
 
     @abstractmethod
     def __init__(
@@ -711,7 +716,10 @@ class Object(Model, metaclass=ABCMeta):
     TODO
     """
 
-    _meta: ObjectMeta | None
+    _class_meta: ObjectMeta | None
+    _class_hooks: ObjectHooks | None
+    _instance_hooks: ObjectHooks | None
+    _instance_meta: ObjectMeta | None
 
     @abstractmethod
     def __init__(
@@ -792,7 +800,10 @@ class Object(Model, metaclass=ABCMeta):
 
 
 class Array(Model, metaclass=ABCMeta):
-    _meta: ArrayMeta | None
+    _class_meta: ArrayMeta | None
+    _class_hooks: ArrayHooks | None
+    _instance_hooks: ArrayHooks | None
+    _instance_meta: ArrayMeta | None
 
     @abstractmethod
     def __init__(
