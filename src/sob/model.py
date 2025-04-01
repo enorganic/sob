@@ -1035,6 +1035,7 @@ class Object(Model, abc.Object, abc.Model):
     ) -> None:
         self._instance_meta: abc.ObjectMeta | None = None
         self._instance_hooks: abc.ObjectHooks | None = None
+        self._extra: dict[str, abc.JSONTypes] | None = None
         Model.__init__(self)
         self._init_url(_data)
         deserialized_data: (

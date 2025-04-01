@@ -720,6 +720,7 @@ class Object(Model, metaclass=ABCMeta):
     _class_hooks: ObjectHooks | None
     _instance_hooks: ObjectHooks | None
     _instance_meta: ObjectMeta | None
+    _extra: dict[str, JSONTypes] | None
 
     @abstractmethod
     def __init__(
