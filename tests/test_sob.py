@@ -59,7 +59,7 @@ class A(model.Object):
         super().__init__(_data)
 
 
-meta.object_writable(A).properties = [  # type: ignore
+meta.get_writable_object_meta(A).properties = [  # type: ignore
     ("is_a_class", properties.Boolean()),
     ("boolean", properties.Boolean()),
     ("string", properties.String()),
@@ -117,7 +117,7 @@ class B(model.Object):
         super().__init__(_)
 
 
-meta.object_writable(B).properties = [  # type: ignore
+meta.get_writable_object_meta(B).properties = [  # type: ignore
     ("is_b_class", properties.Boolean()),
     ("boolean", properties.Boolean()),
     ("string", properties.String()),
@@ -173,7 +173,7 @@ class C(model.Object):
         super().__init__(_)
 
 
-meta.object_writable(C).properties = [  # type: ignore
+meta.get_writable_object_meta(C).properties = [  # type: ignore
     ("is_c_class", properties.Boolean()),
     ("string", properties.String()),
     ("integer", properties.Integer()),
@@ -285,7 +285,7 @@ class Tesstee(model.Object):
         super().__init__(_data)
 
 
-meta.object_writable(Tesstee).properties = {  # type: ignore
+meta.get_writable_object_meta(Tesstee).properties = {  # type: ignore
     "boolean": properties.Boolean(),
     "string": properties.String(),
     "number": properties.Number(),

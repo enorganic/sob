@@ -54,7 +54,7 @@ class Hooks(abc.Hooks):
         return True
 
 
-class Object(Hooks, abc.ObjectHooks):
+class ObjectHooks(Hooks, abc.ObjectHooks):
     """
     TODO
     """
@@ -99,7 +99,11 @@ class Object(Hooks, abc.ObjectHooks):
         self.after_setitem = after_setitem
 
 
-class Array(Hooks, abc.ArrayHooks):
+# For backwards compatibility
+Object = ObjectHooks
+
+
+class ArrayHooks(Hooks, abc.ArrayHooks):
     """
     TODO
     """
@@ -144,7 +148,11 @@ class Array(Hooks, abc.ArrayHooks):
         self.after_append = after_append
 
 
-class Dictionary(Hooks, abc.DictionaryHooks):
+# For backwards compatibility
+Array = ArrayHooks
+
+
+class DictionaryHooks(Hooks, abc.DictionaryHooks):
     """
     TODO
     """
@@ -182,14 +190,20 @@ class Dictionary(Hooks, abc.DictionaryHooks):
         self.after_setitem = after_setitem
 
 
-def read(model: type | abc.Model) -> abc.Hooks | None:
+# For backwards compatibility
+Dictionary = DictionaryHooks
+
+
+def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
     """
     Read metadata from a model class or instance (the returned metadata may be
     inherited, and therefore should not be written to)
     """
     message: str
     if isinstance(model, abc.Model):
-        return getattr(model, "_instance_hooks", None) or read(type(model))
+        return getattr(model, "_instance_hooks", None) or read_model_hooks(
+            type(model)
+        )
     if isinstance(model, type) and issubclass(model, abc.Model):
         base: type
         try:
@@ -214,25 +228,37 @@ def read(model: type | abc.Model) -> abc.Hooks | None:
     raise TypeError(message)
 
 
-def object_read(model: type | abc.Object) -> abc.ObjectHooks | None:
+# For backwards compatibility
+read = read_model_hooks
+
+
+def read_object_hooks(model: type | abc.Object) -> abc.ObjectHooks | None:
     """
     Read metadata from an `sob.model.Object` sub-class or instance (the
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)  # type: ignore
+    return read_model_hooks(model)  # type: ignore
 
 
-def array_read(model: type | abc.Array) -> abc.ArrayHooks | None:
+# For backwards compatibility
+object_read = read_object_hooks
+
+
+def read_array_hooks(model: type | abc.Array) -> abc.ArrayHooks | None:
     """
     Read metadata from an `sob.model.Array` sub-class or instance (the
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)  # type: ignore
+    return read_model_hooks(model)  # type: ignore
 
 
-def dictionary_read(
+# For backwards compatibility
+array_read = read_array_hooks
+
+
+def read_dictionary_hooks(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryHooks | None:
     """
@@ -240,10 +266,14 @@ def dictionary_read(
     returned metadata may be inherited, and therefore should not be written
     to).
     """
-    return read(model)  # type: ignore
+    return read_model_hooks(model)  # type: ignore
 
 
-def writable(model: type[abc.Model] | abc.Model) -> abc.Hooks:
+# For backwards compatibility
+dictionary_read = read_dictionary_hooks
+
+
+def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
@@ -256,13 +286,13 @@ def writable(model: type[abc.Model] | abc.Model) -> abc.Hooks:
             raise TypeError(model)
         if instance_hooks is None:
             new_hooks: Hooks | None = (
-                Object()
+                ObjectHooks()
                 if issubclass(model, abc.Object)
                 else (
-                    Array()
+                    ArrayHooks()
                     if issubclass(model, abc.Array)
                     else (
-                        Dictionary()
+                        DictionaryHooks()
                         if issubclass(model, abc.Dictionary)
                         else Hooks()
                     )
@@ -286,7 +316,7 @@ def writable(model: type[abc.Model] | abc.Model) -> abc.Hooks:
                     break
     elif isinstance(model, abc.Model):
         if instance_hooks is None:
-            writable_hooks = deepcopy(writable(type(model)))
+            writable_hooks = deepcopy(get_writable_model_hooks(type(model)))
     if writable_hooks:
         model._instance_hooks = writable_hooks  # noqa: SLF001
     else:
@@ -294,25 +324,37 @@ def writable(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     return cast(abc.Hooks, writable_hooks)
 
 
-def object_writable(model: type | abc.Object) -> abc.ObjectHooks:
+# For backwards compatibility
+writable = get_writable_model_hooks
+
+
+def get_writable_object_hooks(model: type | abc.Object) -> abc.ObjectHooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_hooks(model)  # type: ignore
 
 
-def array_writable(model: type | abc.Array) -> abc.ArrayHooks:
+# For backwards compatibility
+object_writable = get_writable_object_hooks
+
+
+def get_writable_array_hooks(model: type | abc.Array) -> abc.ArrayHooks:
     """
     Retrieve a metadata instance. If the instance currently inherits its
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_hooks(model)  # type: ignore
 
 
-def dictionary_writable(
+# For backwards compatibility
+array_writable = get_writable_array_hooks
+
+
+def get_writable_dictionary_hooks(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryHooks:
     """
@@ -320,10 +362,14 @@ def dictionary_writable(
     metadata from a class or superclass, this function will copy that
     metadata and assign it directly to the model instance.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_hooks(model)  # type: ignore
 
 
-def type_(model: type | abc.Model) -> type:
+# For backwards compatibility
+dictionary_writable = get_writable_dictionary_hooks
+
+
+def get_model_hooks_type(model: type | abc.Model) -> type:
     """
     Get the type of metadata required for an object
     """
@@ -332,30 +378,36 @@ def type_(model: type | abc.Model) -> type:
         raise TypeError(model)
     if isinstance(model, type):
         hooks_type = (
-            Object
+            ObjectHooks
             if issubclass(model, abc.Object)
-            else Array
+            else ArrayHooks
             if issubclass(model, abc.Array)
-            else Dictionary
+            else DictionaryHooks
         )
     else:
         hooks_type = (
-            Object
+            ObjectHooks
             if isinstance(model, abc.Object)
-            else Array
+            else ArrayHooks
             if isinstance(model, abc.Array)
-            else Dictionary
+            else DictionaryHooks
         )
     return hooks_type
 
 
-def write(model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None) -> None:
+# For backwards compatibility
+type_ = get_model_hooks_type
+
+
+def write_model_hooks(
+    model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None
+) -> None:
     """
     Write metadata to a class or instance
     """
     if hooks is not None:
         # Verify that the metadata is of the correct type
-        hooks_type: type[abc.Hooks] = type_(model)
+        hooks_type: type[abc.Hooks] = get_model_hooks_type(model)
         if not isinstance(hooks, hooks_type):
             message: str = (
                 f"Hooks assigned to `{get_qualified_name(type(model))}` "
@@ -368,3 +420,7 @@ def write(model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None) -> None:
         if not issubclass(model, abc.Model):
             raise TypeError(model)
         model._class_hooks = hooks  # noqa: SLF001
+
+
+# For backwards compatibility
+write = write_model_hooks

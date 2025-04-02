@@ -42,7 +42,7 @@ from sob._io import read
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
 from sob.abc import MARSHALLABLE_TYPES
 from sob.meta import escape_reference_token
-from sob.model import deserialize, from_meta, unmarshal
+from sob.model import deserialize, get_model_from_meta, unmarshal
 from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
 from sob.types import MutableTypes
 from sob.utilities import (
@@ -88,7 +88,7 @@ def _update_types(
             and (type.__name__ in memo)
         ):
             existing_type: type = memo[type.__name__]
-            new_type_meta: abc.Meta | None = meta.read(new_type)
+            new_type_meta: abc.Meta | None = meta.read_model_meta(new_type)
             if not isinstance(
                 new_type_meta,
                 (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
@@ -244,12 +244,12 @@ def _update_object_class_from_meta(
     """
     if not isinstance(new_object_metadata, abc.ObjectMeta):
         raise TypeError(new_object_metadata)
-    object_metadata: abc.Meta | None = meta.read(object_class)
+    object_metadata: abc.Meta | None = meta.read_model_meta(object_class)
     if not isinstance(object_metadata, (abc.ObjectMeta, NoneType)):
         raise TypeError(object_metadata)
     _update_object_meta(object_metadata, new_object_metadata, memo)
     # Recreate the object class
-    updated_object_class: type = from_meta(
+    updated_object_class: type = get_model_from_meta(
         object_class.__name__,
         object_metadata,
         module=object_class.__module__,
@@ -276,7 +276,7 @@ def _update_array_class_from_meta(
     """
     if not isinstance(new_array_metadata, abc.ArrayMeta):
         raise TypeError(new_array_metadata)
-    array_metadata: abc.Meta = meta.writable(array_class)
+    array_metadata: abc.Meta = meta.get_writable_model_meta(array_class)
     if not isinstance(array_metadata, abc.ArrayMeta):
         raise TypeError(array_metadata)
     _update_array_meta(array_metadata, new_array_metadata, memo=memo)
@@ -301,7 +301,9 @@ def _update_dictionary_class_from_meta(
     """
     if not isinstance(new_dictionary_metadata, abc.ArrayMeta):
         raise TypeError(new_dictionary_metadata)
-    dictionary_metadata: abc.Meta = meta.writable(dictionary_class)
+    dictionary_metadata: abc.Meta = meta.get_writable_model_meta(
+        dictionary_class
+    )
     if not isinstance(dictionary_metadata, abc.DictionaryMeta):
         raise TypeError(dictionary_metadata)
     _update_dictionary_meta(
@@ -349,17 +351,15 @@ def _update_model_class_from_meta(
         )
 
 
-def class_name_from_pointer(pointer: str) -> str:
+def get_class_name_from_pointer(pointer: str) -> str:
     """
-    This function returns a class name based on the
-    [sob.thesaurus.Thesaurus](#Thesaurus) key of the
-    [sob.thesaurus.Synonyms](#Synonyms) instance to which an element belongs,
+    This function creates a class name based on the `sob.Thesaurus` key of the
+    `sob.Synonyms` instance to which an element belongs,
     combined with the *JSON pointer* of the applicable element. This function
     can be substituted for another, when generating a module from a thesaurus,
     by passing a function to the `name` parameter of
-    [sob.thesaurus.Thesaurus.get_module_source](#Thesaurus-getmodulesource),
-    [sob.thesaurus.Thesaurus.get_module](#Thesaurus-getmodule), or
-    [sob.thesaurus.Thesaurus.save_module](#Thesaurus-savemodule).
+    `sob.Thesaurus.get_module_source`, `sob.Thesaurus.get_module`, or
+    `sob.Thesaurus.save_module`.
 
     Parameters:
 
@@ -373,12 +373,16 @@ def class_name_from_pointer(pointer: str) -> str:
     )
 
 
+# For backwards compatibility
+class_name_from_pointer = get_class_name_from_pointer
+
+
 def _get_models_from_meta(
     pointer: str,
     metadata: abc.ArrayMeta | abc.ObjectMeta | abc.DictionaryMeta,
     module: str,
     memo: dict[str, type] | None,
-    name: Callable[[str], str] = class_name_from_pointer,
+    name: Callable[[str], str] = get_class_name_from_pointer,
 ) -> list[type]:
     """
     This function generates and updates classes from metadata.
@@ -394,13 +398,15 @@ def _get_models_from_meta(
     new_models: list[type] = []
     # If the object has no attributes, interpret it an an empty dictionary
     if isinstance(metadata, abc.ObjectMeta) and not metadata.properties:
-        metadata = meta.Dictionary()
+        metadata = meta.DictionaryMeta()
     # If a model of the same pointer already exists, we update it to
     # reflect our metadata, otherwise--we create a new model
     if pointer in memo:
         _update_model_class_from_meta(memo[pointer], metadata, memo=memo)
     else:
-        new_model: type = from_meta(name(pointer), metadata, module=module)
+        new_model: type = get_model_from_meta(
+            name(pointer), metadata, module=module
+        )
         memo[pointer] = new_model
         new_models.append(new_model)
     return new_models
@@ -709,10 +715,10 @@ class Synonyms:
         self,
         pointer: str,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
         memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
-        metadata: abc.DictionaryMeta = meta.Dictionary()
+        metadata: abc.DictionaryMeta = meta.DictionaryMeta()
         metadata.value_types: abc.Types = meta.MutableTypes()  # type: ignore
         key: str
         property_name_: str
@@ -726,10 +732,10 @@ class Synonyms:
         self,
         pointer: str,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
         memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
-        metadata: abc.ObjectMeta = meta.Object()
+        metadata: abc.ObjectMeta = meta.ObjectMeta()
         metadata.properties = meta.Properties()  # type: ignore
         key: str
         property_name_: str
@@ -784,7 +790,7 @@ class Synonyms:
         self,
         pointer: str,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
         memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         unified_items: Synonyms = type(self)()
@@ -798,7 +804,7 @@ class Synonyms:
             pointer=f"{pointer}/0", module=module, memo=memo, name=name
         ):
             yield item_type
-        metadata: abc.ArrayMeta = meta.Array(
+        metadata: abc.ArrayMeta = meta.ArrayMeta(
             item_types=(None if item_type is None else [item_type])
         )
         array_type: type
@@ -810,7 +816,7 @@ class Synonyms:
         self,
         pointer: str,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
         memo: dict[str, type] | None = None,
     ) -> Iterable[type]:
         # `_memo` holds a dictionary of all classes which have been created,
@@ -848,7 +854,7 @@ class Synonyms:
         self,
         pointer: str,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> Iterable[type]:
         """
         Retrieve a sequence of class definitions representing a data model
@@ -1104,7 +1110,7 @@ class Thesaurus:
     def get_models(
         self,
         module: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> Iterable[type]:
         key: str
         synonyms: Synonyms
@@ -1115,7 +1121,7 @@ class Thesaurus:
     def _get_module_source(
         self,
         module_name: str = "__main__",
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> str:
         class_names_metadata: abc.OrderedDict[
             str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
@@ -1135,7 +1141,7 @@ class Thesaurus:
                 maxlen=0,
             )
             classes.append(class_source)
-            meta_instance: abc.Meta | None = meta.read(model_class)
+            meta_instance: abc.Meta | None = meta.read_model_meta(model_class)
             if not isinstance(
                 meta_instance,
                 (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
@@ -1182,7 +1188,7 @@ class Thesaurus:
         )
 
     def get_module_source(
-        self, name: Callable[[str], str] = class_name_from_pointer
+        self, name: Callable[[str], str] = get_class_name_from_pointer
     ) -> str:
         """
         This method generates and returns the source code for a module
@@ -1200,7 +1206,7 @@ class Thesaurus:
         return self._get_module_source("__main__", name=name)
 
     def get_module(
-        self, name: Callable[[str], str] = class_name_from_pointer
+        self, name: Callable[[str], str] = get_class_name_from_pointer
     ) -> ModuleType:
         """
         This method generates and returns a module defining data models
@@ -1228,7 +1234,7 @@ class Thesaurus:
     def save_module(
         self,
         path: str,
-        name: Callable[[str], str] = class_name_from_pointer,
+        name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> None:
         """
         This method generates and saves the source code for a module

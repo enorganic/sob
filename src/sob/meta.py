@@ -21,6 +21,7 @@ from typing import (
 
 from sob import abc, errors
 from sob._types import UNDEFINED, NoneType, Undefined
+from sob._utilities import deprecated
 from sob.types import MutableTypes
 from sob.utilities import (
     get_calling_function_qualified_name,
@@ -102,7 +103,7 @@ class Meta(abc.Meta):
         return "\n".join(lines)
 
 
-class Object(Meta, abc.ObjectMeta):
+class ObjectMeta(Meta, abc.ObjectMeta):
     """
     TODO
     """
@@ -136,7 +137,11 @@ class Object(Meta, abc.ObjectMeta):
         self._properties = new_properties
 
 
-class Dictionary(Meta, abc.DictionaryMeta):
+# For backward compatibility
+Object = ObjectMeta
+
+
+class DictionaryMeta(Meta, abc.DictionaryMeta):
     """
     TODO
     """
@@ -174,7 +179,11 @@ class Dictionary(Meta, abc.DictionaryMeta):
         self._value_types = value_types
 
 
-class Array(Meta, abc.ArrayMeta):
+# For backward compatibility
+Dictionary = DictionaryMeta
+
+
+class ArrayMeta(Meta, abc.ArrayMeta):
     """
     TODO
     """
@@ -208,6 +217,10 @@ class Array(Meta, abc.ArrayMeta):
                 item_types = (item_types,)
             item_types = MutableTypes(item_types)
         self._item_types = item_types
+
+
+# For backward compatibility
+Array = ArrayMeta
 
 
 class Properties(abc.Properties):
@@ -378,10 +391,12 @@ class Properties(abc.Properties):
         return self._dict.__len__()
 
 
-def read(model: type | abc.Model) -> abc.Meta | None:
+def read_model_meta(model: type | abc.Model) -> abc.Meta | None:
     message: str
     if isinstance(model, abc.Model):
-        return getattr(model, "_instance_meta", None) or read(type(model))
+        return getattr(model, "_instance_meta", None) or read_model_meta(
+            type(model)
+        )
     if isinstance(model, type) and issubclass(model, abc.Model):
         base: type | None
         try:
@@ -406,21 +421,37 @@ def read(model: type | abc.Model) -> abc.Meta | None:
     raise TypeError(message)
 
 
-def object_read(model: type | abc.Object) -> abc.ObjectMeta | None:
-    return read(model)  # type: ignore
+# For backwards compatibility
+read = read_model_meta
 
 
-def array_read(model: type | abc.Array) -> abc.ArrayMeta | None:
-    return read(model)  # type: ignore
+def read_object_meta(model: type | abc.Object) -> abc.ObjectMeta | None:
+    return read_model_meta(model)  # type: ignore
 
 
-def dictionary_read(
+# For backwards compatibility
+object_read = read_object_meta
+
+
+def read_array_meta(model: type | abc.Array) -> abc.ArrayMeta | None:
+    return read_model_meta(model)  # type: ignore
+
+
+# For backwards compatibility
+array_read = read_array_meta
+
+
+def read_dictionary_meta(
     model: type[abc.Dictionary] | abc.Dictionary,
 ) -> abc.DictionaryMeta | None:
-    return read(model)  # type: ignore
+    return read_model_meta(model)  # type: ignore
 
 
-def writable(model: type | abc.Model) -> abc.Meta:
+# For backwards compatibility
+dictionary_read = read_dictionary_meta
+
+
+def get_writable_model_meta(model: type | abc.Model) -> abc.Meta:
     """
     This function returns an instance of [sob.meta.Meta](#Meta) which can
     be safely modified. If the class or model instance inherits its metadata
@@ -433,29 +464,29 @@ def writable(model: type | abc.Model) -> abc.Meta:
     if isinstance(model, abc.Model):
         if model._instance_meta is None:  # noqa: SLF001
             model._instance_meta = deepcopy(  # noqa: SLF001
-                read(type(model))
+                read_model_meta(type(model))
             )
         if model._instance_meta is None:  # noqa: SLF001
             model._instance_meta = (  # noqa: SLF001
-                Object()
+                ObjectMeta()
                 if isinstance(model, abc.Object)
-                else Array()
+                else ArrayMeta()
                 if isinstance(model, abc.Array)
-                else Dictionary()
+                else DictionaryMeta()
             )
         return model._instance_meta  # noqa: SLF001
     if isinstance(model, type) and issubclass(model, abc.Model):
         if model._class_meta is None:  # noqa: SLF001
             model._class_meta = deepcopy(  # noqa: SLF001
-                read(model)
+                read_model_meta(model)
             )
         if model._class_meta is None:  # noqa: SLF001
             model._class_meta = (  # noqa: SLF001
-                Object()
+                ObjectMeta()
                 if issubclass(model, abc.Object)
-                else Array()
+                else ArrayMeta()
                 if issubclass(model, abc.Array)
-                else Dictionary()
+                else DictionaryMeta()
             )
         return model._class_meta  # noqa: SLF001
     repr_model: str = represent(model)
@@ -470,7 +501,13 @@ def writable(model: type | abc.Model) -> abc.Meta:
     raise TypeError(message)
 
 
-def object_writable(model: type | abc.Object) -> abc.ObjectMeta:
+# For backward compatibility
+writable = get_writable_model_meta
+
+
+def get_writable_object_meta(
+    object_: type[abc.Object] | abc.Object,
+) -> abc.ObjectMeta:
     """
     This function returns an instance of [sob.meta.Object](#meta-Object) which
     can be safely modified. If the class or model instance inherits its
@@ -478,10 +515,14 @@ def object_writable(model: type | abc.Object) -> abc.ObjectMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_meta(object_)  # type: ignore
 
 
-def array_writable(model: type | abc.Array) -> abc.ArrayMeta:
+# For backward compatibility
+object_writable = get_writable_object_meta
+
+
+def get_writable_array_meta(model: type | abc.Array) -> abc.ArrayMeta:
     """
     This function returns an instance of [sob.meta.Array](#meta-Array) which
     can be safely modified. If the class or model instance inherits its
@@ -489,10 +530,14 @@ def array_writable(model: type | abc.Array) -> abc.ArrayMeta:
     duplicate of that metadata assigned directly to the class or instance
     represented by `model`.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_meta(model)  # type: ignore
 
 
-def dictionary_writable(
+# For backwards compatibility
+array_writable = get_writable_array_meta
+
+
+def get_writable_dictionary_meta(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryMeta:
     """
@@ -502,10 +547,16 @@ def dictionary_writable(
     class, this function will create and return a duplicate of that metadata
     assigned directly to the class or instance represented by `model`.
     """
-    return writable(model)  # type: ignore
+    return get_writable_model_meta(model)  # type: ignore
 
 
-def write(model: type[abc.Model] | abc.Model, meta: abc.Meta | None) -> None:
+# For backwards compatibility
+dictionary_writable = get_writable_dictionary_meta
+
+
+def write_model_meta(
+    model: type[abc.Model] | abc.Model, meta: abc.Meta | None
+) -> None:
     message: str
     model_type: type
     if isinstance(model, abc.Model):
@@ -528,13 +579,15 @@ def write(model: type[abc.Model] | abc.Model, meta: abc.Meta | None) -> None:
         )
         raise TypeError(message)
     metadata_type: type = (
-        Object
+        ObjectMeta
         if issubclass(model_type, abc.Object)
         else (
-            Array
+            ArrayMeta
             if issubclass(model_type, abc.Array)
             else (
-                Dictionary if issubclass(model_type, abc.Dictionary) else Meta
+                DictionaryMeta
+                if issubclass(model_type, abc.Dictionary)
+                else Meta
             )
         )
     )
@@ -552,12 +605,20 @@ def write(model: type[abc.Model] | abc.Model, meta: abc.Meta | None) -> None:
         model._class_meta = meta  # noqa: SLF001
 
 
-def get_pointer(model: abc.Model) -> str | None:
+# For backwards compatibility
+write = write_model_meta
+
+
+def get_model_pointer(model: abc.Model) -> str | None:
     return model._pointer  # noqa: SLF001
 
 
+# For backwards compatibility
+get_pointer = get_model_pointer
+
+
 def _read_object(model: abc.Object | type) -> abc.ObjectMeta | None:
-    metadata: abc.Meta | None = read(model)
+    metadata: abc.Meta | None = read_model_meta(model)
     if (metadata is not None) and not isinstance(metadata, abc.ObjectMeta):
         raise TypeError(metadata)
     return metadata
@@ -585,7 +646,7 @@ def escape_reference_token(reference_token: str) -> str:
     return reference_token.replace("~", "~0").replace("/", "~1")
 
 
-def set_pointer(model: abc.Model, pointer_: str) -> None:
+def set_model_pointer(model: abc.Model, pointer_: str) -> None:
     key: str
     value: Any
     model._pointer = pointer_  # noqa: SLF001
@@ -638,6 +699,15 @@ def set_pointer(model: abc.Model, pointer_: str) -> None:
                 pointer(value, f"{pointer_}/{index!s}")
 
 
+# For backwards compatibility
+set_pointer = set_model_pointer
+
+
+@deprecated(
+    "`sob.meta.pointer` is deprecated and will be removed in sob 3. "
+    "Use `sob.get_model_pointer` and `sob.set_model_pointer` "
+    "instead.",
+)
 def pointer(model: abc.Model, pointer_: str | None = None) -> str | None:
     """
     Get or set a model's pointer
@@ -645,8 +715,8 @@ def pointer(model: abc.Model, pointer_: str | None = None) -> str | None:
     if not isinstance(model, (abc.Object, abc.Dictionary, abc.Array)):
         raise TypeError(model)
     if pointer_ is not None:
-        set_pointer(model, pointer_)
-    return get_pointer(model)
+        set_model_pointer(model, pointer_)
+    return get_model_pointer(model)
 
 
 def _traverse_models(
@@ -680,7 +750,7 @@ def _traverse_models(
                 yield value
 
 
-def set_url(model_instance: abc.Model, source_url: str | None) -> None:
+def set_model_url(model_instance: abc.Model, source_url: str | None) -> None:
     if not isinstance(model_instance, (abc.Object, abc.Dictionary, abc.Array)):
         raise TypeError(model_instance)
     if (source_url is not None) and not isinstance(source_url, str):
@@ -688,17 +758,30 @@ def set_url(model_instance: abc.Model, source_url: str | None) -> None:
     model_instance._url = source_url  # noqa: SLF001
     child_model: abc.Model
     for child_model in _traverse_models(model_instance):
-        set_url(child_model, source_url)
+        set_model_url(child_model, source_url)
 
 
-def get_url(model: abc.Model) -> str | None:
+# For backwards compatibility
+set_url = set_model_url
+
+
+def get_model_url(model: abc.Model) -> str | None:
     return model._url  # noqa: SLF001
 
 
+# For backwards compatibility
+get_url = get_model_url
+
+
+@deprecated(
+    "`sob.meta.url` is deprecated and will be removed in sob 3. "
+    "Use `sob.get_model_url` and `sob.set_model_url` "
+    "instead.",
+)
 def url(model: abc.Model, url_: str | None = None) -> str | None:
     if url_ is not None:
-        set_url(model, url_)
-    return get_url(model)
+        set_model_url(model, url_)
+    return get_model_url(model)
 
 
 def _version_match(
@@ -801,14 +884,14 @@ def _version_object(  # noqa: C901
     version_number: str | int | Sequence[int],
 ) -> None:
     message: str
-    meta_: abc.ObjectMeta | None = object_read(data)
+    meta_: abc.ObjectMeta | None = read_object_meta(data)
     if meta_ is None:
         message = f"Unable to read metadata for {represent(data)}"
         raise RuntimeError(message)
     if TYPE_CHECKING:
         assert isinstance(meta_.properties, abc.Properties)
     if meta_.properties:
-        class_meta = read(type(data))
+        class_meta = read_model_meta(type(data))
         property_name: str
         property_: abc.Property
         for property_name, property_ in tuple(meta_.properties.items()):
@@ -818,14 +901,14 @@ def _version_object(  # noqa: C901
                 )
                 if new_property is not property_:
                     if meta_ is class_meta:
-                        meta_ = object_writable(data)
+                        meta_ = get_writable_object_meta(data)
                     if TYPE_CHECKING:
                         assert isinstance(meta_, abc.ObjectMeta)
                         assert isinstance(meta_.properties, abc.Properties)
                     meta_.properties[property_name] = new_property
             else:
                 if meta_ is class_meta:
-                    meta_ = object_writable(data)
+                    meta_ = get_writable_object_meta(data)
                 if TYPE_CHECKING:
                     assert isinstance(meta_, abc.ObjectMeta)
                     assert isinstance(meta_.properties, abc.Properties)
@@ -840,7 +923,7 @@ def _version_object(  # noqa: C901
                     raise errors.VersionError(message)
             value = getattr(data, property_name)
             if isinstance(value, abc.Model):
-                version(value, specification, version_number)
+                version_model(value, specification, version_number)
 
 
 def _version_dictionary(
@@ -848,23 +931,23 @@ def _version_dictionary(
     specification: str,
     version_number: str | int | Sequence[int],
 ) -> None:
-    instance_meta: abc.Meta | None = read(data)
+    instance_meta: abc.Meta | None = read_model_meta(data)
     if TYPE_CHECKING:
         assert isinstance(instance_meta, abc.DictionaryMeta)
-    class_meta = read(type(data))
+    class_meta = read_model_meta(type(data))
     if instance_meta and instance_meta.value_types:
         new_value_types = _version_properties(
             instance_meta.value_types, specification, version_number
         )
         if new_value_types:
             if instance_meta is class_meta:
-                instance_meta = writable(data)
+                instance_meta = get_writable_model_meta(data)
                 if TYPE_CHECKING:
                     assert isinstance(instance_meta, abc.DictionaryMeta)
             instance_meta.value_types = new_value_types  # type: ignore
     for value in data.values():
         if isinstance(value, (abc.Object, abc.Dictionary, abc.Array)):
-            version(value, specification, version_number)
+            version_model(value, specification, version_number)
 
 
 def _version_array(
@@ -872,22 +955,22 @@ def _version_array(
     specification: str,
     version_number: str | int | Sequence[int],
 ) -> None:
-    instance_meta = read(data)
-    class_meta = read(type(data))
+    instance_meta = read_model_meta(data)
+    class_meta = read_model_meta(type(data))
     if isinstance(instance_meta, abc.ArrayMeta) and instance_meta.item_types:
         new_item_types = _version_properties(
             instance_meta.item_types, specification, version_number
         )
         if new_item_types:
             if instance_meta is class_meta:
-                instance_meta = array_writable(data)
+                instance_meta = get_writable_array_meta(data)
             instance_meta.item_types = new_item_types  # type: ignore
     for item in data:
         if isinstance(item, abc.Model):
-            version(item, specification, version_number)
+            version_model(item, specification, version_number)
 
 
-def version(
+def version_model(
     data: abc.Model,
     specification: str,
     version_number: str | int | Sequence[int],
@@ -925,11 +1008,15 @@ def version(
         _version_array(data, specification, version_number)
 
 
+# For backwards compatibility
+version = version_model
+
+
 def _copy_object_to(
     source: abc.Object,
     target: abc.Object,
 ) -> None:
-    source_meta: abc.ObjectMeta = cast(abc.ObjectMeta, read(source))
+    source_meta: abc.ObjectMeta = cast(abc.ObjectMeta, read_model_meta(source))
     if (source_meta is not None) and (source_meta.properties is not None):
         for property_name in source_meta.properties:
             source_property_value = getattr(source, property_name)
@@ -937,7 +1024,9 @@ def _copy_object_to(
             if target_property_value and isinstance(
                 source_property_value, abc.Model
             ):
-                copy_to(source_property_value, target_property_value)
+                _copy_model_meta_to(
+                    source_property_value, target_property_value
+                )
 
 
 def _copy_array_to(source: abc.Array, target: abc.Array) -> None:
@@ -946,7 +1035,7 @@ def _copy_array_to(source: abc.Array, target: abc.Array) -> None:
         if target_value and isinstance(value, abc.Model):
             if not isinstance(target_value, abc.Model):
                 raise TypeError(target_value)
-            copy_to(value, target_value)
+            _copy_model_meta_to(value, target_value)
 
 
 def _copy_dictionary_to(
@@ -961,10 +1050,12 @@ def _copy_dictionary_to(
             and isinstance(value, abc.Model)
             and isinstance(target_value, abc.Model)
         ):
-            copy_to(value, target_value)
+            _copy_model_meta_to(value, target_value)
 
 
-def copy_to(source: abc.Model, target: abc.Model) -> None:  # noqa: C901
+def _copy_model_meta_to(  # noqa: C901
+    source: abc.Model, target: abc.Model
+) -> None:
     """
     This function copies metadata from one model instance to another
     """
@@ -977,10 +1068,10 @@ def copy_to(source: abc.Model, target: abc.Model) -> None:  # noqa: C901
     if type(source) is not type(target):
         raise TypeError(source, target)
     # Copy the metadata
-    source_meta: abc.Meta | None = read(source)
-    target_meta: abc.Meta | None = read(target)
+    source_meta: abc.Meta | None = read_model_meta(source)
+    target_meta: abc.Meta | None = read_model_meta(target)
     if source_meta is not target_meta:
-        write(target, source_meta)
+        write_model_meta(target, source_meta)
     # ... and recursively do the same for member data
     if isinstance(source_meta, abc.ObjectMeta) and (
         source_meta.properties is not None

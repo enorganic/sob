@@ -175,7 +175,7 @@ class VersionedObject(sob.model.Object):
             | None
         ) = None
         super().__init__(_data)
-        sob.meta.version(self, "test-specification", str(version))
+        sob.meta.version_model(self, "test-specification", str(version))
         self.version = version
         self.versioned_simple_type = versioned_simple_type
         self.versioned_container = versioned_container
@@ -185,7 +185,9 @@ class VersionedObject(sob.model.Object):
 # region Metadata
 
 
-sob.meta.object_writable(VersionedObject).properties = sob.meta.Properties(
+sob.meta.get_writable_object_meta(
+    VersionedObject
+).properties = sob.meta.Properties(
     [
         (
             "version",
@@ -218,7 +220,9 @@ sob.meta.object_writable(VersionedObject).properties = sob.meta.Properties(
     ]
 )
 
-sob.meta.object_writable(MemberObjectA).properties = sob.meta.Properties(
+sob.meta.get_writable_object_meta(
+    MemberObjectA
+).properties = sob.meta.Properties(
     [("property_a", sob.properties.Integer(name="propertyA"))]
 )
 

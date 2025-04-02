@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 from inspect import Parameter, signature
 from typing import Any, Callable

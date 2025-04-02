@@ -270,9 +270,9 @@ class Property(abc.Property):
         return self._copy(deep=True, memo=memo or {})
 
 
-class String(Property, abc.String):
+class StringProperty(Property, abc.String):
     """
-    See `sob.properties.Property`
+    See `sob.Property`
     """
 
     _types: abc.Types = Types((str,))  # type: ignore
@@ -294,7 +294,11 @@ class String(Property, abc.String):
         )
 
 
-class Date(Property, abc.Date):
+# For backwards compatibility
+String = StringProperty
+
+
+class DateProperty(Property, abc.Date):
     """
     ...See `sob.properties.Property`
 
@@ -339,7 +343,11 @@ class Date(Property, abc.Date):
         return self._str2date(value)
 
 
-class DateTime(Property, abc.DateTime):
+# For backwards compatibility
+Date = DateProperty
+
+
+class DateTimeProperty(Property, abc.DateTime):
     """
     (See [`sob.properties.Property`](#Property))
 
@@ -383,7 +391,11 @@ class DateTime(Property, abc.DateTime):
         return self._str2datetime(value)
 
 
-class Bytes(Property, abc.Bytes):
+# For backwards compatibility
+DateTime = DateTimeProperty
+
+
+class BytesProperty(Property, abc.Bytes):
     """
     (See [`sob.properties.Property`](#Property))
 
@@ -409,7 +421,11 @@ class Bytes(Property, abc.Bytes):
         )
 
 
-class Enumerated(Property, abc.Enumerated):
+# For backwards compatibility
+Bytes = BytesProperty
+
+
+class EnumeratedProperty(Property, abc.Enumerated):
     """
     Parameters:
 
@@ -460,7 +476,11 @@ class Enumerated(Property, abc.Enumerated):
             self._values = set(values)
 
 
-class Number(Property, abc.Number):
+# For backwards compatibility
+Enumerated = EnumeratedProperty
+
+
+class NumberProperty(Property, abc.Number):
     """
     See `sob.properties.Property`
     """
@@ -480,7 +500,11 @@ class Number(Property, abc.Number):
         super().__init__(name=name, required=required, versions=versions)
 
 
-class Integer(Property, abc.Integer):
+# For backwards compatibility
+Number = NumberProperty
+
+
+class IntegerProperty(Property, abc.Integer):
     """
     See `sob.properties.Property`
     """
@@ -504,7 +528,11 @@ class Integer(Property, abc.Integer):
         )
 
 
-class Boolean(Property, abc.Boolean):
+# For backwards compatibility
+Integer = IntegerProperty
+
+
+class BooleanProperty(Property, abc.Boolean):
     """
     See `sob.properties.Property`
     """
@@ -528,7 +556,11 @@ class Boolean(Property, abc.Boolean):
         )
 
 
-class Array(Property, abc.ArrayProperty):
+# For backwards compatibility
+Boolean = BooleanProperty
+
+
+class ArrayProperty(Property, abc.ArrayProperty):
     """
     See `sob.properties.Property`...
 
@@ -600,7 +632,11 @@ class Array(Property, abc.ArrayProperty):
         self._item_types = item_types
 
 
-class Dictionary(Property, abc.DictionaryProperty):
+# For backwards compatibility
+Array = ArrayProperty
+
+
+class DictionaryProperty(Property, abc.DictionaryProperty):
     """
     See `sob.properties.Property`...
 
@@ -669,6 +705,10 @@ class Dictionary(Property, abc.DictionaryProperty):
         self._value_types = value_types
 
 
+# For backwards compatibility
+Dictionary = DictionaryProperty
+
+name: str
 # This constant maps data types to their corresponding properties
 TYPES_PROPERTIES: dict[type, type] = dict(
     chain(
@@ -679,11 +719,13 @@ TYPES_PROPERTIES: dict[type, type] = dict(
             )
             for property_class in (
                 property_class
-                for property_class in locals().values()
+                for name, property_class in locals().items()
                 if (
                     isinstance(property_class, type)
                     and issubclass(property_class, Property)
                     and property_class._types  # noqa: SLF001
+                    # Don't include aliases
+                    and property_class.__name__ == name
                 )
             )
         )

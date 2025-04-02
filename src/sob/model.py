@@ -104,7 +104,7 @@ class Model(abc.Model):
             elif hasattr(data, "name"):
                 url = urljoin("file:", data.name)
             if url is not None:
-                meta.set_url(self, url)
+                meta.set_model_url(self, url)
 
     def _init_format(
         self,
@@ -153,8 +153,8 @@ class Model(abc.Model):
         This function sets the root pointer value, and recursively applies
         appropriate pointers to child elements.
         """
-        if meta.get_pointer(self) is None:
-            meta.set_pointer(self, "#")
+        if meta.get_model_pointer(self) is None:
+            meta.set_model_pointer(self, "#")
 
     @abstractmethod
     def _marshal(self) -> abc.JSONTypes:
@@ -250,11 +250,11 @@ class Array(Model, abc.Array, abc.Model):
             # are an instance of `Array`, we adopt the item types from that
             # `Array` instance.
             if isinstance(items, abc.Array):
-                items_meta: abc.ArrayMeta | None = meta.array_read(items)
-                if meta.array_read(self) is not items_meta:
-                    meta.write(self, deepcopy(items_meta))
+                items_meta: abc.ArrayMeta | None = meta.read_array_meta(items)
+                if meta.read_array_meta(self) is not items_meta:
+                    meta.write_model_meta(self, deepcopy(items_meta))
         else:
-            meta_: abc.ArrayMeta = meta.array_writable(self)
+            meta_: abc.ArrayMeta = meta.get_writable_array_meta(self)
             meta_.item_types = item_types  # type: ignore
 
     def _init_items(
@@ -295,10 +295,10 @@ class Array(Model, abc.Array, abc.Model):
         return id(self)
 
     def __setitem__(self, index: int, value: abc.MarshallableTypes) -> None:
-        instance_hooks: abc.ArrayHooks | None = hooks.array_read(self)
+        instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
         if instance_hooks and instance_hooks.before_setitem:
             index, value = instance_hooks.before_setitem(self, index, value)
-        meta_: abc.ArrayMeta | None = meta.array_read(self)
+        meta_: abc.ArrayMeta | None = meta.read_array_meta(self)
         item_types: abc.Types | None = (
             None if meta_ is None else meta_.item_types
         )
@@ -317,12 +317,12 @@ class Array(Model, abc.Array, abc.Model):
     def append(self, value: abc.MarshallableTypes) -> None:
         if not isinstance(value, (*abc.MARSHALLABLE_TYPES, NoneType)):
             raise errors.UnmarshalTypeError(data=value)
-        instance_hooks: abc.ArrayHooks | None = hooks.array_read(self)
+        instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
         if instance_hooks and instance_hooks.before_append:
             value = instance_hooks.before_append(
                 self, cast(abc.MarshallableTypes, value)
             )
-        instance_meta: abc.ArrayMeta | None = meta.array_read(self)
+        instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
         item_types: abc.Types | None = None
         if instance_meta:
             item_types = instance_meta.item_types
@@ -372,14 +372,16 @@ class Array(Model, abc.Array, abc.Model):
         new_instance: Array = self.__class__()
         if not isinstance(new_instance, abc.Model):
             raise TypeError(new_instance)
-        instance_meta: abc.ArrayMeta | None = meta.array_read(self)
-        class_meta: abc.ArrayMeta | None = meta.array_read(type(self))
+        instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
+        class_meta: abc.ArrayMeta | None = meta.read_array_meta(type(self))
         if instance_meta is not class_meta:
-            meta.write(new_instance, deepcopy(instance_meta, memo=memo))
-        instance_hooks: abc.ArrayHooks | None = hooks.array_read(self)
-        class_hooks: abc.ArrayHooks | None = hooks.array_read(type(self))
+            meta.write_model_meta(
+                new_instance, deepcopy(instance_meta, memo=memo)
+            )
+        instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
+        class_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(type(self))
         if instance_hooks is not class_hooks:
-            hooks.write(
+            hooks.write_model_hooks(
                 new_instance,
                 deepcopy(instance_hooks, memo=memo),
             )
@@ -390,10 +392,10 @@ class Array(Model, abc.Array, abc.Model):
 
     def _marshal(self) -> Sequence[abc.JSONTypes]:
         data: abc.Model = self
-        instance_hooks: abc.ArrayHooks | None = hooks.array_read(self)
+        instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
         if instance_hooks and instance_hooks.before_marshal:
             data = instance_hooks.before_marshal(data)
-        metadata: abc.ArrayMeta | None = meta.array_read(self)
+        metadata: abc.ArrayMeta | None = meta.read_array_meta(self)
         if not isinstance(data, abc.Array):
             raise TypeError(data)
         marshalled_data: Sequence[abc.JSONTypes] = [
@@ -413,11 +415,11 @@ class Array(Model, abc.Array, abc.Model):
 
     def _validate(self, *, raise_errors: bool = True) -> list[str]:
         validation_errors: list[str] = []
-        instance_hooks: abc.ArrayHooks | None = hooks.array_read(self)
+        instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
         data: abc.Model = self
         if instance_hooks and instance_hooks.before_validate:
             data = instance_hooks.before_validate(self)
-        instance_meta: abc.ArrayMeta | None = meta.array_read(self)
+        instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
         if instance_meta and instance_meta.item_types:
             item: Any
             if not isinstance(data, abc.Array):
@@ -453,8 +455,8 @@ class Array(Model, abc.Array, abc.Model):
         A string representation of this array which can be used to recreate the
         array
         """
-        instance_meta: abc.ArrayMeta | None = meta.array_read(self)
-        class_meta: abc.ArrayMeta | None = meta.array_read(type(self))
+        instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
+        class_meta: abc.ArrayMeta | None = meta.read_array_meta(type(self))
         representation_lines = [get_qualified_name(type(self)) + "("]
         if len(self) > 0:
             representation_lines.append("    [")
@@ -654,14 +656,16 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             # items are an instance of `Dictionary`, we adopt the item types
             # from that `Array` instance.
             if isinstance(items, abc.Dictionary):
-                meta_: abc.DictionaryMeta | None = meta.dictionary_read(self)
-                values_meta: abc.DictionaryMeta | None = meta.dictionary_read(
-                    items
+                meta_: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+                    self
+                )
+                values_meta: abc.DictionaryMeta | None = (
+                    meta.read_dictionary_meta(items)
                 )
                 if meta_ is not values_meta:
-                    meta.write(self, deepcopy(values_meta))
+                    meta.write_model_meta(self, deepcopy(values_meta))
         else:
-            writable_meta: abc.Meta = meta.dictionary_writable(self)
+            writable_meta: abc.Meta = meta.get_writable_dictionary_meta(self)
             if not isinstance(writable_meta, abc.DictionaryMeta):
                 raise TypeError(writable_meta)
             writable_meta.value_types = value_types  # type: ignore
@@ -671,12 +675,14 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
         message: str
-        instance_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
-            self
+        instance_hooks: abc.DictionaryHooks | None = (
+            hooks.read_dictionary_hooks(self)
         )
         if instance_hooks and instance_hooks.before_setitem:
             key, value = instance_hooks.before_setitem(self, key, value)
-        instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(self)
+        instance_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+            self
+        )
         value_types: abc.Types | None = None
         if instance_meta:
             value_types = instance_meta.value_types
@@ -702,20 +708,22 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def __copy__(self) -> abc.Dictionary:
         new_instance: abc.Dictionary = self.__class__()
-        instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(self)
-        class_meta: abc.DictionaryMeta | None = meta.dictionary_read(
+        instance_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+            self
+        )
+        class_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
             type(self)
         )
         if instance_meta is not class_meta:
-            meta.write(new_instance, instance_meta)
-        instance_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
-            self
+            meta.write_model_meta(new_instance, instance_meta)
+        instance_hooks: abc.DictionaryHooks | None = (
+            hooks.read_dictionary_hooks(self)
         )
-        class_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
+        class_hooks: abc.DictionaryHooks | None = hooks.read_dictionary_hooks(
             type(self)
         )
         if instance_hooks is not class_hooks:
-            hooks.write(new_instance, instance_hooks)
+            hooks.write_model_hooks(new_instance, instance_hooks)
         key: str
         value: abc.MarshallableTypes
         for key, value in self.items():
@@ -724,20 +732,26 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def __deepcopy__(self, memo: dict | None = None) -> Dictionary:
         new_instance = self.__class__()
-        instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(self)
-        class_meta: abc.DictionaryMeta | None = meta.dictionary_read(
+        instance_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+            self
+        )
+        class_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
             type(self)
         )
         if instance_meta is not class_meta:
-            meta.write(new_instance, deepcopy(instance_meta, memo=memo))
-        instance_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
-            self
+            meta.write_model_meta(
+                new_instance, deepcopy(instance_meta, memo=memo)
+            )
+        instance_hooks: abc.DictionaryHooks | None = (
+            hooks.read_dictionary_hooks(self)
         )
-        class_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
+        class_hooks: abc.DictionaryHooks | None = hooks.read_dictionary_hooks(
             type(self)
         )
         if instance_hooks is not class_hooks:
-            hooks.write(new_instance, deepcopy(instance_hooks, memo=memo))
+            hooks.write_model_hooks(
+                new_instance, deepcopy(instance_hooks, memo=memo)
+            )
         key: str
         value: abc.MarshallableTypes
         for key, value in self.items():
@@ -751,8 +765,8 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         JSON.
         """
         # Check for hooks
-        instance_hooks: abc.DictionaryHooks | None = hooks.dictionary_read(
-            self
+        instance_hooks: abc.DictionaryHooks | None = (
+            hooks.read_dictionary_hooks(self)
         )
         # This variable is needed because before-marshal hooks are permitted to
         # return altered *copies* of `self`, so prior to marshalling--this
@@ -764,7 +778,9 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         if not isinstance(data, abc.Dictionary):
             raise TypeError(data)
         # Get the metadata, if any has been assigned
-        instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(data)
+        instance_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+            data
+        )
         # Check to see if value types are defined in the metadata
         value_types: abc.Types | None = (
             instance_meta.value_types if instance_meta else None
@@ -810,13 +826,13 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         Recursively validate
         """
         validation_errors: list[str] = []
-        hooks_: abc.DictionaryHooks | None = hooks.dictionary_read(self)
+        hooks_: abc.DictionaryHooks | None = hooks.read_dictionary_hooks(self)
         data: abc.Model = self
         if hooks_ and hooks_.before_validate:
             data = hooks_.before_validate(data)
         if not isinstance(data, (NoneType, abc.Dictionary)):
             raise TypeError(data)
-        meta_: abc.DictionaryMeta | None = meta.dictionary_read(data)
+        meta_: abc.DictionaryMeta | None = meta.read_dictionary_meta(data)
         value_types: abc.Types | None = meta_.value_types if meta_ else None
         if value_types is not None:
             if not isinstance(data, abc.Dictionary):
@@ -866,10 +882,12 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         Return a string representation of this object which can be used to
         re-assemble the object programmatically
         """
-        class_meta: abc.DictionaryMeta | None = meta.dictionary_read(
+        class_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
             type(self)
         )
-        instance_meta: abc.DictionaryMeta | None = meta.dictionary_read(self)
+        instance_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
+            self
+        )
         representation_lines: list[str] = [
             get_qualified_name(type(self)) + "("
         ]
@@ -1090,12 +1108,12 @@ class Object(Model, abc.Object, abc.Model):
         """
         Initialize this object from another `Object` (copy constructor)
         """
-        other_meta: abc.ObjectMeta | None = meta.object_read(other)
-        if meta.object_read(self) is not other_meta:
-            meta.write(self, deepcopy(other_meta))
-        instance_hooks: abc.ObjectHooks | None = hooks.object_read(other)
-        if hooks.object_read(self) is not instance_hooks:
-            hooks.write(self, deepcopy(instance_hooks))
+        other_meta: abc.ObjectMeta | None = meta.read_object_meta(other)
+        if meta.read_object_meta(self) is not other_meta:
+            meta.write_model_meta(self, deepcopy(other_meta))
+        instance_hooks: abc.ObjectHooks | None = hooks.read_object_hooks(other)
+        if hooks.read_object_hooks(self) is not instance_hooks:
+            hooks.write_model_hooks(self, deepcopy(instance_hooks))
         if other_meta and other_meta.properties:
             for property_name_ in other_meta.properties:
                 try:
@@ -1127,7 +1145,7 @@ class Object(Model, abc.Object, abc.Model):
         """
         Get a property's definition
         """
-        meta_: abc.ObjectMeta | None = meta.object_read(self)
+        meta_: abc.ObjectMeta | None = meta.read_object_meta(self)
         if meta_ and meta_.properties:
             try:
                 return meta_.properties[property_name_]
@@ -1168,7 +1186,7 @@ class Object(Model, abc.Object, abc.Model):
         self, property_name_: str, value: abc.MarshallableTypes
     ) -> None:
         unmarshalled_value: abc.MarshallableTypes = value
-        instance_hooks: abc.ObjectHooks | None = hooks.object_read(self)
+        instance_hooks: abc.ObjectHooks | None = hooks.read_object_hooks(self)
         if property_name_[0] != "_":
             if instance_hooks and instance_hooks.before_setattr:
                 property_name_, value = instance_hooks.before_setattr(
@@ -1188,7 +1206,7 @@ class Object(Model, abc.Object, abc.Model):
 
     def _get_key_property_name(self, key: str) -> str:
         property_name_: str | None = None
-        instance_meta: abc.ObjectMeta | None = meta.object_read(self)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if instance_meta and instance_meta.properties:
             if (key in instance_meta.properties) and (
                 instance_meta.properties[key].name in (None, key)
@@ -1221,7 +1239,7 @@ class Object(Model, abc.Object, abc.Model):
 
     def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
         # Before set-item hooks
-        hooks_: abc.ObjectHooks | None = hooks.object_read(self)
+        hooks_: abc.ObjectHooks | None = hooks.read_object_hooks(self)
         if hooks_ and hooks_.before_setitem:
             key, value = hooks_.before_setitem(self, key, value)
         # Get the corresponding property name
@@ -1237,7 +1255,7 @@ class Object(Model, abc.Object, abc.Model):
         Deleting attributes with defined metadata is not allowed--doing this
         is instead interpreted as setting that attribute to `None`.
         """
-        instance_meta: abc.ObjectMeta | None = meta.object_read(self)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if (
             instance_meta
             and instance_meta.properties
@@ -1290,7 +1308,7 @@ class Object(Model, abc.Object, abc.Model):
         # Perform a regular copy operation
         new_instance: abc.Object = self.__copy__()
         # Retrieve the metadata
-        meta_: abc.ObjectMeta | None = meta.object_read(self)
+        meta_: abc.ObjectMeta | None = meta.read_object_meta(self)
         # If there is metadata--copy it recursively
         if meta_ and meta_.properties:
             for property_name_ in meta_.properties:
@@ -1299,7 +1317,7 @@ class Object(Model, abc.Object, abc.Model):
 
     def _marshal(self) -> abc.OrderedDict[str, abc.JSONTypes]:
         object_: abc.Object = self
-        instance_hooks: abc.ObjectHooks | None = hooks.object_read(self)
+        instance_hooks: abc.ObjectHooks | None = hooks.read_object_hooks(self)
         if instance_hooks and instance_hooks.before_marshal:
             before_marshal_object: abc.Model = instance_hooks.before_marshal(
                 self
@@ -1308,7 +1326,7 @@ class Object(Model, abc.Object, abc.Model):
                 assert isinstance(before_marshal_object, abc.Object)
             object_ = before_marshal_object
         data: abc.OrderedDict[str, abc.JSONTypes] = collections.OrderedDict()
-        instance_meta: abc.ObjectMeta | None = meta.object_read(object_)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(object_)
         if instance_meta and instance_meta.properties is not None:
             property_name_: str
             property_: abc.Property
@@ -1346,7 +1364,7 @@ class Object(Model, abc.Object, abc.Model):
 
     def __repr__(self) -> str:
         representation = [f"{get_qualified_name(type(self))}("]
-        instance_meta: abc.ObjectMeta | None = meta.object_read(self)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if instance_meta and instance_meta.properties:
             property_name_: str
             value: abc.MarshallableTypes
@@ -1367,13 +1385,13 @@ class Object(Model, abc.Object, abc.Model):
     def __eq__(self, other: abc.Any) -> bool:
         if type(self) is not type(other):
             return False
-        instance_meta: abc.ObjectMeta | None = meta.object_read(self)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         self_properties = set(
             instance_meta.properties.keys()
             if instance_meta and instance_meta.properties
             else ()
         )
-        other_meta: abc.ObjectMeta | None = meta.object_read(other)
+        other_meta: abc.ObjectMeta | None = meta.read_object_meta(other)
         other_properties = set(
             other_meta.properties.keys()
             if other_meta and other_meta.properties
@@ -1394,7 +1412,7 @@ class Object(Model, abc.Object, abc.Model):
         return not self == other
 
     def __iter__(self) -> Iterator[str]:
-        instance_meta: abc.ObjectMeta | None = meta.object_read(self)
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if instance_meta and instance_meta.properties:
             property_name_: str
             property_: abc.Property
@@ -1450,13 +1468,13 @@ class Object(Model, abc.Object, abc.Model):
         """
         validation_error_messages: list[str] = []
         validated_object: abc.Object = self
-        instance_hooks: abc.ObjectHooks | None = hooks.object_read(self)
+        instance_hooks: abc.ObjectHooks | None = hooks.read_object_hooks(self)
         if instance_hooks and instance_hooks.before_validate:
             validated_model: abc.Model = instance_hooks.before_validate(self)
             if TYPE_CHECKING:
                 assert isinstance(validated_model, abc.Object)
             validated_object = validated_model
-        instance_meta: abc.ObjectMeta | None = meta.object_read(
+        instance_meta: abc.ObjectMeta | None = meta.read_object_meta(
             validated_object
         )
         if instance_meta and instance_meta.properties:
@@ -1669,7 +1687,7 @@ class _Unmarshal:
             if self.data is not NULL:
                 # If the data is a sob `Model`, get it's metadata
                 if isinstance(self.data, abc.Model):
-                    self.meta = meta.read(self.data)
+                    self.meta = meta.read_model_meta(self.data)
                 # Only un-marshall models if they have no metadata yet (are
                 # generic)
                 if self.meta is None:
@@ -1793,7 +1811,7 @@ class _Unmarshal:
 
     def before_hook(self, type_: type) -> abc.MarshallableTypes:
         data = self.data
-        hooks_ = hooks.read(type_)
+        hooks_ = hooks.read_model_hooks(type_)
         if hooks_:
             before_unmarshal_hook = hooks_.before_unmarshal
             if before_unmarshal_hook:
@@ -1802,7 +1820,7 @@ class _Unmarshal:
 
     @staticmethod
     def after_hook(type_: type, data: abc.Model) -> abc.Model:
-        hooks_ = hooks.read(type_)
+        hooks_ = hooks.read_model_hooks(type_)
         if hooks_:
             after_unmarshal_hook = hooks_.after_unmarshal
             if after_unmarshal_hook:
@@ -1934,7 +1952,7 @@ def _get_serialize_instance_hooks(
 ]:
     before_serialize: Callable[[abc.JSONTypes], abc.JSONTypes] | None = None
     after_serialize: Callable[[str], str] | None = None
-    instance_hooks: abc.Hooks | None = hooks.read(data)
+    instance_hooks: abc.Hooks | None = hooks.read_model_hooks(data)
     if instance_hooks is not None:
         before_serialize = instance_hooks.before_serialize
         after_serialize = instance_hooks.after_serialize
@@ -2418,7 +2436,7 @@ def _replace_object_nulls(
         if value is NULL:
             setattr(object_instance, property_name_, replacement_value)
         elif isinstance(value, abc.Model):
-            replace_nulls(value, replacement_value)
+            replace_model_nulls(value, replacement_value)
 
 
 def _replace_array_nulls(
@@ -2431,7 +2449,7 @@ def _replace_array_nulls(
         if value is NULL:
             array_instance[index] = replacement_value
         elif isinstance(value, abc.Model):
-            replace_nulls(value, replacement_value)
+            replace_model_nulls(value, replacement_value)
 
 
 def _replace_dictionary_nulls(
@@ -2444,10 +2462,10 @@ def _replace_dictionary_nulls(
         if value is NULL:
             dictionary_instance[key] = replacement_value
         elif isinstance(value, abc.Model):
-            replace_nulls(value, replacement_value)
+            replace_model_nulls(value, replacement_value)
 
 
-def replace_nulls(
+def replace_model_nulls(
     model_instance: abc.Model,
     replacement_value: abc.MarshallableTypes = None,
 ) -> None:
@@ -2466,6 +2484,10 @@ def replace_nulls(
         _replace_array_nulls(model_instance, replacement_value)
     elif isinstance(model_instance, abc.Dictionary):
         _replace_dictionary_nulls(model_instance, replacement_value)
+
+
+# For backwards compatibility
+replace_nulls = replace_model_nulls
 
 
 # endregion
@@ -2766,7 +2788,7 @@ def _class_definition_from_meta(
     return "\n".join(out)
 
 
-def from_meta(
+def get_model_from_meta(
     name: str,
     metadata: abc.Meta,
     module: str | None = None,
@@ -2832,6 +2854,10 @@ def from_meta(
     model_class.__module__ = module
     model_class._class_meta = metadata  # noqa: SLF001
     return model_class
+
+
+# For backwards compatibility
+from_meta = get_model_from_meta
 
 
 # endregion

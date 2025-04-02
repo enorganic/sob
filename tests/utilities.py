@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 
 def _get_object_property_names(object_: abc.Object) -> set[str]:
-    meta_: abc.Meta | None = meta.read(object_)
+    meta_: abc.Meta | None = meta.read_model_meta(object_)
     if not isinstance(meta_, (abc.ObjectMeta, NoneType)):
         raise TypeError(meta_)
     return set(
@@ -158,7 +158,7 @@ def _remarshal_object(string_object: str, object_instance: abc.Object) -> None:
         object_pairs_hook=collections.OrderedDict,
     )
     keys: set[str] = set()
-    instance_meta: abc.Meta | None = meta.read(object_instance)
+    instance_meta: abc.Meta | None = meta.read_model_meta(object_instance)
     if not isinstance(instance_meta, (abc.ObjectMeta, NoneType)):
         raise TypeError(instance_meta)
     if (instance_meta is not None) and (instance_meta.properties is not None):
@@ -179,7 +179,9 @@ def _reload_object(object_instance: abc.Object) -> None:
     if string_object == "":
         raise ValueError(string_object)
     reloaded_object_instance = object_type(string_object)
-    meta.copy_to(object_instance, reloaded_object_instance)
+    meta._copy_model_meta_to(  # noqa: SLF001
+        object_instance, reloaded_object_instance
+    )
     if object_instance != reloaded_object_instance:
         raise _get_object_discrepancies_error(
             object_instance, reloaded_object_instance
@@ -202,7 +204,7 @@ def _object(
     if errors:
         warn("\n" + "\n".join(errors), stacklevel=2)
     _reload_object(object_instance)
-    instance_meta: abc.Meta | None = meta.read(object_instance)
+    instance_meta: abc.Meta | None = meta.read_model_meta(object_instance)
     if not isinstance(instance_meta, (abc.ObjectMeta, NoneType)):
         raise TypeError(instance_meta)
     if (instance_meta is not None) and (instance_meta.properties is not None):
