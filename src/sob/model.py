@@ -8,9 +8,7 @@ import builtins
 import collections
 import collections.abc
 import json
-import os
 import re
-import sys
 from abc import abstractmethod
 from base64 import b64decode, b64encode
 from collections.abc import (
@@ -1053,7 +1051,7 @@ class Object(Model, abc.Object, abc.Model):
     ) -> None:
         self._instance_meta: abc.ObjectMeta | None = None
         self._instance_hooks: abc.ObjectHooks | None = None
-        self._extra: dict[str, abc.JSONTypes] | None = None
+        self._extra: dict[str, abc.MarshallableTypes] | None = None
         Model.__init__(self)
         self._init_url(_data)
         deserialized_data: (
@@ -1204,7 +1202,7 @@ class Object(Model, abc.Object, abc.Model):
         ):
             instance_hooks.after_setattr(self, property_name_, value)
 
-    def _get_key_property_name(self, key: str) -> str:
+    def _get_key_property_name(self, key: str) -> str | None:
         property_name_: str | None = None
         instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if instance_meta and instance_meta.properties:
@@ -1220,21 +1218,6 @@ class Object(Model, abc.Object, abc.Model):
                     if key == property_.name:
                         property_name_ = potential_property_name
                         break
-        if property_name_ is None:
-            found_in: str = " "
-            type_module_name: str = getattr(type(self), "__module__", "")
-            if type_module_name:
-                type_module: Any = sys.modules.get(type_module_name, None)
-                if type_module:
-                    type_module_file: str = os.path.abspath(
-                        getattr(type_module, "__file__", "")
-                    )
-                    found_in = f", found in {type_module_file}, "
-            message: str = (
-                f"`{get_qualified_name(type(self))}`{found_in}"
-                f'has no property mapped to the name "{key}"'
-            )
-            raise KeyError(message)
         return property_name_
 
     def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
@@ -1243,12 +1226,18 @@ class Object(Model, abc.Object, abc.Model):
         if hooks_ and hooks_.before_setitem:
             key, value = hooks_.before_setitem(self, key, value)
         # Get the corresponding property name
-        property_name_: str = self._get_key_property_name(key)
-        # Set the attribute value
-        self.__setattr__(property_name_, value)
-        # After set-item hooks
-        if hooks_ and hooks_.after_setitem:
-            hooks_.after_setitem(self, key, value)
+        property_name_: str | None = self._get_key_property_name(key)
+        if property_name_ is None:
+            # Store the extraneous attribute in our extras dictionary
+            if self._extra is None:
+                self._extra = {}
+            self._extra[key] = value
+        else:
+            # Set the attribute value
+            self.__setattr__(property_name_, value)
+            # After set-item hooks
+            if hooks_ and hooks_.after_setitem:
+                hooks_.after_setitem(self, key, value)
 
     def __delattr__(self, key: str) -> None:
         """
@@ -1266,13 +1255,24 @@ class Object(Model, abc.Object, abc.Model):
             object.__delattr__(self, key)
 
     def __delitem__(self, key: str) -> None:
-        self.__delattr__(self._get_key_property_name(key))
+        property_name: str | None = self._get_key_property_name(key)
+        if property_name is None:
+            if self._extra is None:
+                raise KeyError(key)
+            del self._extra[key]
+        else:
+            self.__delattr__(property_name)
 
-    def __getitem__(self, key: str) -> None:
+    def __getitem__(self, key: str) -> abc.MarshallableTypes:
         """
         Retrieve a value using the item assignment operators `[]`.
         """
-        return getattr(self, self._get_key_property_name(key))
+        property_name: str | None = self._get_key_property_name(key)
+        if property_name is None:
+            if self._extra is None:
+                raise KeyError(key)
+            return self._extra[key]
+        return cast(abc.MarshallableTypes, getattr(self, property_name))
 
     def __copy__(self) -> abc.Object:
         return self.__class__(self)
@@ -1463,8 +1463,10 @@ class Object(Model, abc.Object, abc.Model):
 
     def _validate(self, *, raise_errors: bool = True) -> list[str]:
         """
-        This method verifies that all required properties are present, and
-        that all property values are of the correct type.
+        This method verifies that all required properties are present,
+        that all property values are of the correct type, and that no
+        extraneous attributes (attributes having no associated metadata)
+        were found.
         """
         validation_error_messages: list[str] = []
         validated_object: abc.Object = self
@@ -1480,7 +1482,6 @@ class Object(Model, abc.Object, abc.Model):
         if instance_meta and instance_meta.properties:
             property_name_: str
             property_: abc.Property
-            error_message: str
             for (
                 property_name_,
                 property_,
@@ -1496,6 +1497,12 @@ class Object(Model, abc.Object, abc.Model):
                 )
             if instance_hooks and instance_hooks.after_validate:
                 instance_hooks.after_validate(validated_object)
+            if self._extra:
+                validation_error_messages.append(
+                    f"Extraneous attribute(s) were provided for an instance "
+                    f"of `{get_qualified_name(type(self))}`:\n"
+                    f"{represent(self._extra)}"
+                )
             if raise_errors and validation_error_messages:
                 raise errors.ValidationError(
                     "\n".join(validation_error_messages)
@@ -1755,7 +1762,10 @@ class _Unmarshal:
         return unmarshalled_data
 
     @property  # type: ignore
-    def as_typed(self) -> abc.MarshallableTypes:
+    def as_typed(self) -> abc.MarshallableTypes:  # noqa: C901
+        extra_length: int
+        smallest_extra_length: int | None = None
+        candidate_unmarshalled_data: abc.MarshallableTypes
         unmarshalled_data: abc.MarshallableTypes | Undefined = UNDEFINED
         first_error: Exception | None = None
         error_messages: list[str] = []
@@ -1764,14 +1774,45 @@ class _Unmarshal:
         type_: type | abc.Property
         for type_ in self.types:
             try:
-                unmarshalled_data = self.as_type(type_)
-                # If the data is un-marshalled successfully, we do
-                # not need to try any further types
-                break
+                candidate_unmarshalled_data = self.as_type(type_)
             except (AttributeError, KeyError, TypeError, ValueError) as error:
                 if first_error is None:
                     first_error = error
                 error_messages.append(errors.get_exception_text())
+            else:
+                if isinstance(candidate_unmarshalled_data, abc.Object):
+                    # If the unmarshalled data is an `sob.Object`, we check to
+                    # see if the JSON contained extraneous properties,
+                    # and if it did, continue checking types to see
+                    # if there is a better match
+                    extra_length = (
+                        0
+                        if (
+                            candidate_unmarshalled_data._extra  # noqa: SLF001
+                            is None
+                        )
+                        else len(
+                            candidate_unmarshalled_data._extra  # noqa: SLF001
+                        )
+                    )
+                    if not extra_length:
+                        # If there is no extraneous data, we've found what
+                        # we need and can stop looking
+                        unmarshalled_data = candidate_unmarshalled_data
+                        break
+                    if (
+                        smallest_extra_length is None
+                    ) or extra_length < smallest_extra_length:
+                        # If this is the first candidate, or has fewer
+                        # extraneous properties than all previous candidates,
+                        # accept it until/unless a better candidate is found
+                        smallest_extra_length = extra_length
+                        unmarshalled_data = candidate_unmarshalled_data
+                else:
+                    unmarshalled_data = candidate_unmarshalled_data
+                    # If the data is un-marshalled successfully, and is not
+                    # an `sob.Object` we do not need to try any further types
+                    break
         if isinstance(unmarshalled_data, Undefined):
             if (first_error is None) or isinstance(first_error, TypeError):
                 raise errors.UnmarshalTypeError(
@@ -2343,12 +2384,12 @@ class _MarshalProperty:
                 raise TypeError(self.property)
             date_string = self.property.date2str(value)
             if not isinstance(date_string, str):
-                msg = (
+                message: str = (
                     "The date2str function should return a `str`, not a "
                     f"`{type(date_string).__name__}`: "
                     f"{date_string!r}"
                 )
-                raise TypeError(msg)
+                raise TypeError(message)
         return date_string
 
     def parse_datetime(self, value: datetime | None) -> str | None:

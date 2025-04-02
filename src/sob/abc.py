@@ -713,14 +713,14 @@ class Dictionary(Model, metaclass=ABCMeta):
 
 class Object(Model, metaclass=ABCMeta):
     """
-    TODO
+    This is the abstract base class for `sob.Object`
     """
 
     _class_meta: ObjectMeta | None
     _class_hooks: ObjectHooks | None
     _instance_hooks: ObjectHooks | None
     _instance_meta: ObjectMeta | None
-    _extra: dict[str, JSONTypes] | None
+    _extra: dict[str, MarshallableTypes] | None
 
     @abstractmethod
     def __init__(
@@ -757,7 +757,7 @@ class Object(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __getitem__(self, key: str) -> None:
+    def __getitem__(self, key: str) -> MarshallableTypes:
         pass
 
     @abstractmethod
