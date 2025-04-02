@@ -93,6 +93,7 @@ from sob.types import (
     Types,
     Undefined,
 )
+from sob.version import Version
 
 __all__: tuple[str, ...] = (
     # Modules
@@ -171,4 +172,5 @@ __all__: tuple[str, ...] = (
     "Types",
     "MutableTypes",
     "NoneType",
+    "Version",
 )
