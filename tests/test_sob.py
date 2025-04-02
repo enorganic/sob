@@ -592,7 +592,7 @@ def test_validation() -> None:
 
 def test_utilities() -> None:
     assert utilities.get_calling_function_qualified_name() == (
-        "test_sob.test_utilities"
+        "tests.test_sob.test_utilities"
     )
 
     class TestCallingFunctionQualifiedNameA:

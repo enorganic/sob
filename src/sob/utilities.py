@@ -596,42 +596,39 @@ def _get_module_name(file_name: str) -> str:
             if "[" in module_name:
                 module_name = "[".join(module_name.split("[")[:-1])
         else:
-            msg = f'The path "{file_name}" is not a python module'
-            raise ValueError(msg)
+            message: str = f'The path "{file_name}" is not a python module'
+            raise ValueError(message)
     return module_name
 
 
-def _get_frame_info_names(frame_info: FrameInfo) -> list[str]:
-    names: list[str] = []
+def _iter_frame_info_names(frame_info: FrameInfo) -> Iterable[str]:
+    name_count: int = 0
     if frame_info.function != "<module>":
-        names.append(frame_info.function)
-        arguments, _, _, frame_locals = getargvalues(frame_info.frame)
-        if arguments:
-            argument = arguments[0]
-            argument_value = frame_locals[argument]
-            argument_value_type = type(argument_value)
-            if (
-                hasattr(argument_value_type, "__name__")
-                and hasattr(argument_value_type, "__module__")
-                and (
-                    (argument_value_type.__name__ not in builtins.__dict__)
-                    or (
-                        builtins.__dict__[argument_value_type.__name__]
-                        is not argument_value_type
-                    )
+        yield frame_info.function
+        name_count += 1
+    arguments, _, _, frame_locals = getargvalues(frame_info.frame)
+    if arguments:
+        argument: str = arguments[0]
+        argument_value: Any = frame_locals[argument]
+        argument_value_type: type = type(argument_value)
+        if (
+            hasattr(argument_value_type, "__name__")
+            and hasattr(argument_value_type, "__module__")
+            and (
+                (argument_value_type.__name__ not in builtins.__dict__)
+                or (
+                    builtins.__dict__[argument_value_type.__name__]
+                    is not argument_value_type
                 )
-            ):
-                names.append(get_qualified_name(argument_value_type))
-    if len(names) < 2:  # noqa: PLR2004
-        module_name = _get_module_name(frame_info.filename)
-        if module_name in sys.modules:
-            qualified_module_name = get_qualified_name(
-                sys.modules[module_name]
             )
-            names.append(qualified_module_name)
-        elif module_name:
-            names.append(module_name)
-    return names
+        ):
+            yield get_qualified_name(argument_value_type)
+            name_count += 1
+    if (
+        name_count < 2  # noqa: PLR2004
+        and ("__name__" in frame_info.frame.f_globals)
+    ):
+        yield frame_info.frame.f_globals["__name__"]
 
 
 def get_calling_module_name(depth: int = 1) -> str:
@@ -670,7 +667,7 @@ def get_calling_function_qualified_name(depth: int = 1) -> str | None:
     >>> def my_function() -> str:
     ...     return get_calling_function_qualified_name()
     >>> print(my_function())
-    sob.utilities.get_calling_function_qualified_name.my_function
+    sob.utilities.my_function
 
     >>> class MyClass:
     ...     def __call__(self) -> None:
@@ -689,8 +686,7 @@ def get_calling_function_qualified_name(depth: int = 1) -> str | None:
         return None
     if len(stack_) < (depth + 1):
         return None
-    names: list[str] = _get_frame_info_names(stack_[depth])
-    return ".".join(reversed(names))
+    return ".".join(reversed(tuple(_iter_frame_info_names(stack_[depth]))))
 
 
 def get_source(object_: type | Callable | ModuleType) -> str:
