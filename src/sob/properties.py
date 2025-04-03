@@ -269,7 +269,7 @@ class Property(abc.Property):
         return self._copy(deep=True, memo=memo or {})
 
 
-class StringProperty(Property, abc.String):
+class StringProperty(Property, abc.StringProperty):
     """
     See `sob.Property`
     """
@@ -297,7 +297,7 @@ class StringProperty(Property, abc.String):
 String = StringProperty
 
 
-class DateProperty(Property, abc.Date):
+class DateProperty(Property, abc.DateProperty):
     """
     ...See `sob.properties.Property`
 
@@ -346,7 +346,7 @@ class DateProperty(Property, abc.Date):
 Date = DateProperty
 
 
-class DateTimeProperty(Property, abc.DateTime):
+class DateTimeProperty(Property, abc.DateTimeProperty):
     """
     (See [`sob.properties.Property`](#Property))
 
@@ -394,7 +394,7 @@ class DateTimeProperty(Property, abc.DateTime):
 DateTime = DateTimeProperty
 
 
-class BytesProperty(Property, abc.Bytes):
+class BytesProperty(Property, abc.BytesProperty):
     """
     (See [`sob.properties.Property`](#Property))
 
@@ -424,7 +424,7 @@ class BytesProperty(Property, abc.Bytes):
 Bytes = BytesProperty
 
 
-class EnumeratedProperty(Property, abc.Enumerated):
+class EnumeratedProperty(Property, abc.EnumeratedProperty):
     """
     Parameters:
 
@@ -479,7 +479,7 @@ class EnumeratedProperty(Property, abc.Enumerated):
 Enumerated = EnumeratedProperty
 
 
-class NumberProperty(Property, abc.Number):
+class NumberProperty(Property, abc.NumberProperty):
     """
     See `sob.properties.Property`
     """
@@ -503,7 +503,7 @@ class NumberProperty(Property, abc.Number):
 Number = NumberProperty
 
 
-class IntegerProperty(Property, abc.Integer):
+class IntegerProperty(Property, abc.IntegerProperty):
     """
     See `sob.properties.Property`
     """
@@ -531,7 +531,7 @@ class IntegerProperty(Property, abc.Integer):
 Integer = IntegerProperty
 
 
-class BooleanProperty(Property, abc.Boolean):
+class BooleanProperty(Property, abc.BooleanProperty):
     """
     See `sob.properties.Property`
     """

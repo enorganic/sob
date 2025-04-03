@@ -48,14 +48,14 @@ __all__: tuple[str, ...] = (
     "Object",
     "Array",
     "Property",
-    "String",
-    "Date",
-    "DateTime",
-    "Bytes",
-    "Enumerated",
-    "Number",
-    "Integer",
-    "Boolean",
+    "StringProperty",
+    "DateProperty",
+    "DateTimeProperty",
+    "BytesProperty",
+    "EnumeratedProperty",
+    "NumberProperty",
+    "IntegerProperty",
+    "BooleanProperty",
     "ArrayProperty",
     "DictionaryProperty",
     "Version",
@@ -89,6 +89,10 @@ def _check_methods(class_: type, methods: Iterable[str]) -> bool | None:
 
 
 class Types(metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.types.Types` class.
+    """
+
     @abstractmethod
     def __init__(
         self,
@@ -133,7 +137,7 @@ class Types(metaclass=ABCMeta):
 
 class MutableTypes(Types, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.types.MutableTypes` class.
     """
 
     @abstractmethod
@@ -161,7 +165,7 @@ class MutableTypes(Types, metaclass=ABCMeta):
 
 class Hooks(metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.Hooks` class.
     """
 
     before_marshal: Callable[[Model], Any] | None
@@ -205,7 +209,7 @@ class Hooks(metaclass=ABCMeta):
 
 class ObjectHooks(Hooks, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.ObjectHooks` class.
     """
 
     before_setattr: (
@@ -249,7 +253,7 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
 
 class ArrayHooks(Hooks, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.ArrayHooks` class.
     """
 
     before_setitem: (
@@ -287,7 +291,7 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
 
 class DictionaryHooks(Hooks, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.DictionaryHooks` class.
     """
 
     before_setitem: (
@@ -320,8 +324,10 @@ class DictionaryHooks(Hooks, metaclass=ABCMeta):
 
 class Readable(metaclass=ABCMeta):
     """
-    A generic ABC for IO-like objects which are readable but not
-    necessarily writable.
+    This is an abstract base for file-like objects which are readable, but not
+    *necessarily* writable (such an which are found in the `io` module, but
+    also objects such as `http.client.HTTPResponse`). Objects will be
+    identified as sub-classes if they have a callable `read` method.
     """
 
     register: Callable[[type], None]
@@ -365,12 +371,14 @@ class Readable(metaclass=ABCMeta):
 
 
 class Meta(metaclass=ABCMeta):  # noqa: B024
-    pass
+    """
+    This is an abstract base for the `sob.Meta` class.
+    """
 
 
 class ObjectMeta(Meta, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.ObjectMeta` class.
     """
 
     @abstractmethod
@@ -402,7 +410,7 @@ class ObjectMeta(Meta, metaclass=ABCMeta):
 
 class DictionaryMeta(Meta, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.DictionaryMeta` class.
     """
 
     @abstractmethod
@@ -436,7 +444,7 @@ class DictionaryMeta(Meta, metaclass=ABCMeta):
 
 class ArrayMeta(Meta, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.ArrayMeta` class.
     """
 
     @abstractmethod
@@ -465,6 +473,10 @@ class ArrayMeta(Meta, metaclass=ABCMeta):
 
 
 class Properties(Meta, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.Properties` class.
+    """
+
     @abstractmethod
     def __init__(
         self,
@@ -563,6 +575,10 @@ class Properties(Meta, metaclass=ABCMeta):
 
 
 class Model(metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.Model` class.
+    """
+
     _source: str | None
     _pointer: str | None
     _url: str | None
@@ -614,6 +630,10 @@ class Model(metaclass=ABCMeta):
 
 
 class Dictionary(Model, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.Dictionary` class.
+    """
+
     _class_meta: DictionaryMeta | None
     _class_hooks: DictionaryHooks | None
     _instance_meta: DictionaryMeta | None
@@ -717,7 +737,7 @@ class Dictionary(Model, metaclass=ABCMeta):
 
 class Object(Model, metaclass=ABCMeta):
     """
-    This is the abstract base class for `sob.Object`
+    This is an abstract base for the `sob.Object` class.
     """
 
     _class_meta: ObjectMeta | None
@@ -805,6 +825,10 @@ class Object(Model, metaclass=ABCMeta):
 
 
 class Array(Model, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.Array` class.
+    """
+
     _class_meta: ArrayMeta | None
     _class_hooks: ArrayHooks | None
     _instance_hooks: ArrayHooks | None
@@ -920,7 +944,7 @@ class Array(Model, metaclass=ABCMeta):
 
 class Property(metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.Property` class.
     """
 
     name: str | None
@@ -969,15 +993,19 @@ class Property(metaclass=ABCMeta):
         pass
 
 
-class String(Property, metaclass=ABCMeta):
+class StringProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.StringProperty` class.
     """
 
 
-class Date(Property, metaclass=ABCMeta):
+# For backwards compatibility
+String = StringProperty
+
+
+class DateProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.DateProperty` class.
     """
 
     @abstractmethod
@@ -989,7 +1017,15 @@ class Date(Property, metaclass=ABCMeta):
         pass
 
 
-class DateTime(Property, metaclass=ABCMeta):
+# For backwards compatibility
+Date = DateProperty
+
+
+class DateTimeProperty(Property, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.StringProperty` class.
+    """
+
     @abstractmethod
     def datetime2str(self, value: datetime) -> str:
         pass
@@ -999,15 +1035,23 @@ class DateTime(Property, metaclass=ABCMeta):
         pass
 
 
-class Bytes(Property, metaclass=ABCMeta):
+# For backwards compatibility
+DateTime = DateTimeProperty
+
+
+class BytesProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.BytesProperty` class.
     """
 
 
-class Enumerated(Property, metaclass=ABCMeta):
+# For backwards compatibility
+Bytes = BytesProperty
+
+
+class EnumeratedProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.EnumeratedProperty` class.
     """
 
     @property  # type: ignore
@@ -1019,21 +1063,43 @@ class Enumerated(Property, metaclass=ABCMeta):
         pass
 
 
-class Number(Property, metaclass=ABCMeta):
-    pass
+# For backwards compatibility
+Enumerated = EnumeratedProperty
 
 
-class Integer(Property, metaclass=ABCMeta):
-    pass
+class NumberProperty(Property, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.NumberProperty` class.
+    """
 
 
-class Boolean(Property, metaclass=ABCMeta):
-    pass
+# For backwards compatibility
+Number = NumberProperty
+
+
+class IntegerProperty(Property, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.IntegerProperty` class.
+    """
+
+
+# For backwards compatibility
+Integer = IntegerProperty
+
+
+class BooleanProperty(Property, metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.BooleanProperty` class.
+    """
+
+
+# For backwards compatibility
+Boolean = BooleanProperty
 
 
 class ArrayProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.ArrayProperty` class.
     """
 
     @property  # type: ignore
@@ -1052,7 +1118,7 @@ class ArrayProperty(Property, metaclass=ABCMeta):
 
 class DictionaryProperty(Property, metaclass=ABCMeta):
     """
-    TODO
+    This is an abstract base for the `sob.DictionaryProperty` class.
     """
 
     @property  # type: ignore
@@ -1069,6 +1135,10 @@ class DictionaryProperty(Property, metaclass=ABCMeta):
 
 
 class Version(metaclass=ABCMeta):
+    """
+    This is an abstract base for the `sob.Version` class.
+    """
+
     specification: str | None
     equals: Sequence[str | float | int | Decimal] | None
     not_equals: Sequence[str | float | int | Decimal] | None

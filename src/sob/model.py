@@ -2192,7 +2192,7 @@ class _UnmarshalProperty:
         """
         if (
             (value is not None)
-            and isinstance(self.property, abc.Enumerated)
+            and isinstance(self.property, abc.EnumeratedProperty)
             and (self.property.values is not None)
             and (value not in self.property.values)
         ):
@@ -2228,7 +2228,7 @@ class _UnmarshalProperty:
         if isinstance(value, date):
             date_instance = value
         else:
-            if not isinstance(self.property, abc.Date):
+            if not isinstance(self.property, abc.DateProperty):
                 raise TypeError(self.property)
             date_instance = self.property.str2date(value)
         if not isinstance(date_instance, date):
@@ -2243,7 +2243,7 @@ class _UnmarshalProperty:
             if isinstance(value, datetime):
                 datetime_instance = value
             else:
-                if not isinstance(self.property, abc.DateTime):
+                if not isinstance(self.property, abc.DateTimeProperty):
                     raise TypeError(self.property)
                 datetime_instance = self.property.str2datetime(value)
             if not isinstance(datetime_instance, datetime):
@@ -2306,12 +2306,12 @@ class _UnmarshalProperty:
         unmarshalled_value: abc.MarshallableTypes = value
         method: Callable[..., abc.MarshallableTypes]
         for type_, method in (
-            (abc.Date, self.parse_date),
-            (abc.DateTime, self.parse_datetime),
-            (abc.Bytes, self.parse_bytes),
+            (abc.DateProperty, self.parse_date),
+            (abc.DateTimeProperty, self.parse_datetime),
+            (abc.BytesProperty, self.parse_bytes),
             (abc.ArrayProperty, self.unmarshall_array),
             (abc.DictionaryProperty, self.unmarshall_dictionary),
-            (abc.Enumerated, self.unmarshal_enumerated),
+            (abc.EnumeratedProperty, self.unmarshal_enumerated),
         ):
             if isinstance(self.property, type_):
                 matched = True
@@ -2379,7 +2379,7 @@ class _MarshalProperty:
     def parse_date(self, value: date | None) -> str | None:
         date_string: str | None = None
         if value is not None:
-            if not isinstance(self.property, abc.Date):
+            if not isinstance(self.property, abc.DateProperty):
                 raise TypeError(self.property)
             date_string = self.property.date2str(value)
             if not isinstance(date_string, str):
@@ -2394,7 +2394,7 @@ class _MarshalProperty:
     def parse_datetime(self, value: datetime | None) -> str | None:
         datetime_string: str | None = None
         if value is not None:
-            if not isinstance(self.property, abc.DateTime):
+            if not isinstance(self.property, abc.DateTimeProperty):
                 raise TypeError(self.property)
             datetime_string = self.property.datetime2str(value)
             if not isinstance(datetime_string, str):
@@ -2422,15 +2422,15 @@ class _MarshalProperty:
 
     def __call__(self, value: abc.MarshallableTypes) -> abc.JSONTypes:
         if value is not None:
-            if isinstance(self.property, abc.Date):
+            if isinstance(self.property, abc.DateProperty):
                 if not isinstance(value, date):
                     raise TypeError(value)
                 value = self.parse_date(value)
-            elif isinstance(self.property, abc.DateTime):
+            elif isinstance(self.property, abc.DateTimeProperty):
                 if not isinstance(value, datetime):
                     raise TypeError(value)
                 value = self.parse_datetime(value)
-            elif isinstance(self.property, abc.Bytes):
+            elif isinstance(self.property, abc.BytesProperty):
                 if not isinstance(value, bytes):
                     raise TypeError(value)
                 value = self.parse_bytes(value)
@@ -2594,7 +2594,7 @@ def _type_hint_from_property(
             )
         else:
             type_hint = "dict"
-    elif isinstance(property_or_type, abc.Number):
+    elif isinstance(property_or_type, abc.NumberProperty):
         type_hint = (
             "(\n"  # -
             "    float\n"  # -
