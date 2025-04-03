@@ -570,15 +570,21 @@ def test_doctest() -> None:
 
 def test_copy() -> None:
     """
-    Verify that the `copy` method of the model works as expected
+    Verify that the `deepcopy` method produces identical objects with
+    different memory addresses.
     """
     testy_deep_copy: Tesstee = deepcopy(testy)
+    assert id(testy_deep_copy) != id(testy)
+    assert testy.string2string2c_b_a is not None
     assert testy_deep_copy.string2string2c_b_a is not None
-    del testy_deep_copy.string2string2c_b_a
-    assert testy_deep_copy.string2string2c_b_a is None
+    assert id(testy_deep_copy.string2string2c_b_a["one"]["c"]) != id(
+        testy.string2string2c_b_a["one"]["c"]
+    )
+    del testy_deep_copy.string2string2c_b_a["one"]["c"]
+    assert testy.string2string2c_b_a["one"]["c"] is not None
 
 
-def test_json_bytes_serialization() -> None:
+def test_bytes_serialization() -> None:
     with open(
         RAINBOW_PNG,
         mode="rb",
@@ -599,12 +605,12 @@ def test_replicate_serialization() -> None:
     tests_utilities.validate_serialization_is_replicable(testy)
 
 
-def test_serialization() -> None:
+def test_serialization_regression() -> None:
     """
     This test verifies that a model can be serialized producing identical
-    output to previous test runs. Whenever changes are made to the
-    implicated models, delete the file ./tests/data/reversible_dict_testy.json.
-    The file be recreated the next time the test is run.
+    output to previous test runs. Whenever changes are made to Whenever changes
+    are made to `testy`, delete the file ./tests/data/testy.json
+    (The file be recreated the next time the test is run).
     """
     serialized_testy: str = model.serialize(testy, indent=4).strip()
     if not TEST_JSON.exists():
@@ -617,9 +623,12 @@ def test_serialization() -> None:
             raise ValueError(message)
 
 
-def test_json_deserialization() -> None:
+def test_deserialization_regression() -> None:
     """
-    TODO
+    This test verifies that a model can be deserialized producing identical
+    results to a model recreated from serialized data. Whenever changes are
+    made to `testy`, delete the file ./tests/data/testy.json
+    (The file be recreated the next time the test is run).
     """
     with open(
         TEST_JSON,
