@@ -8,7 +8,7 @@ from collections.abc import Iterable, Reversible
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, cast
+from typing import IO, TYPE_CHECKING, cast
 
 import pytest
 from iso8601.iso8601 import parse_date
@@ -18,6 +18,8 @@ import sob._inspect
 import sob._utilities
 from sob import abc, meta, model, properties, utilities
 from tests import utilities as tests_utilities
+
+# region Test Model
 
 
 class A(sob.Object):
@@ -236,7 +238,9 @@ class Tesstee(sob.Object):
 
     def __init__(
         self,
-        _data: str | bytes | dict | abc.Readable | abc.Object | None = None,
+        _data: (
+            str | bytes | dict | abc.Readable | abc.Object | IO | None
+        ) = None,
         boolean: bool | None = None,
         string: str | None = None,
         number: float | Decimal | None = None,
@@ -459,8 +463,16 @@ valid_testy: Tesstee = Tesstee(
     ),
     string2a_b_c={},
     string2c_b_a={},
-    string2string2a_b_c={"one": {}, "two": {}, "three": {}},
-    string2string2c_b_a={"one": {}, "two": {}, "three": {}},
+    string2string2a_b_c={
+        "one": {"a": A(is_a_class=True)},
+        "two": {"b": B(is_b_class=True)},
+        "three": {"c": C(is_c_class=True)},
+    },
+    string2string2c_b_a={
+        "one": {"c": C(is_c_class=True)},
+        "two": {"b": B(is_b_class=True)},
+        "three": {"a": A(is_a_class=True)},
+    },
     required_integer=1,
     required_integer_or_string="Two",
 )
@@ -553,10 +565,14 @@ valid_testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
 
+# endregion
+
 
 def test_copy() -> None:
-    # Test deletions
-    testy_deep_copy = deepcopy(valid_testy)
+    """
+    Verify that the `copy` method of the model works as expected
+    """
+    testy_deep_copy: Tesstee = deepcopy(valid_testy)
     assert testy_deep_copy.string2string2c_b_a is not None
     del testy_deep_copy.string2string2c_b_a
     assert testy_deep_copy.string2string2c_b_a is None
@@ -614,8 +630,8 @@ def test_json_deserialization() -> None:
     with open(
         _get_testy_path(),
         encoding="utf-8",
-    ) as f:
-        assert Tesstee(cast(abc.Readable, f)) == valid_testy
+    ) as testee_io:
+        assert Tesstee(testee_io) == valid_testy
         error = None
         try:
             Tesstee("[]")

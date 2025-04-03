@@ -40,7 +40,6 @@ from urllib.parse import urljoin
 
 from typing_extensions import Self
 
-from sob import __name__ as _parent_module_name
 from sob import abc, errors, hooks, meta, utilities
 from sob._datetime import date2str, datetime2str
 from sob._io import read
@@ -2538,13 +2537,11 @@ replace_nulls = replace_model_nulls
 def _type_hint_from_property_types(
     property_types: abc.Types | None, module: str
 ) -> str:
-    type_hint: str = (
-        f"typing.Optional[{_parent_module_name}.abc.MarshallableTypes]"
-    )
+    type_hint: str = "sob.abc.MarshallableTypes | None"
     if property_types is not None:
         if len(property_types) > 1:
-            type_hint = "typing.Union[\n{}\n]".format(
-                ",\n".join(
+            type_hint = "(\n{}\n)".format(
+                "\n| ".join(
                     indent_(
                         _type_hint_from_property(item_type, module), start=0
                     )
@@ -2599,11 +2596,7 @@ def _type_hint_from_property(
             type_hint = "dict"
     elif isinstance(property_or_type, abc.Number):
         type_hint = (
-            "typing.Union[\n"
-            "    float,\n"
-            "    int,\n"
-            "    decimal.Decimal\n"
-            "]"
+            "(\n" "    float\n" "    | int\n" "    | decimal.Decimal\n" ")"
         )
     elif property_or_type and property_or_type.types:
         type_hint = _type_hint_from_property_types(
@@ -2664,7 +2657,7 @@ def _model_class_from_meta(
     )
 
 
-_REPR_MARSHALLABLE_TYPING: str = f"{_parent_module_name}.abc.MarshallableTypes"
+_REPR_MARSHALLABLE_TYPING: str = "sob.abc.MarshallableTypes"
 
 
 def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
@@ -2679,23 +2672,23 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "\n"
             "    def __init__(\n"
             "        self,\n"
-            "        items: typing.Union[\n"
-            f"            {_parent_module_name}.abc.Dictionary,\n"
-            "            typing.Mapping[\n"
+            "        items: (\n"
+            "            sob.abc.Dictionary\n"
+            "            | typing.Mapping[\n"
             "                str,\n"
             f"                {mapping_repr_value_typing}\n"
-            "            ],\n"
-            "            typing.Iterable[\n"
+            "            ]\n"
+            "            | typing.Iterable[\n"
             "                tuple[\n"
             "                    str,\n"
             f"                    {iterable_repr_value_typing}\n"
             "                ]\n"
-            "            ],\n"
-            f"            {_parent_module_name}.abc.Readable,\n"
-            "            str,\n"
-            "            bytes,\n"
-            "            None,\n"
-            "        ] = None,\n"
+            "            ]\n"
+            "            | sob.abc.Readable\n"
+            "            | str\n"
+            "            | bytes\n"
+            "            | None\n"
+            "        ) = None,\n"
             "    ) -> None:\n"
             "        super().__init__(items)\n\n"
         )
@@ -2707,15 +2700,15 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "\n"
             "    def __init__(\n"
             "        self,\n"
-            "        items: typing.Union[\n"
+            "        items: (\n"
             "            typing.Iterable[\n"
             f"                {repr_item_typing}\n"
-            "            ],\n"
-            f"            {_parent_module_name}.abc.Readable,\n"
-            "            str,\n"
-            "            bytes,\n"
-            "            None,\n"
-            "        ] = None\n"
+            "            ]\n"
+            "            | sob.abc.Readable,\n"
+            "            | str\n"
+            "            | bytes\n"
+            "            | None\n"
+            "        ) = None\n"
             "    ) -> None:\n"
             "        super().__init__(items)\n\n"
         )
@@ -2724,23 +2717,24 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "\n"
             "    def __init__(\n"
             "        self,\n"
-            "        _data: typing.Union[\n"
-            f"            {_parent_module_name}.abc.Dictionary,\n"
-            "            typing.Mapping[\n"
+            "        _data: (\n"
+            "            sob.abc.Dictionary\n"
+            "            | typing.Mapping[\n"
             "                str,\n"
             f"                {_REPR_MARSHALLABLE_TYPING}\n"
-            "            ],\n"
-            "            typing.Iterable[\n"
+            "            ]\n"
+            "            | typing.Iterable[\n"
             "                tuple[\n"
             "                    str,\n"
             f"                    {_REPR_MARSHALLABLE_TYPING}\n"
             "                ]\n"
-            "            ],\n"
-            f"            {_parent_module_name}.abc.Readable,\n"
-            "            str,\n"
-            "            bytes,\n"
-            "            None,\n"
-            "        ] = None,"
+            "            ]\n"
+            "            | sob.abc.Readable\n"
+            "            | typing.IO\n"
+            "            | str\n"
+            "            | bytes\n"
+            "            | None\n"
+            "        ) = None,"
         )
         property_assignments: list[str] = []
         metadata_properties_items: tuple[tuple[str, abc.Property], ...] = (
@@ -2880,7 +2874,7 @@ def get_model_from_meta(
     # first
     if re.search(r"\bdatetime\b", class_definition):
         imports.append("import datetime")
-    imports.append(f"import {_parent_module_name}")
+    imports.append("import sob")
     source: str = suffix_long_lines(
         "{}\n\n\n{}".format("\n".join(imports), class_definition)
     )

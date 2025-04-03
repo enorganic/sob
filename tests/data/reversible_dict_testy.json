@@ -130,14 +130,38 @@
         "string2ABC": {},
         "string2CBA": {},
         "string2string2ABC": {
-            "one": {},
-            "two": {},
-            "three": {}
+            "one": {
+                "a": {
+                    "is_a_class": true
+                }
+            },
+            "two": {
+                "b": {
+                    "is_b_class": true
+                }
+            },
+            "three": {
+                "c": {
+                    "is_c_class": true
+                }
+            }
         },
         "string2String2CBA": {
-            "one": {},
-            "two": {},
-            "three": {}
+            "one": {
+                "c": {
+                    "is_c_class": true
+                }
+            },
+            "two": {
+                "b": {
+                    "is_b_class": true
+                }
+            },
+            "three": {
+                "a": {
+                    "is_a_class": true
+                }
+            }
         },
         "requiredInteger": 1,
         "requiredIntegerOrString": "Two"
@@ -319,14 +343,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -456,14 +504,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -593,14 +665,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -730,14 +826,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -867,14 +987,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1004,14 +1148,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1141,14 +1309,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1278,14 +1470,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1415,14 +1631,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1552,14 +1792,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1749,14 +2013,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -1886,14 +2174,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -2023,14 +2335,38 @@
             "string2ABC": {},
             "string2CBA": {},
             "string2string2ABC": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                }
             },
             "string2String2CBA": {
-                "one": {},
-                "two": {},
-                "three": {}
+                "one": {
+                    "c": {
+                        "is_c_class": true
+                    }
+                },
+                "two": {
+                    "b": {
+                        "is_b_class": true
+                    }
+                },
+                "three": {
+                    "a": {
+                        "is_a_class": true
+                    }
+                }
             },
             "requiredInteger": 1,
             "requiredIntegerOrString": "Two"
@@ -2163,14 +2499,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2300,14 +2660,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2437,14 +2821,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2576,14 +2984,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2713,14 +3145,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2850,14 +3306,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -2989,14 +3469,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -3126,14 +3630,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -3263,14 +3791,38 @@
                 "string2ABC": {},
                 "string2CBA": {},
                 "string2string2ABC": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    }
                 },
                 "string2String2CBA": {
-                    "one": {},
-                    "two": {},
-                    "three": {}
+                    "one": {
+                        "c": {
+                            "is_c_class": true
+                        }
+                    },
+                    "two": {
+                        "b": {
+                            "is_b_class": true
+                        }
+                    },
+                    "three": {
+                        "a": {
+                            "is_a_class": true
+                        }
+                    }
                 },
                 "requiredInteger": 1,
                 "requiredIntegerOrString": "Two"
@@ -3351,6 +3903,9 @@
     },
     "string2string2ABC": {
         "one": {
+            "a": {
+                "is_a_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
@@ -3387,6 +3942,9 @@
             }
         },
         "two": {
+            "b": {
+                "is_b_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
@@ -3423,6 +3981,9 @@
             }
         },
         "three": {
+            "c": {
+                "is_c_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
@@ -3461,6 +4022,9 @@
     },
     "string2String2CBA": {
         "one": {
+            "c": {
+                "is_c_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
@@ -3497,6 +4061,9 @@
             }
         },
         "two": {
+            "b": {
+                "is_b_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
@@ -3533,6 +4100,9 @@
             }
         },
         "three": {
+            "a": {
+                "is_a_class": true
+            },
             "A": {
                 "is_a_class": true,
                 "boolean": true,
