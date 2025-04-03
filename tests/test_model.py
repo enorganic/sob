@@ -437,7 +437,7 @@ c = C(
     iso8601_date=date.fromisoformat("2001-10-26"),
 )
 
-valid_testy: Tesstee = Tesstee(
+testy: Tesstee = Tesstee(
     boolean=True,
     string="stringy",
     number=1.0,
@@ -476,92 +476,90 @@ valid_testy: Tesstee = Tesstee(
     required_integer=1,
     required_integer_or_string="Two",
 )
-testy_deep_copy = deepcopy(valid_testy)
-valid_testy.testy = deepcopy(valid_testy)
+testy_deep_copy = deepcopy(testy)
+testy.testy = deepcopy(testy)
 index: int
-valid_testy.testy_array = [deepcopy(testy_deep_copy) for index in range(10)]
-invalid_testy: Tesstee = deepcopy(valid_testy)
-invalid_testy.required_integer = None
+testy.testy_array = [deepcopy(testy_deep_copy) for index in range(10)]
 
 if TYPE_CHECKING:
-    assert isinstance(valid_testy.string2testy, dict)
-    assert isinstance(valid_testy.string2string2testy, dict)
-    assert isinstance(valid_testy.string2a_b_c, dict)
-    assert isinstance(valid_testy.string2string2a_b_c, dict)
+    assert isinstance(testy.string2testy, dict)
+    assert isinstance(testy.string2string2testy, dict)
+    assert isinstance(testy.string2a_b_c, dict)
+    assert isinstance(testy.string2string2a_b_c, dict)
 
-valid_testy.string2testy["A"] = deepcopy(testy_deep_copy)
-valid_testy.string2testy["B"] = deepcopy(testy_deep_copy)
-valid_testy.string2testy["C"] = deepcopy(testy_deep_copy)
+testy.string2testy["A"] = deepcopy(testy_deep_copy)
+testy.string2testy["B"] = deepcopy(testy_deep_copy)
+testy.string2testy["C"] = deepcopy(testy_deep_copy)
 
-valid_testy.string2string2testy["A"]["A"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["A"]["B"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["A"]["C"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["B"]["A"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["B"]["B"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["B"]["C"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["C"]["A"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["C"]["B"] = deepcopy(testy_deep_copy)
-valid_testy.string2string2testy["C"]["C"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["A"]["A"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["A"]["B"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["A"]["C"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["B"]["A"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["B"]["B"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["B"]["C"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["C"]["A"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["C"]["B"] = deepcopy(testy_deep_copy)
+testy.string2string2testy["C"]["C"] = deepcopy(testy_deep_copy)
 
-valid_testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
-valid_testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
-valid_testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
-valid_testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
-valid_testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
-valid_testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
+testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
+testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
 
-valid_testy.string2string2a_b_c["one"]["A"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["one"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2a_b_c["one"]["B"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["one"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2a_b_c["one"]["C"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["one"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-valid_testy.string2string2a_b_c["two"]["A"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["two"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2a_b_c["two"]["B"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["two"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2a_b_c["two"]["C"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["two"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-valid_testy.string2string2a_b_c["three"]["A"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["three"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2a_b_c["three"]["B"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["three"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2a_b_c["three"]["C"] = deepcopy(  # type: ignore
+testy.string2string2a_b_c["three"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-valid_testy.string2string2c_b_a["one"]["A"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["one"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2c_b_a["one"]["B"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["one"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2c_b_a["one"]["C"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["one"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-valid_testy.string2string2c_b_a["two"]["A"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["two"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2c_b_a["two"]["B"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["two"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2c_b_a["two"]["C"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["two"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-valid_testy.string2string2c_b_a["three"]["A"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["three"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-valid_testy.string2string2c_b_a["three"]["B"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["three"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-valid_testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
+testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
 
@@ -572,7 +570,7 @@ def test_copy() -> None:
     """
     Verify that the `copy` method of the model works as expected
     """
-    testy_deep_copy: Tesstee = deepcopy(valid_testy)
+    testy_deep_copy: Tesstee = deepcopy(testy)
     assert testy_deep_copy.string2string2c_b_a is not None
     del testy_deep_copy.string2string2c_b_a
     assert testy_deep_copy.string2string2c_b_a is None
@@ -600,19 +598,19 @@ def test_json_bytes_serialization() -> None:
         mode="rb",
     ) as file:
         rainbow_bytes = file.read()
-        assert valid_testy.rainbow == rainbow_bytes
-        assert cast(dict, model.marshal(valid_testy))["rainbow"] == str(
+        assert testy.rainbow == rainbow_bytes
+        assert cast(dict, model.marshal(testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
 
 
 def test_model() -> None:
-    tests_utilities.model(valid_testy)
+    tests_utilities.model(testy)
 
 
 def test_json_serialization() -> None:
     path: str = _get_testy_path()
-    serialized_testy: str = model.serialize(valid_testy, indent=4).strip()
+    serialized_testy: str = model.serialize(testy, indent=4).strip()
     if not os.path.exists(path):
         with open(path, mode="w", encoding="utf-8") as file:
             file.write(serialized_testy)
@@ -631,7 +629,7 @@ def test_json_deserialization() -> None:
         _get_testy_path(),
         encoding="utf-8",
     ) as testee_io:
-        assert Tesstee(testee_io) == valid_testy
+        assert Tesstee(testee_io) == testy
         error = None
         try:
             Tesstee("[]")
@@ -640,8 +638,13 @@ def test_json_deserialization() -> None:
         assert isinstance(error, TypeError)
 
 
-def test_validation() -> None:
-    sob.validate(valid_testy)
+def test_valid_validation() -> None:
+    sob.validate(testy)
+
+
+def test_invalid_validation() -> None:
+    invalid_testy: Tesstee = deepcopy(testy)
+    invalid_testy.required_integer = None
     error_caught: bool = False
     try:
         sob.validate(invalid_testy)
