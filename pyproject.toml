@@ -125,7 +125,7 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 [tool.coverage.report]
-# fail_under = 80
+fail_under = 70
 
 [tool.coverage.run]
 source = ["src"]
