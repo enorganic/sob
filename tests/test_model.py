@@ -14,6 +14,8 @@ import pytest
 from iso8601.iso8601 import parse_date
 
 import sob
+import sob._inspect
+import sob._utilities
 from sob import abc, meta, model, properties, utilities
 from tests import utilities as tests_utilities
 
@@ -201,10 +203,6 @@ meta.get_writable_object_meta(C).properties = [  # type: ignore
 
 
 class Tesstee(sob.Object):
-    """
-    TODO
-    """
-
     __slots__: tuple[str, ...] = (
         "boolean",
         "string",
@@ -267,6 +265,8 @@ class Tesstee(sob.Object):
         version_switch: int | str | Iterable[int] | None = None,
         version_1: int | None = None,
         version_2: int | None = None,
+        required_integer: int | None = None,
+        required_integer_or_string: int | str | None = None,
     ):
         self.boolean = boolean
         self.string = string
@@ -296,54 +296,59 @@ class Tesstee(sob.Object):
         self.version_switch = version_switch
         self.version_1 = version_1
         self.version_2 = version_2
+        self.required_integer = required_integer
+        self.required_integer_or_string = required_integer_or_string
         super().__init__(_data)
 
 
-sob.get_writable_object_meta(Tesstee).properties = {  # type: ignore
-    "boolean": properties.Boolean(),
-    "string": properties.String(),
-    "number": properties.Number(),
-    "decimal": properties.Number(),
-    "integer": properties.Integer(),
-    "rainbow": properties.Bytes(),
-    "testy": properties.Property(types=(Tesstee,)),
-    "boolean_array": properties.Array(item_types=(bool,), name="booleanArray"),
-    "string_array": properties.Array(item_types=(str,), name="stringArray"),
-    "number_array": properties.Array(
+testee_meta: sob.abc.ObjectMeta = meta.get_writable_object_meta(Tesstee)
+testee_meta.properties = {  # type: ignore
+    "boolean": sob.BooleanProperty(),
+    "string": sob.StringProperty(),
+    "number": sob.NumberProperty(),
+    "decimal": sob.NumberProperty(),
+    "integer": sob.IntegerProperty(),
+    "rainbow": sob.BytesProperty(),
+    "testy": sob.Property(types=(Tesstee,)),
+    "boolean_array": sob.ArrayProperty(
+        item_types=(bool,), name="booleanArray"
+    ),
+    "string_array": sob.ArrayProperty(item_types=(str,), name="stringArray"),
+    "number_array": sob.ArrayProperty(
         item_types=(properties.Number(),), name="numberArray"
     ),
-    "integer_array": properties.Array(
+    "integer_array": sob.ArrayProperty(
         item_types=(properties.Integer(),), name="integerArray"
     ),
-    "rainbow_array": properties.Array(
+    "rainbow_array": sob.ArrayProperty(
         item_types=(properties.Bytes(),), name="rainbowArray"
     ),
-    "testy_array": properties.Array(item_types=(Tesstee,), name="testyArray"),
-    "string_number_boolean": properties.Property(
+    "testy_array": sob.ArrayProperty(item_types=(Tesstee,), name="testyArray"),
+    "string_number_boolean": sob.Property(
         types=(str, properties.Number(), bool), name="stringNumberBoolean"
     ),
-    "a": properties.Property(
+    "a": sob.Property(
         types=(A,),
     ),
-    "b": properties.Property(
+    "b": sob.Property(
         types=(B,),
     ),
-    "c": properties.Property(
+    "c": sob.Property(
         types=(C,),
     ),
-    "a_b_c": properties.Property(types=(A, B, C), name="ABC"),
-    "c_b_a": properties.Property(types=(C, B, A), name="CBA"),
-    "string2testy": properties.Dictionary(value_types=(Tesstee,)),
-    "string2string2testy": properties.Dictionary(
-        value_types=(properties.Dictionary(value_types=(Tesstee,)),)
+    "a_b_c": sob.Property(types=(A, B, C), name="ABC"),
+    "c_b_a": sob.Property(types=(C, B, A), name="CBA"),
+    "string2testy": sob.DictionaryProperty(value_types=(Tesstee,)),
+    "string2string2testy": sob.DictionaryProperty(
+        value_types=(sob.DictionaryProperty(value_types=(Tesstee,)),)
     ),
-    "string2a_b_c": properties.Dictionary(
+    "string2a_b_c": sob.DictionaryProperty(
         value_types=(A, B, C), name="string2ABC"
     ),
-    "string2c_b_a": properties.Dictionary(
+    "string2c_b_a": sob.DictionaryProperty(
         value_types=(C, B, A), name="string2CBA"
     ),
-    "string2string2a_b_c": properties.Dictionary(
+    "string2string2a_b_c": sob.DictionaryProperty(
         value_types=(
             properties.Dictionary(
                 value_types=(A, B, C),
@@ -351,7 +356,7 @@ sob.get_writable_object_meta(Tesstee).properties = {  # type: ignore
         ),
         name="string2string2ABC",
     ),
-    "string2string2c_b_a": properties.Dictionary(
+    "string2string2c_b_a": sob.DictionaryProperty(
         value_types=(
             properties.Dictionary(
                 value_types=(C, B, A),
@@ -359,16 +364,28 @@ sob.get_writable_object_meta(Tesstee).properties = {  # type: ignore
         ),
         name="string2String2CBA",
     ),
-    "version_switch": properties.Property(
+    "version_switch": sob.Property(
         types=(
-            properties.Integer(versions=("testy<2",)),
-            properties.String(versions=("testy>1&testy<3",)),
-            properties.Array(item_types=(int,), versions=("testy==3.0",)),
+            sob.IntegerProperty(versions=("testy<2",)),
+            sob.StringProperty(versions=("testy>1&testy<3",)),
+            sob.ArrayProperty(item_types=(int,), versions=("testy==3.0",)),
         ),
         name="versionSwitch",
     ),
-    "version_1": properties.Integer(versions=("testy==1.0",), name="version1"),
-    "version_2": properties.Integer(versions=("testy==2.0",), name="version2"),
+    "version_1": sob.IntegerProperty(
+        versions=("testy==1.0",), name="version1"
+    ),
+    "version_2": sob.IntegerProperty(
+        versions=("testy==2.0",), name="version2"
+    ),
+    "required_integer": sob.IntegerProperty(
+        name="requiredInteger", required=True
+    ),
+    "required_integer_or_string": sob.Property(
+        types=sob.Types([int, str]),
+        name="requiredIntegerOrString",
+        required=True,
+    ),
 }
 
 with open(
@@ -416,7 +433,7 @@ c = C(
     iso8601_date=date.fromisoformat("2001-10-26"),
 )
 
-testy = Tesstee(
+valid_testy: Tesstee = Tesstee(
     boolean=True,
     string="stringy",
     number=1.0,
@@ -429,8 +446,8 @@ testy = Tesstee(
     testy=None,
     boolean_array=(True, False, True, False),
     string_array=tuple("ABCDEFG"),
-    number_array=(1**n / 3 for n in range(10)),
-    integer_array=(1**n for n in range(10)),
+    number_array=(2**n / 3 for n in range(10)),
+    integer_array=(2**n for n in range(10)),
     rainbow_array=(_rainbow for n in range(10)),
     testy_array=None,
     string_number_boolean=True,
@@ -444,99 +461,102 @@ testy = Tesstee(
     string2c_b_a={},
     string2string2a_b_c={"one": {}, "two": {}, "three": {}},
     string2string2c_b_a={"one": {}, "two": {}, "three": {}},
+    required_integer=1,
+    required_integer_or_string="Two",
 )
-testy_deep_copy = deepcopy(testy)
-
-testy.testy = deepcopy(testy)
-
-testy.testy_array = [deepcopy(testy_deep_copy) for i in range(10)]
+testy_deep_copy = deepcopy(valid_testy)
+valid_testy.testy = deepcopy(valid_testy)
+index: int
+valid_testy.testy_array = [deepcopy(testy_deep_copy) for index in range(10)]
+invalid_testy: Tesstee = deepcopy(valid_testy)
+invalid_testy.required_integer = None
 
 if TYPE_CHECKING:
-    assert isinstance(testy.string2testy, dict)
-    assert isinstance(testy.string2string2testy, dict)
-    assert isinstance(testy.string2a_b_c, dict)
-    assert isinstance(testy.string2string2a_b_c, dict)
+    assert isinstance(valid_testy.string2testy, dict)
+    assert isinstance(valid_testy.string2string2testy, dict)
+    assert isinstance(valid_testy.string2a_b_c, dict)
+    assert isinstance(valid_testy.string2string2a_b_c, dict)
 
-testy.string2testy["A"] = deepcopy(testy_deep_copy)
-testy.string2testy["B"] = deepcopy(testy_deep_copy)
-testy.string2testy["C"] = deepcopy(testy_deep_copy)
+valid_testy.string2testy["A"] = deepcopy(testy_deep_copy)
+valid_testy.string2testy["B"] = deepcopy(testy_deep_copy)
+valid_testy.string2testy["C"] = deepcopy(testy_deep_copy)
 
-testy.string2string2testy["A"]["A"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["A"]["B"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["A"]["C"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["B"]["A"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["B"]["B"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["B"]["C"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["C"]["A"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["C"]["B"] = deepcopy(testy_deep_copy)
-testy.string2string2testy["C"]["C"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["A"]["A"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["A"]["B"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["A"]["C"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["B"]["A"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["B"]["B"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["B"]["C"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["C"]["A"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["C"]["B"] = deepcopy(testy_deep_copy)
+valid_testy.string2string2testy["C"]["C"] = deepcopy(testy_deep_copy)
 
-testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
-testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
-testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
-testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
-testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
-testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
+valid_testy.string2a_b_c["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+valid_testy.string2a_b_c["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+valid_testy.string2a_b_c["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
+valid_testy.string2c_b_a["A"] = deepcopy(testy_deep_copy.a)  # type: ignore
+valid_testy.string2c_b_a["B"] = deepcopy(testy_deep_copy.b)  # type: ignore
+valid_testy.string2c_b_a["C"] = deepcopy(testy_deep_copy.c)  # type: ignore
 
-testy.string2string2a_b_c["one"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["one"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2a_b_c["one"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["one"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2a_b_c["one"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["one"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-testy.string2string2a_b_c["two"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["two"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2a_b_c["two"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["two"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2a_b_c["two"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["two"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-testy.string2string2a_b_c["three"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["three"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2a_b_c["three"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["three"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2a_b_c["three"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2a_b_c["three"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-testy.string2string2c_b_a["one"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["one"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2c_b_a["one"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["one"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2c_b_a["one"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["one"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-testy.string2string2c_b_a["two"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["two"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2c_b_a["two"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["two"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2c_b_a["two"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["two"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
-testy.string2string2c_b_a["three"]["A"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["three"]["A"] = deepcopy(  # type: ignore
     testy_deep_copy.a
 )
-testy.string2string2c_b_a["three"]["B"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["three"]["B"] = deepcopy(  # type: ignore
     testy_deep_copy.b
 )
-testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
+valid_testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
     testy_deep_copy.c
 )
 
 
-def test_object() -> None:
+def test_copy() -> None:
     # Test deletions
-    testy_deep_copy = deepcopy(testy)
+    testy_deep_copy = deepcopy(valid_testy)
     assert testy_deep_copy.string2string2c_b_a is not None
     del testy_deep_copy.string2string2c_b_a
     assert testy_deep_copy.string2string2c_b_a is None
@@ -556,17 +576,7 @@ def _get_testy_path() -> str:
     return path
 
 
-def test_json_serialization() -> None:
-    sob.validate(testy)
-    tests_utilities.model(testy)
-    path: str = _get_testy_path()
-    if not os.path.exists(path):
-        with open(path, mode="w", encoding="utf-8") as file:
-            file.write(model.serialize(testy))
-    with open(path, encoding="utf-8") as file:
-        serialized_testy = model.serialize(testy).strip()
-        file_testy = file.read().strip()
-        assert serialized_testy == file_testy
+def test_json_bytes_serialization() -> None:
     with open(
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
@@ -574,11 +584,27 @@ def test_json_serialization() -> None:
         mode="rb",
     ) as file:
         rainbow_bytes = file.read()
-        assert testy.rainbow == rainbow_bytes
-        assert cast(dict, model.marshal(testy))["rainbow"] == str(
+        assert valid_testy.rainbow == rainbow_bytes
+        assert cast(dict, model.marshal(valid_testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
-    tests_utilities.model(testy)
+
+
+def test_model() -> None:
+    tests_utilities.model(valid_testy)
+
+
+def test_json_serialization() -> None:
+    path: str = _get_testy_path()
+    serialized_testy: str = model.serialize(valid_testy, indent=4).strip()
+    if not os.path.exists(path):
+        with open(path, mode="w", encoding="utf-8") as file:
+            file.write(serialized_testy)
+    with open(path, encoding="utf-8") as file:
+        file_testy = file.read().strip()
+        if serialized_testy != file_testy:
+            message: str = f"{serialized_testy}\n!=\n{file_testy}"
+            raise ValueError(message)
 
 
 def test_json_deserialization() -> None:
@@ -589,7 +615,7 @@ def test_json_deserialization() -> None:
         _get_testy_path(),
         encoding="utf-8",
     ) as f:
-        assert Tesstee(cast(abc.Readable, f)) == testy
+        assert Tesstee(cast(abc.Readable, f)) == valid_testy
         error = None
         try:
             Tesstee("[]")
@@ -599,9 +625,13 @@ def test_json_deserialization() -> None:
 
 
 def test_validation() -> None:
-    """
-    TODO
-    """
+    sob.validate(valid_testy)
+    error_caught: bool = False
+    try:
+        sob.validate(invalid_testy)
+    except sob.ValidationError:
+        error_caught = True
+    assert error_caught
 
 
 def test_utilities() -> None:

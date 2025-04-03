@@ -22,6 +22,7 @@ from typing import (
 from sob import abc, errors
 from sob._types import UNDEFINED, NoneType, Undefined
 from sob._utilities import deprecated
+from sob.properties import TYPES_PROPERTIES
 from sob.types import MutableTypes
 from sob.utilities import (
     get_calling_function_qualified_name,
@@ -243,7 +244,16 @@ class Properties(abc.Properties):
 
     def __setitem__(self, key: str, value: abc.Property) -> None:
         if not isinstance(value, abc.Property):
-            raise TypeError(value)
+            if value in TYPES_PROPERTIES:
+                value = TYPES_PROPERTIES[value]()
+            else:
+                message: str = (
+                    f"Cannot set `{key}={value!r}`, as properties must be "
+                    "either an instance of `sob.Property`"
+                    "or one of the following mapped types:\n"
+                    f"{represent(TYPES_PROPERTIES)}"
+                )
+                raise TypeError(message)
         self._dict.__setitem__(key, value)
 
     def __copy__(self) -> abc.Properties:

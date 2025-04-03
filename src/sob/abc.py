@@ -127,6 +127,9 @@ class Types(metaclass=ABCMeta):
     def __getitem__(self, index: int) -> type | Property:
         pass
 
+    def __bool__(self) -> bool:
+        return bool(len(self))
+
 
 class MutableTypes(Types, metaclass=ABCMeta):
     """

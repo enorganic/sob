@@ -10,7 +10,6 @@ from collections.abc import Iterable, Sequence
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -149,7 +148,7 @@ class Property(abc.Property):
         if versions is not None:
             self.versions = versions  # type: ignore
 
-    @property  # type: ignore
+    @property
     def types(self) -> abc.Types | None:
         return self._types
 
@@ -708,26 +707,19 @@ class DictionaryProperty(Property, abc.DictionaryProperty):
 # For backwards compatibility
 Dictionary = DictionaryProperty
 
-name: str
 # This constant maps data types to their corresponding properties
-TYPES_PROPERTIES: dict[type, type] = dict(
-    chain(
-        *(  # type: ignore
-            (
-                (type_, property_class)
-                for type_ in (property_class._types or ())  # noqa: SLF001
-            )
-            for property_class in (
-                property_class
-                for name, property_class in locals().items()
-                if (
-                    isinstance(property_class, type)
-                    and issubclass(property_class, Property)
-                    and property_class._types  # noqa: SLF001
-                    # Don't include aliases
-                    and property_class.__name__ == name
-                )
-            )
-        )
-    )
-)
+TYPES_PROPERTIES: dict[type, type] = {
+    str: StringProperty,
+    date: DateProperty,
+    datetime: DateTimeProperty,
+    bytes: BytesProperty,
+    Decimal: NumberProperty,
+    float: NumberProperty,
+    int: IntegerProperty,
+    bool: BooleanProperty,
+    abc.Array: ArrayProperty,
+    list: ArrayProperty,
+    tuple: ArrayProperty,
+    abc.Dictionary: DictionaryProperty,
+    dict: DictionaryProperty,
+}

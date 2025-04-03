@@ -17,6 +17,16 @@ from sob import (
     types,
     utilities,
 )
+from sob.errors import (
+    DeserializeError,
+    ObjectDiscrepancyError,
+    UnmarshalError,
+    UnmarshalKeyError,
+    UnmarshalTypeError,
+    UnmarshalValueError,
+    ValidationError,
+    VersionError,
+)
 from sob.hooks import (
     ArrayHooks,
     DictionaryHooks,
@@ -173,4 +183,12 @@ __all__: tuple[str, ...] = (
     "MutableTypes",
     "NoneType",
     "Version",
+    "VersionError",
+    "DeserializeError",
+    "UnmarshalError",
+    "UnmarshalKeyError",
+    "UnmarshalTypeError",
+    "UnmarshalValueError",
+    "ObjectDiscrepancyError",
+    "ValidationError",
 )
