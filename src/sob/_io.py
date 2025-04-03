@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import UnsupportedOperation
-from typing import TYPE_CHECKING, Callable
+from typing import IO, TYPE_CHECKING, Callable
 
 # isort: off
 from sob.utilities import get_method
@@ -13,16 +13,18 @@ if TYPE_CHECKING:
 # isort: on
 
 
-def read(file: Readable) -> str | bytes:
+def read(file: Readable | IO) -> str | bytes:
     """
     Read a file-like object and return the text or binary data it contains.
 
     Parameters:
 
-    - file (abc.io.Readable): A readable, file-like object.
+        file: A readable, file-like object.
 
     This function returns an instance of `str` or `bytes`.
     """
+    if TYPE_CHECKING:
+        assert isinstance(file, Readable)
     read_method_name: str
     seek_method: Callable | None = get_method(file, "seek", None)
     if seek_method:

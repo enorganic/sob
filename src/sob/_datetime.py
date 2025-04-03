@@ -9,6 +9,9 @@ def date2str(date_value: date) -> str:
     """
     Return an ISO-8601 formatted representation of an instance of
     `datetime.date`.
+
+    >>> date2str(date(2023, 10, 1))
+    '2023-10-01'
     """
     if (not isinstance(date_value, date)) or isinstance(date_value, datetime):
         raise TypeError(date_value)
@@ -19,6 +22,18 @@ def datetime2str(datetime_value: datetime) -> str:
     """
     Return an ISO-8601 formatted representation of an instance of
     `datetime.datetime`.
+
+    Examples:
+
+    >>> datetime2str(datetime(2023, 10, 1, 12, 0, 0))
+    '2023-10-01T12:00:00Z'
+    >>> from datetime import timezone, timedelta
+    >>> datetime2str(datetime(2023, 10, 1, 12, 0, 0, tzinfo=timezone.utc))
+    '2023-10-01T12:00:00+00:00'
+    >>> from datetime import timezone
+    >>> pacific_time: timezone = timezone(timedelta(hours=-8))
+    >>> datetime2str(datetime(2023, 10, 1, 12, 0, 0, tzinfo=pacific_time))
+    '2023-10-01T12:00:00-08:00'
     """
     if not isinstance(datetime_value, datetime):
         raise TypeError(datetime_value)
@@ -32,6 +47,13 @@ def str2datetime(str_value: str) -> datetime:
     """
     Return an instance of `datetime.datetime` from an ISO-8601 formatted
     string representation.
+
+    Examples:
+
+    >>> str2datetime("2023-10-01T12:00:00Z")
+    datetime.datetime(2023, 10, 1, 12, 0, tzinfo=datetime.timezone.utc)
+    >>> str2datetime("2023-10-01T12:00:00")
+    datetime.datetime(2023, 10, 1, 12, 0)
     """
     if not isinstance(str_value, str):
         raise TypeError(str_value)
@@ -56,6 +78,11 @@ def str2date(str_value: str) -> date:
     """
     Return an instance of `datetime.date` from an ISO-8601 formatted
     string representation.
+
+    Examples:
+
+    >>> str2date("2023-10-01")
+    datetime.date(2023, 10, 1)
     """
     if not isinstance(str_value, str):
         raise TypeError(str_value)

@@ -13,11 +13,12 @@ from typing import TYPE_CHECKING, cast
 import pytest
 from iso8601.iso8601 import parse_date
 
+import sob
 from sob import abc, meta, model, properties, utilities
 from tests import utilities as tests_utilities
 
 
-class A(model.Object):
+class A(sob.Object):
     """
     TODO
     """
@@ -59,20 +60,20 @@ class A(model.Object):
         super().__init__(_data)
 
 
-meta.get_writable_object_meta(A).properties = [  # type: ignore
-    ("is_a_class", properties.Boolean()),
-    ("boolean", properties.Boolean()),
-    ("string", properties.String()),
-    ("alpha", properties.Enumerated(values=(1, 2, 3))),
-    ("beta", properties.Enumerated(values=(1, 2, 3))),
-    ("gamma", properties.Enumerated(values=(1, 2, 3))),
-    ("delta", properties.Enumerated(values=(1, 2, 3))),
-    ("iso8601_datetime", properties.DateTime(name="iso8601DateTime")),
-    ("iso8601_date", properties.Date(name="iso8601Date")),
+sob.get_writable_object_meta(A).properties = [  # type: ignore
+    ("is_a_class", sob.BooleanProperty()),
+    ("boolean", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("alpha", sob.EnumeratedProperty(values=(1, 2, 3))),
+    ("beta", sob.EnumeratedProperty(values=(1, 2, 3))),
+    ("gamma", sob.EnumeratedProperty(values=(1, 2, 3))),
+    ("delta", sob.EnumeratedProperty(values=(1, 2, 3))),
+    ("iso8601_datetime", sob.DateTimeProperty(name="iso8601DateTime")),
+    ("iso8601_date", sob.DateProperty(name="iso8601Date")),
 ]
 
 
-class B(model.Object):
+class B(sob.Object):
     """
     TODO
     """
@@ -117,21 +118,34 @@ class B(model.Object):
         super().__init__(_)
 
 
-meta.get_writable_object_meta(B).properties = [  # type: ignore
-    ("is_b_class", properties.Boolean()),
-    ("boolean", properties.Boolean()),
-    ("string", properties.String()),
-    ("integer", properties.Integer()),
-    ("alpha", properties.Enumerated(values=("A", "B", "C"))),
-    ("beta", properties.Enumerated(values=("A", "B", "C"))),
-    ("gamma", properties.Enumerated(values=("A", "B", "C"))),
-    ("delta", properties.Enumerated(values=("A", "B", "C"))),
-    ("iso8601_datetime", properties.DateTime(name="iso8601DateTime")),
-    ("iso8601_date", properties.Date(name="iso8601Date")),
+sob.get_writable_object_meta(B).properties = [  # type: ignore
+    ("is_b_class", sob.BooleanProperty()),
+    ("boolean", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("integer", sob.IntegerProperty()),
+    ("alpha", sob.EnumeratedProperty(values=("A", "B", "C"))),
+    ("beta", sob.EnumeratedProperty(values=("A", "B", "C"))),
+    ("gamma", sob.EnumeratedProperty(values=("A", "B", "C"))),
+    ("delta", sob.EnumeratedProperty(values=("A", "B", "C"))),
+    ("iso8601_datetime", sob.DateTimeProperty(name="iso8601DateTime")),
+    ("iso8601_date", sob.DateProperty(name="iso8601Date")),
 ]
 
 
-class C(model.Object):
+def test_sequence_properties_assignment() -> None:
+    """
+    Verify that when a list/tuple is assigned to a model's properties
+    metadata, that the resulting property is an instance of `sob.Properties`
+    """
+    object_meta: sob.abc.Meta | None = sob.read_object_meta(B)
+    if (object_meta is None) or not isinstance(object_meta, meta.ObjectMeta):
+        raise TypeError(object_meta)
+    properties: sob.abc.Properties | None = object_meta.properties
+    assert properties is not None
+    assert isinstance(properties, meta.Properties)
+
+
+class C(sob.Object):
     """
     TODO
     """
@@ -186,7 +200,7 @@ meta.get_writable_object_meta(C).properties = [  # type: ignore
 ]
 
 
-class Tesstee(model.Object):
+class Tesstee(sob.Object):
     """
     TODO
     """
@@ -285,7 +299,7 @@ class Tesstee(model.Object):
         super().__init__(_data)
 
 
-meta.get_writable_object_meta(Tesstee).properties = {  # type: ignore
+sob.get_writable_object_meta(Tesstee).properties = {  # type: ignore
     "boolean": properties.Boolean(),
     "string": properties.String(),
     "number": properties.Number(),
@@ -543,7 +557,7 @@ def _get_testy_path() -> str:
 
 
 def test_json_serialization() -> None:
-    model.validate(testy)
+    sob.validate(testy)
     tests_utilities.model(testy)
     path: str = _get_testy_path()
     if not os.path.exists(path):
@@ -592,7 +606,7 @@ def test_validation() -> None:
 
 def test_utilities() -> None:
     assert utilities.get_calling_function_qualified_name() == (
-        "tests.test_sob.test_utilities"
+        "tests.test_model.test_utilities"
     )
 
     class TestCallingFunctionQualifiedNameA:
@@ -609,7 +623,7 @@ def test_utilities() -> None:
     class TestCallingFunctionQualifiedNameB:
         def __init__(self) -> None:
             assert utilities.get_calling_function_qualified_name() == (
-                "tests.test_sob.test_utilities.TestCallingFunctionQualifie"
+                "tests.test_model.test_utilities.TestCallingFunctionQualifie"
                 "dNameB.__init__"
             )
 
@@ -619,7 +633,7 @@ def test_utilities() -> None:
         class TestCallingFunctionQualifiedNameD:
             def __init__(self) -> None:
                 assert utilities.get_calling_function_qualified_name() == (
-                    "tests.test_sob.test_utilities.TestCallingFunctionQualifie"
+                    "tests.test_model.test_utilities.TestCallingFunctionQualifie"
                     "dNameC.TestCallingFunctionQualifiedNameD.__init__"
                 )
 
@@ -633,7 +647,7 @@ def test_utilities() -> None:
                 # -
             ).TestCallingFunctionQualifiedNameD
         ) == (
-            "tests.test_sob.test_utilities.TestCallingFunctionQualifiedNameC."
+            "tests.test_model.test_utilities.TestCallingFunctionQualifiedNameC."
             "TestCallingFunctionQualifiedNameD"
         )
     else:

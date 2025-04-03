@@ -16,12 +16,13 @@ from collections.abc import (
 from datetime import date, datetime
 from decimal import Decimal
 from typing import (
-    IO,
     TYPE_CHECKING,
     Any,
     Callable,
     Union,
 )
+
+from typing_extensions import Self
 
 from sob._types import UNDEFINED, NoneType, Null, Undefined
 
@@ -339,7 +340,7 @@ class Readable(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __enter__(self) -> IO:
+    def __enter__(self) -> Self:
         pass
 
     @abstractmethod
