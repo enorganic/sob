@@ -12,7 +12,6 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    # Run doctests for the sob._datetime module
     doctest.testmod(sob._datetime)  # noqa: SLF001
 
 
