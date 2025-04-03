@@ -2596,7 +2596,11 @@ def _type_hint_from_property(
             type_hint = "dict"
     elif isinstance(property_or_type, abc.Number):
         type_hint = (
-            "(\n" "    float\n" "    | int\n" "    | decimal.Decimal\n" ")"
+            "(\n"  # -
+            "    float\n"  # -
+            "    | int\n"  # -
+            "    | decimal.Decimal\n"  # -
+            ")"
         )
     elif property_or_type and property_or_type.types:
         type_hint = _type_hint_from_property_types(
