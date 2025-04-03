@@ -647,13 +647,30 @@ def test_deserialization_regression() -> None:
         assert isinstance(error, TypeError)
 
 
-def test_valid_validation() -> None:
+def test_valid_object_validation() -> None:
     sob.validate(testy)
 
 
-def test_invalid_validation() -> None:
+def test_missing_attributes_validation() -> None:
     invalid_testy: Tesstee = deepcopy(testy)
     invalid_testy.required_integer = None
+    error_caught: bool = False
+    try:
+        sob.validate(invalid_testy)
+    except sob.ValidationError:
+        error_caught = True
+    assert error_caught
+
+
+def test_extraneous_attributes_validation() -> None:
+    """
+    Ensure that un-marshalling extraneous attributes into an object
+    does not raise an error on initialization, but *does* raise a validation
+    error when passed to `sob.validate`.
+    """
+    marshalled_testy: dict = cast(dict, sob.marshal(testy))
+    marshalled_testy["extraneous_attribute"] = "extraneous value"
+    invalid_testy: Tesstee = Tesstee(marshalled_testy)
     error_caught: bool = False
     try:
         sob.validate(invalid_testy)
