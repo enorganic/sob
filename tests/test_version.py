@@ -5,6 +5,7 @@ model instances
 
 from __future__ import annotations
 
+import doctest
 from typing import IO, TYPE_CHECKING
 
 import pytest
@@ -227,6 +228,13 @@ sob.meta.get_writable_object_meta(
 )
 
 # endregion
+
+
+def test_doctest() -> None:
+    """
+    Run docstring tests
+    """
+    doctest.testmod(sob.version)
 
 
 def test_version_1() -> None:

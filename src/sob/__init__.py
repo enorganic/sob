@@ -16,6 +16,7 @@ from sob import (
     thesaurus,
     types,
     utilities,
+    version,
 )
 from sob.errors import (
     DeserializeError,
@@ -117,6 +118,7 @@ __all__: tuple[str, ...] = (
     "hooks",
     "request",
     "thesaurus",
+    "version",
     # Functions and Classes
     "Model",
     "Object",

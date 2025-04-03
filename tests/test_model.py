@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import functools
-import os
+import doctest
 from base64 import b64encode
 from collections import OrderedDict
-from collections.abc import Iterable, Reversible
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from typing import IO, TYPE_CHECKING, cast
 
 import pytest
@@ -16,17 +15,19 @@ from iso8601.iso8601 import parse_date
 import sob
 import sob._inspect
 import sob._utilities
-from sob import abc, meta, model, properties, utilities
+from sob import abc, meta, model, properties
 from tests import utilities as tests_utilities
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+TEST_JSON: Path = Path(__file__).parent / "data" / "testy.json"
+RAINBOW_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
 
 # region Test Model
 
 
 class A(sob.Object):
-    """
-    TODO
-    """
-
     __slots__: tuple[str, ...] = (
         "is_a_class",
         "boolean",
@@ -78,10 +79,6 @@ sob.get_writable_object_meta(A).properties = [  # type: ignore
 
 
 class B(sob.Object):
-    """
-    TODO
-    """
-
     __slots__: tuple[str, ...] = (
         "is_b_class",
         "boolean",
@@ -393,9 +390,7 @@ testee_meta.properties = {  # type: ignore
 }
 
 with open(
-    os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
-    ),
+    RAINBOW_PNG,
     mode="rb",
 ) as f:
     _rainbow = f.read()
@@ -566,6 +561,13 @@ testy.string2string2c_b_a["three"]["C"] = deepcopy(  # type: ignore
 # endregion
 
 
+def test_doctest() -> None:
+    """
+    Run docstring tests
+    """
+    doctest.testmod(model)
+
+
 def test_copy() -> None:
     """
     Verify that the `copy` method of the model works as expected
@@ -576,25 +578,9 @@ def test_copy() -> None:
     assert testy_deep_copy.string2string2c_b_a is None
 
 
-@functools.lru_cache
-def _get_testy_path() -> str:
-    data_dir: str = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), "data/"
-    )
-    path: str
-    # The following accounts for `dict` being ordered in python 3.8+
-    if isinstance({}, Reversible):
-        path = os.path.join(data_dir, "reversible_dict_testy.json")
-    else:
-        path = os.path.join(data_dir, "testy.json")
-    return path
-
-
 def test_json_bytes_serialization() -> None:
     with open(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "data", "rainbow.png"
-        ),
+        RAINBOW_PNG,
         mode="rb",
     ) as file:
         rainbow_bytes = file.read()
@@ -604,17 +590,27 @@ def test_json_bytes_serialization() -> None:
         )
 
 
-def test_model() -> None:
-    tests_utilities.model(testy)
+def test_replicate_serialization() -> None:
+    """
+    This test verifies that a model can be serialized and deserialized
+    producing comparable results. This test will only work with models which
+    have no extraneous properties (all properties have metadata).
+    """
+    tests_utilities.validate_serialization_is_replicable(testy)
 
 
-def test_json_serialization() -> None:
-    path: str = _get_testy_path()
+def test_serialization() -> None:
+    """
+    This test verifies that a model can be serialized producing identical
+    output to previous test runs. Whenever changes are made to the
+    implicated models, delete the file ./tests/data/reversible_dict_testy.json.
+    The file be recreated the next time the test is run.
+    """
     serialized_testy: str = model.serialize(testy, indent=4).strip()
-    if not os.path.exists(path):
-        with open(path, mode="w", encoding="utf-8") as file:
+    if not TEST_JSON.exists():
+        with open(TEST_JSON, mode="w", encoding="utf-8") as file:
             file.write(serialized_testy)
-    with open(path, encoding="utf-8") as file:
+    with open(TEST_JSON, encoding="utf-8") as file:
         file_testy = file.read().strip()
         if serialized_testy != file_testy:
             message: str = f"{serialized_testy}\n!=\n{file_testy}"
@@ -626,7 +622,7 @@ def test_json_deserialization() -> None:
     TODO
     """
     with open(
-        _get_testy_path(),
+        TEST_JSON,
         encoding="utf-8",
     ) as testee_io:
         assert Tesstee(testee_io) == testy
@@ -651,62 +647,6 @@ def test_invalid_validation() -> None:
     except sob.ValidationError:
         error_caught = True
     assert error_caught
-
-
-def test_utilities() -> None:
-    assert utilities.get_calling_function_qualified_name() == (
-        "tests.test_model.test_utilities"
-    )
-
-    class TestCallingFunctionQualifiedNameA:
-        __module__ = "tests.utilities"
-
-        def __init__(self) -> None:
-            assert utilities.get_calling_function_qualified_name() == (
-                "tests.utilities.test_utilities."
-                "TestCallingFunctionQualifiedNameA.__init__"
-            )
-
-    TestCallingFunctionQualifiedNameA()
-
-    class TestCallingFunctionQualifiedNameB:
-        def __init__(self) -> None:
-            assert utilities.get_calling_function_qualified_name() == (
-                "tests.test_model.test_utilities.TestCallingFunctionQualifie"
-                "dNameB.__init__"
-            )
-
-    TestCallingFunctionQualifiedNameB()
-
-    class TestCallingFunctionQualifiedNameC:
-        class TestCallingFunctionQualifiedNameD:
-            def __init__(self) -> None:
-                assert utilities.get_calling_function_qualified_name() == (
-                    "tests.test_model.test_utilities.TestCallingFunctionQualifie"
-                    "dNameC.TestCallingFunctionQualifiedNameD.__init__"
-                )
-
-    TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
-    if hasattr(
-        TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD,
-        "__qualname__",
-    ):
-        assert utilities.get_qualified_name(
-            TestCallingFunctionQualifiedNameC(
-                # -
-            ).TestCallingFunctionQualifiedNameD
-        ) == (
-            "tests.test_model.test_utilities.TestCallingFunctionQualifiedNameC."
-            "TestCallingFunctionQualifiedNameD"
-        )
-    else:
-        assert utilities.get_qualified_name(
-            TestCallingFunctionQualifiedNameC().TestCallingFunctionQualifiedNameD
-        ) == (
-            ("" if __name__ == "__main__" else "test_sob.")
-            + "TestCallingFunctionQualifiedNameD"
-        )
-    assert utilities.get_qualified_name(model.Object) == "sob.model.Object"
 
 
 if __name__ == "__main__":

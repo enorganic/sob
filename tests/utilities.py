@@ -193,7 +193,7 @@ def _reload_object(object_instance: abc.Object) -> None:
     _remarshal_object(string_object, object_instance)
 
 
-def _object(
+def _serial_validate_object(
     object_instance: abc.Object,
     *,
     raise_validation_errors: bool = True,
@@ -213,19 +213,24 @@ def _object(
         for property_name in instance_meta.properties:
             property_value: Any = getattr(object_instance, property_name)
             if isinstance(property_value, abc.Model):
-                model(
+                validate_serialization_is_replicable(
                     property_value,
                     raise_validation_errors=raise_validation_errors,
                 )
 
 
-def model(
+def validate_serialization_is_replicable(
     model_instance: abc.Model,
     *,
     raise_validation_errors: bool = True,
 ) -> None:
     """
-    Tests an instance of a `sob.model.Model` sub-class.
+    Validates an instance of a `sob.model.Model` sub-class and verifies that
+    the object can be serialized, then subsequently de-serialized,
+    without introducing discrepancies.
+
+    Please note that this validation will only succeed for models which
+    have no extraneous properties (all properties have metadata).
 
     Parameters:
         model_instance: An instance of a `sob.model.Model` sub-class.
@@ -240,14 +245,14 @@ def model(
     if not isinstance(model_instance, abc.Model):
         raise TypeError(model_instance)
     if isinstance(model_instance, abc.Object):
-        _object(
+        _serial_validate_object(
             model_instance, raise_validation_errors=raise_validation_errors
         )
     elif isinstance(model_instance, abc.Array):
         validate(model_instance)
         for item in model_instance:
             if isinstance(item, abc.Model):
-                model(
+                validate_serialization_is_replicable(
                     item,
                     raise_validation_errors=raise_validation_errors,
                 )
@@ -257,7 +262,7 @@ def model(
         value: abc.MarshallableTypes
         for value in model_instance.values():
             if isinstance(value, abc.Model):
-                model(
+                validate_serialization_is_replicable(
                     value,
                     raise_validation_errors=raise_validation_errors,
                 )

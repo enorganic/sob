@@ -1,12 +1,26 @@
 from __future__ import annotations
 
+import doctest
 from pathlib import Path
 
-from sob._io import read
+import pytest
+
+from sob import _io
 
 RAINBOX_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
 
 
+def test_doctest() -> None:
+    """
+    Run docstring tests
+    """
+    doctest.testmod(_io)
+
+
 def test_read() -> None:
     with open(RAINBOX_PNG, "rb") as rainbow_io:
-        read(rainbow_io)
+        _io.read(rainbow_io)
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-vv"])

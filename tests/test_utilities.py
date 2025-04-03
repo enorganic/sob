@@ -5,15 +5,60 @@ from typing import Any
 
 import pytest
 
+import sob
 from sob import _io, _types, utilities
-from sob.utilities import (
-    get_calling_function_qualified_name,
-    get_calling_module_name,
-)
+
+
+def test_doctest() -> None:
+    """
+    Run docstring tests
+    """
+    doctest.testmod(utilities)
 
 
 def test_utilities() -> None:
-    doctest.testmod(utilities)
+    assert sob.utilities.get_calling_function_qualified_name() == (
+        "tests.test_utilities.test_utilities"
+    )
+
+    class TestCallingFunctionQualifiedNameA:
+        __module__ = "tests.utilities"
+
+        def __init__(self) -> None:
+            assert sob.utilities.get_calling_function_qualified_name() == (
+                "tests.utilities.test_utilities."
+                "TestCallingFunctionQualifiedNameA.__init__"
+            )
+
+    TestCallingFunctionQualifiedNameA()
+
+    class TestCallingFunctionQualifiedNameB:
+        def __init__(self) -> None:
+            assert sob.utilities.get_calling_function_qualified_name() == (
+                "tests.test_utilities.test_utilities.TestCallingFunctionQualif"
+                "iedNameB.__init__"
+            )
+
+    TestCallingFunctionQualifiedNameB()
+
+    class TestCallingFunctionQualifiedNameC:
+        class TestCallingFunctionQualifiedNameD:
+            def __init__(self) -> None:
+                assert sob.utilities.get_calling_function_qualified_name() == (
+                    "tests.test_utilities.test_utilities.TestCallingFunctionQu"
+                    "alifiedNameC.TestCallingFunctionQualifiedNameD.__init__"
+                )
+
+    TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
+    assert utilities.get_qualified_name(
+        TestCallingFunctionQualifiedNameC(
+            # -
+        ).TestCallingFunctionQualifiedNameD
+    ) == (
+        "tests.test_utilities.test_utilities.TestCallingFunctionQualifiedNameC"
+        ".TestCallingFunctionQualifiedNameD"
+    )
+    assert sob.utilities.get_qualified_name(sob.Object) == "sob.model.Object"
 
 
 def test_inspect() -> None:
@@ -28,13 +73,13 @@ def test_inspect() -> None:
 
             @staticmethod
             def get_static_method_name() -> str | None:
-                return get_calling_function_qualified_name()
+                return sob.utilities.get_calling_function_qualified_name()
 
             def get_method_name(self) -> str | None:
-                return get_calling_function_qualified_name()
+                return sob.utilities.get_calling_function_qualified_name()
 
             def get_module_name(self) -> str:
-                return get_calling_module_name()
+                return sob.utilities.get_calling_module_name()
 
         return MyClass()
 
@@ -54,7 +99,7 @@ def test_inspect() -> None:
 
 
 def test_get_calling_function_qualified_name() -> None:
-    assert get_calling_function_qualified_name() == (
+    assert sob.utilities.get_calling_function_qualified_name() == (
         "tests.test_utilities.test_get_calling_function_qualified_name"
     )
 

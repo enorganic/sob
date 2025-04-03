@@ -3,12 +3,14 @@ from __future__ import annotations
 import doctest
 from datetime import date, datetime
 
+import pytest
+
 import sob._datetime
 
 
 def test_doctest() -> None:
     """
-    Run all the doctests in the sob module.
+    Run docstring tests
     """
     # Run doctests for the sob._datetime module
     doctest.testmod(sob._datetime)  # noqa: SLF001
@@ -54,3 +56,7 @@ def test_raise_str2date_type_error() -> None:
     except ValueError:
         error_caught = True
     assert error_caught
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-s", "-vv"])
