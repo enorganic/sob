@@ -580,6 +580,10 @@ def test_copy() -> None:
     assert id(testy_deep_copy.string2string2c_b_a["one"]["c"]) != id(
         testy.string2string2c_b_a["one"]["c"]
     )
+    assert (
+        testy_deep_copy.string2string2c_b_a["one"]["c"]
+        == (testy.string2string2c_b_a["one"]["c"])
+    )
     del testy_deep_copy.string2string2c_b_a["one"]["c"]
     assert testy.string2string2c_b_a["one"]["c"] is not None
 
