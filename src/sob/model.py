@@ -2540,12 +2540,18 @@ def _type_hint_from_property_types(
     type_hint: str = "sob.abc.MarshallableTypes | None"
     if property_types is not None:
         if len(property_types) > 1:
-            type_hint = "(\n{}\n)".format(
-                "\n| ".join(
-                    indent_(
-                        _type_hint_from_property(item_type, module), start=0
-                    )
-                    for item_type in property_types
+            property_type_hints: tuple[str, ...] = tuple(
+                _type_hint_from_property(item_type, module)
+                for item_type in property_types
+            )
+            property_type_hint: str
+            type_hint = "\n".join(
+                (
+                    property_type_hints[0],
+                    *(
+                        f"| {property_type_hint}"
+                        for property_type_hint in property_type_hints[1:]
+                    ),
                 )
             )
         else:
@@ -2576,9 +2582,9 @@ def _type_hint_from_property(
             property_or_type.item_types, module
         )
         if item_type_hint:
-            type_hint = (
-                f"typing.Sequence[\n    {indent_(item_type_hint)}\n" "]"
-            )
+            if item_type_hint[0] == "(":
+                item_type_hint = item_type_hint[1:-1].strip()
+            type_hint = f"typing.Sequence[\n    {item_type_hint}\n]"
         else:
             type_hint = "typing.Sequence"
     elif isinstance(property_or_type, abc.DictionaryProperty):
@@ -2586,21 +2592,20 @@ def _type_hint_from_property(
             property_or_type.value_types, module
         )
         if value_type_hint:
+            if value_type_hint[0] == "(":
+                value_type_hint = value_type_hint[1:-1].strip()
             type_hint = (
                 "typing.Mapping[\n"
                 "    str,\n"
-                f"    {indent_(value_type_hint)}\n"
-                "]"
+                f"    {indent_(value_type_hint)}\n]"
             )
         else:
             type_hint = "dict"
     elif isinstance(property_or_type, abc.NumberProperty):
         type_hint = (
-            "(\n"  # -
-            "    float\n"  # -
-            "    | int\n"  # -
-            "    | decimal.Decimal\n"  # -
-            ")"
+            "float\n"  # -
+            "| int\n"  # -a
+            "| decimal.Decimal"
         )
     elif property_or_type and property_or_type.types:
         type_hint = _type_hint_from_property_types(
@@ -2764,14 +2769,16 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
                 _type_hint_from_property(property_, module), 12
             )
             property_assignments.append(
-                f"        self.{property_name_}: typing.Optional[\n"
+                f"        self.{property_name_}: (\n"
                 f"            {repr_property_typing}\n"
-                f"        ] = {property_name_}"
+                "            | None\n"
+                f"        ) = {property_name_}"
             )
             out.append(
-                f"        {property_name_}: typing.Optional[\n"
+                f"        {property_name_}: (\n"
                 f"            {repr_property_typing}\n"
-                f"        ] = None{repr_comma}"
+                "            | None\n"
+                f"        ) = None{repr_comma}"
             )
         out.append("    ) -> None:")
         out.extend(property_assignments)
@@ -2794,7 +2801,6 @@ def _iter_represent_object_metadata_slots(
         for property_name in metadata.properties:
             yield f'        "{property_name}",'
         yield "    )"
-        yield ""
 
 
 def _class_definition_from_meta(

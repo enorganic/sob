@@ -79,6 +79,9 @@ python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 
 [tool.ruff]
 line-length = 79
+extend-exclude = [
+    "tests/data/tesstee_model.py",
+]
 
 [tool.ruff.lint]
 ignore = [

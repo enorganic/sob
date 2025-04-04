@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 TEST_JSON: Path = Path(__file__).parent / "data" / "testy.json"
 RAINBOW_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
+TESTEE_MODEL_PY: Path = Path(__file__).parent / "data" / "tesstee_model.py"
 
 # region Test Model
 
@@ -206,7 +207,7 @@ class Tesstee(sob.Object):
         "boolean",
         "string",
         "number",
-        "decimal",
+        "decimal_",
         "integer",
         "rainbow",
         "a",
@@ -241,7 +242,7 @@ class Tesstee(sob.Object):
         boolean: bool | None = None,
         string: str | None = None,
         number: float | Decimal | None = None,
-        decimal: float | Decimal | None = None,
+        decimal_: float | Decimal | None = None,
         integer: int | None = None,
         rainbow: bytes | None = None,
         a: A | None = None,
@@ -272,7 +273,7 @@ class Tesstee(sob.Object):
         self.boolean = boolean
         self.string = string
         self.number = number
-        self.decimal = decimal
+        self.decimal_ = decimal_
         self.integer = integer
         self.rainbow = rainbow
         self.a = a
@@ -307,7 +308,7 @@ testee_meta.properties = {  # type: ignore
     "boolean": sob.BooleanProperty(),
     "string": sob.StringProperty(),
     "number": sob.NumberProperty(),
-    "decimal": sob.NumberProperty(),
+    "decimal_": sob.NumberProperty(),
     "integer": sob.IntegerProperty(),
     "rainbow": sob.BytesProperty(),
     "testy": sob.Property(types=(Tesstee,)),
@@ -436,7 +437,7 @@ testy: Tesstee = Tesstee(
     boolean=True,
     string="stringy",
     number=1.0,
-    decimal=Decimal("9.99"),
+    decimal_=Decimal("9.99"),
     integer=1,
     rainbow=_rainbow,
     a=a,
@@ -677,6 +678,30 @@ def test_extraneous_attributes_validation() -> None:
     except sob.ValidationError:
         error_caught = True
     assert error_caught
+
+
+def test_get_model_from_meta_regression() -> None:
+    """
+    This test verifies that a model's source code can be recreated
+    consistently from identical metadata. Whenever changes are
+    made to `Tesstee`, delete the file ./tests/data/tesstee_model.py
+    (The file be recreated the next time the test is run).
+    """
+    tesstee_meta: sob.abc.ObjectMeta = cast(
+        sob.abc.ObjectMeta, sob.read_object_meta(Tesstee)
+    )
+    tesstee_source: str = sob.utilities.get_source(
+        sob.get_model_from_meta("Tesstee", tesstee_meta)
+    )
+    tesstee_source = tesstee_source.replace(
+        "\nimport sob\n", "\nimport sob\nimport tests.test_model\n"
+    )
+    if TESTEE_MODEL_PY.exists():
+        with open(TESTEE_MODEL_PY) as testee_model_io:
+            assert tesstee_source == testee_model_io.read()
+    else:
+        with open(TESTEE_MODEL_PY, mode="w") as testee_model_io:
+            testee_model_io.write(tesstee_source)
 
 
 if __name__ == "__main__":

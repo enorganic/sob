@@ -2,14 +2,14 @@
     "boolean": true,
     "string": "stringy",
     "number": 1.0,
-    "decimal": 9.99,
+    "decimal_": 9.99,
     "integer": 1,
     "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
     "testy": {
         "boolean": true,
         "string": "stringy",
         "number": 1.0,
-        "decimal": 9.99,
+        "decimal_": 9.99,
         "integer": 1,
         "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
         "booleanArray": [
@@ -222,7 +222,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -383,7 +383,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -544,7 +544,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -705,7 +705,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -866,7 +866,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1027,7 +1027,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1188,7 +1188,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1349,7 +1349,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1510,7 +1510,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1671,7 +1671,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -1892,7 +1892,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -2053,7 +2053,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -2214,7 +2214,7 @@
             "boolean": true,
             "string": "stringy",
             "number": 1.0,
-            "decimal": 9.99,
+            "decimal_": 9.99,
             "integer": 1,
             "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
             "booleanArray": [
@@ -2378,7 +2378,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -2539,7 +2539,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -2700,7 +2700,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -2863,7 +2863,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -3024,7 +3024,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -3185,7 +3185,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -3348,7 +3348,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -3509,7 +3509,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [
@@ -3670,7 +3670,7 @@
                 "boolean": true,
                 "string": "stringy",
                 "number": 1.0,
-                "decimal": 9.99,
+                "decimal_": 9.99,
                 "integer": 1,
                 "rainbow": "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAWUlEQVQ4jWN8nZT0///X3wwseiIMbM7yDP9/MDIwyl1l4BR7wPDmqzDD0qfWDJ8ZORhePxVkuHxFiYGB7T+D9tPnDLLvPjD8ZGFhYGKgEIwaMGrAqAGDxQAAClYYrXhyfdkAAAAASUVORK5CYII=",
                 "booleanArray": [

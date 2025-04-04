@@ -97,8 +97,12 @@ def property_name(string: str) -> str:
     # Replace any two or more adjacent underscores with a single underscore
     name = re.sub(r"__+", "_", name)
     # Append an underscore to the keyword until it does not conflict with any
-    # python keywords or built-ins
-    while iskeyword(name) or (name in builtins.__dict__) or name == "self":
+    # python keywords, built-ins, or potential module imports
+    while (
+        iskeyword(name)
+        or (name in builtins.__dict__)
+        or name in {"self", "decimal", "datetime", "typing"}
+    ):
         name += "_"
     return name.lstrip("_")
 
