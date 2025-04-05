@@ -71,6 +71,13 @@ test:
 	hatch fmt --check && hatch run mypy && hatch test -c -vv && \
 	echo "Tests Successful"
 
+# Refresh regression test data and run tests
+refresh-test-data:
+	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
+	rm tests/data/tesstee_model.py\
+	 tests/data/testy.json && \
+	make test
+
 format:
 	hatch fmt --formatter
 	hatch fmt --linter

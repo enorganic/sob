@@ -132,13 +132,4 @@ fail_under = 70
 
 [tool.coverage.run]
 source = ["src"]
-omit = [
-    "src/**/__main__.py",
-    "src/sob/warnings.py",
-    "src/sob/test.py",
-    "src/sob/thesaurus.py",
-    "src/sob/hooks.py",
-    "src/sob/abc.py",
-    "src/sob/utilities/**",
-]
 
