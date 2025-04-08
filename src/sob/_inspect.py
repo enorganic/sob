@@ -20,10 +20,10 @@ def get_parameters_defaults(function: Callable[..., Any]) -> dict[str, Any]:
     ...     X.__init__  # -
     ... ).items():
     ...     print((parameter_name, default))
-    ('self', UNDEFINED)
-    ('a', UNDEFINED)
-    ('b', UNDEFINED)
-    ('c', UNDEFINED)
+    ('self', sob.UNDEFINED)
+    ('a', sob.UNDEFINED)
+    ('b', sob.UNDEFINED)
+    ('c', sob.UNDEFINED)
     ('d', 1)
     ('e', 2)
     ('f', 3)

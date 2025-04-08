@@ -121,6 +121,8 @@ def _version_as_tuple(
 
 
 class Version(abc.Version):
+    __module__: str = "sob"
+
     def __init__(
         self,
         version_string: str | None = None,

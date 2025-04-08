@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING
 
 from typing_extensions import Self
 
@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
 
 class Types(abc.Types):
+    __module__: str = "sob"
+
     def __init__(
         self,
         items: abc.Types
@@ -37,13 +39,6 @@ class Types(abc.Types):
         self._list: list[type | abc.Property] = []
         if items is not None:
             self._extend(items)
-
-    @classmethod
-    def _raise_immutable_type_error(cls) -> NoReturn:
-        message: str = (
-            f"Instances of `{get_qualified_name(cls)}` cannot be " "modified."
-        )
-        raise TypeError(message)
 
     def __copy__(self) -> abc.Types:
         return self.__class__(self)
@@ -121,6 +116,8 @@ class MutableTypes(Types, abc.MutableTypes):
     - items ([type|sob.properties.Property])
     - mutable (bool)
     """
+
+    __module__: str = "sob"
 
     def __setitem__(self, index: int, value: type | abc.Property) -> None:
         _validate_type_or_property(value)

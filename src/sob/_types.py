@@ -16,29 +16,23 @@ class Undefined:
     meaningful value.
     """
 
+    __module__ = "sob"
+
     def __init__(self) -> None:
         """
         Only one instance of `Undefined` is permitted, so initialization
         checks to make sure this is the first use.
         """
         if "UNDEFINED" in _module_locals:
-            msg = f"{self!r} may only be instantiated once."
-            raise RuntimeError(msg)
+            message: str = f"{self!r} may only be instantiated once."
+            raise DefinitionExistsError(message)
 
     def __repr__(self) -> str:
         """
         Represent instances of this class using the qualified name for the
         constant `UNDEFINED`.
         """
-        representation = "UNDEFINED"
-        if self.__module__ not in (
-            "__main__",
-            "builtins",
-            "__builtin__",
-            __name__,
-        ):
-            representation = f"{type(self).__module__}.{representation}"
-        return representation
+        return "sob.UNDEFINED"
 
     def __bool__(self) -> bool:
         """
@@ -89,6 +83,8 @@ class Null:
     referenced through the constant `NULL` from this same module.
     """
 
+    __module__ = "sob"
+
     def __init__(self) -> None:
         if "NULL" in _module_locals:
             message: str = f"{self!r} may only be defined once."
@@ -111,11 +107,7 @@ class Null:
         return None
 
     def __repr__(self) -> str:
-        return (
-            "NULL"
-            if self.__module__ in ("__main__", "builtins", "__builtin__")
-            else f"{self.__module__}.NULL"
-        )
+        return "sob.NULL"
 
     def __copy__(self) -> Null:
         return self

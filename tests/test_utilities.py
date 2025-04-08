@@ -58,7 +58,7 @@ def test_utilities() -> None:
         "tests.test_utilities.test_utilities.TestCallingFunctionQualifiedNameC"
         ".TestCallingFunctionQualifiedNameD"
     )
-    assert sob.utilities.get_qualified_name(sob.Object) == "sob.model.Object"
+    assert sob.utilities.get_qualified_name(sob.Object) == "sob.Object"
 
 
 def test_inspect() -> None:

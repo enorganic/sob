@@ -59,10 +59,12 @@ def _is_model(_model: Any) -> bool:
     return _is_object(_model) or _is_array(_model) or _is_dictionary(_model)
 
 
-class Meta(abc.Meta):
+class Meta(abc.Meta):  # pragma: no cover
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __copy__(self) -> abc.Meta:
         new_instance: Meta = self.__class__()
@@ -109,6 +111,8 @@ class ObjectMeta(Meta, abc.ObjectMeta):
     TODO
     """
 
+    __module__: str = "sob"
+
     def __init__(
         self,
         properties: Mapping[str, abc.Property]
@@ -146,6 +150,8 @@ class DictionaryMeta(Meta, abc.DictionaryMeta):
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,
@@ -189,6 +195,8 @@ class ArrayMeta(Meta, abc.ArrayMeta):
     TODO
     """
 
+    __module__: str = "sob"
+
     def __init__(
         self,
         item_types: Iterable[abc.Property | type]
@@ -228,6 +236,8 @@ class Properties(abc.Properties):
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,

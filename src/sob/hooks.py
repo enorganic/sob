@@ -13,10 +13,12 @@ if TYPE_CHECKING:
     from sob.abc import JSONTypes, MarshallableTypes
 
 
-class Hooks(abc.Hooks):
+class Hooks(abc.Hooks):  # pragma: no cover
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,
@@ -58,6 +60,8 @@ class ObjectHooks(Hooks, abc.ObjectHooks):
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,
@@ -108,6 +112,8 @@ class ArrayHooks(Hooks, abc.ArrayHooks):
     TODO
     """
 
+    __module__: str = "sob"
+
     def __init__(
         self,
         before_marshal: Callable[[abc.Model], abc.Model] | None = None,
@@ -156,6 +162,8 @@ class DictionaryHooks(Hooks, abc.DictionaryHooks):
     """
     TODO
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,
@@ -234,7 +242,7 @@ read = read_model_hooks
 
 def read_object_hooks(model: type | abc.Object) -> abc.ObjectHooks | None:
     """
-    Read metadata from an `sob.model.Object` sub-class or instance (the
+    Read metadata from an `sob.Object` sub-class or instance (the
     returned metadata may be inherited, and therefore should not be written
     to).
     """

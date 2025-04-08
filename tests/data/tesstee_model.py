@@ -1,11 +1,367 @@
 from __future__ import annotations
 import typing
-import decimal
 import sob
-import tests.test_model
+import datetime
+import decimal
 
 
-class Tesstee(sob.model.Object):
+class ArrayA(sob.Array):
+
+    def __init__(
+        self,
+        items: (
+            typing.Iterable[
+                ObjectA
+            ]
+            | sob.abc.Readable
+            | str
+            | bytes
+            | None
+        ) = None
+    ) -> None:
+        super().__init__(items)
+
+
+class ObjectA(sob.Object):
+
+    __slots__: tuple[str, ...] = (
+        "is_a_class",
+        "boolean",
+        "string",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
+
+    def __init__(
+        self,
+        _data: (
+            sob.abc.Dictionary
+            | typing.Mapping[
+                str,
+                sob.abc.MarshallableTypes
+            ]
+            | typing.Iterable[
+                tuple[
+                    str,
+                    sob.abc.MarshallableTypes
+                ]
+            ]
+            | sob.abc.Readable
+            | typing.IO
+            | str
+            | bytes
+            | None
+        ) = None,
+        is_a_class: (
+            bool
+            | None
+        ) = None,
+        boolean: (
+            bool
+            | None
+        ) = None,
+        string: (
+            str
+            | None
+        ) = None,
+        alpha: (
+            typing.Any
+            | None
+        ) = None,
+        beta: (
+            typing.Any
+            | None
+        ) = None,
+        gamma: (
+            typing.Any
+            | None
+        ) = None,
+        delta: (
+            typing.Any
+            | None
+        ) = None,
+        iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = None,
+        iso8601_date: (
+            datetime.date
+            | None
+        ) = None
+    ) -> None:
+        self.is_a_class: (
+            bool
+            | None
+        ) = is_a_class
+        self.boolean: (
+            bool
+            | None
+        ) = boolean
+        self.string: (
+            str
+            | None
+        ) = string
+        self.alpha: (
+            typing.Any
+            | None
+        ) = alpha
+        self.beta: (
+            typing.Any
+            | None
+        ) = beta
+        self.gamma: (
+            typing.Any
+            | None
+        ) = gamma
+        self.delta: (
+            typing.Any
+            | None
+        ) = delta
+        self.iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = iso8601_datetime
+        self.iso8601_date: (
+            datetime.date
+            | None
+        ) = iso8601_date
+        super().__init__(_data)
+
+
+class ObjectB(sob.Object):
+
+    __slots__: tuple[str, ...] = (
+        "is_b_class",
+        "boolean",
+        "string",
+        "integer",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
+
+    def __init__(
+        self,
+        _data: (
+            sob.abc.Dictionary
+            | typing.Mapping[
+                str,
+                sob.abc.MarshallableTypes
+            ]
+            | typing.Iterable[
+                tuple[
+                    str,
+                    sob.abc.MarshallableTypes
+                ]
+            ]
+            | sob.abc.Readable
+            | typing.IO
+            | str
+            | bytes
+            | None
+        ) = None,
+        is_b_class: (
+            bool
+            | None
+        ) = None,
+        boolean: (
+            bool
+            | None
+        ) = None,
+        string: (
+            str
+            | None
+        ) = None,
+        integer: (
+            int
+            | None
+        ) = None,
+        alpha: (
+            typing.Any
+            | None
+        ) = None,
+        beta: (
+            typing.Any
+            | None
+        ) = None,
+        gamma: (
+            typing.Any
+            | None
+        ) = None,
+        delta: (
+            typing.Any
+            | None
+        ) = None,
+        iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = None,
+        iso8601_date: (
+            datetime.date
+            | None
+        ) = None
+    ) -> None:
+        self.is_b_class: (
+            bool
+            | None
+        ) = is_b_class
+        self.boolean: (
+            bool
+            | None
+        ) = boolean
+        self.string: (
+            str
+            | None
+        ) = string
+        self.integer: (
+            int
+            | None
+        ) = integer
+        self.alpha: (
+            typing.Any
+            | None
+        ) = alpha
+        self.beta: (
+            typing.Any
+            | None
+        ) = beta
+        self.gamma: (
+            typing.Any
+            | None
+        ) = gamma
+        self.delta: (
+            typing.Any
+            | None
+        ) = delta
+        self.iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = iso8601_datetime
+        self.iso8601_date: (
+            datetime.date
+            | None
+        ) = iso8601_date
+        super().__init__(_data)
+
+
+class ObjectC(sob.Object):
+
+    __slots__: tuple[str, ...] = (
+        "is_c_class",
+        "string",
+        "integer",
+        "alpha",
+        "beta",
+        "gamma",
+        "delta",
+        "iso8601_datetime",
+        "iso8601_date",
+    )
+
+    def __init__(
+        self,
+        _data: (
+            sob.abc.Dictionary
+            | typing.Mapping[
+                str,
+                sob.abc.MarshallableTypes
+            ]
+            | typing.Iterable[
+                tuple[
+                    str,
+                    sob.abc.MarshallableTypes
+                ]
+            ]
+            | sob.abc.Readable
+            | typing.IO
+            | str
+            | bytes
+            | None
+        ) = None,
+        is_c_class: (
+            bool
+            | None
+        ) = None,
+        string: (
+            str
+            | None
+        ) = None,
+        integer: (
+            int
+            | None
+        ) = None,
+        alpha: (
+            typing.Any
+            | None
+        ) = None,
+        beta: (
+            typing.Any
+            | None
+        ) = None,
+        gamma: (
+            typing.Any
+            | None
+        ) = None,
+        delta: (
+            typing.Any
+            | None
+        ) = None,
+        iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = None,
+        iso8601_date: (
+            datetime.date
+            | None
+        ) = None
+    ) -> None:
+        self.is_c_class: (
+            bool
+            | None
+        ) = is_c_class
+        self.string: (
+            str
+            | None
+        ) = string
+        self.integer: (
+            int
+            | None
+        ) = integer
+        self.alpha: (
+            typing.Any
+            | None
+        ) = alpha
+        self.beta: (
+            typing.Any
+            | None
+        ) = beta
+        self.gamma: (
+            typing.Any
+            | None
+        ) = gamma
+        self.delta: (
+            typing.Any
+            | None
+        ) = delta
+        self.iso8601_datetime: (
+            datetime.datetime
+            | None
+        ) = iso8601_datetime
+        self.iso8601_date: (
+            datetime.date
+            | None
+        ) = iso8601_date
+        super().__init__(_data)
+
+
+class Tesstee(sob.Object):
 
     __slots__: tuple[str, ...] = (
         "boolean",
@@ -38,6 +394,8 @@ class Tesstee(sob.model.Object):
         "version_2",
         "required_integer",
         "required_integer_or_string",
+        "array_a",
+        "null_value",
     )
 
     def __init__(
@@ -89,7 +447,7 @@ class Tesstee(sob.model.Object):
             | None
         ) = None,
         testy: (
-            "tests.test_model.Tesstee"
+            Tesstee
             | None
         ) = None,
         boolean_array: (
@@ -126,7 +484,7 @@ class Tesstee(sob.model.Object):
         ) = None,
         testy_array: (
             typing.Sequence[
-                "tests.test_model.Tesstee"
+                Tesstee
             ]
             | None
         ) = None,
@@ -139,33 +497,33 @@ class Tesstee(sob.model.Object):
             | None
         ) = None,
         a: (
-            "tests.test_model.A"
+            ObjectA
             | None
         ) = None,
         b: (
-            "tests.test_model.B"
+            ObjectB
             | None
         ) = None,
         c: (
-            "tests.test_model.C"
+            ObjectC
             | None
         ) = None,
         a_b_c: (
-            "tests.test_model.A"
-            | "tests.test_model.B"
-            | "tests.test_model.C"
+            ObjectA
+            | ObjectB
+            | ObjectC
             | None
         ) = None,
         c_b_a: (
-            "tests.test_model.C"
-            | "tests.test_model.B"
-            | "tests.test_model.A"
+            ObjectC
+            | ObjectB
+            | ObjectA
             | None
         ) = None,
         string2testy: (
             typing.Mapping[
                 str,
-                "tests.test_model.Tesstee"
+                Tesstee
             ]
             | None
         ) = None,
@@ -174,7 +532,7 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.Tesstee"
+                    Tesstee
                 ]
             ]
             | None
@@ -182,18 +540,18 @@ class Tesstee(sob.model.Object):
         string2a_b_c: (
             typing.Mapping[
                 str,
-                "tests.test_model.A"
-                | "tests.test_model.B"
-                | "tests.test_model.C"
+                ObjectA
+                | ObjectB
+                | ObjectC
             ]
             | None
         ) = None,
         string2c_b_a: (
             typing.Mapping[
                 str,
-                "tests.test_model.C"
-                | "tests.test_model.B"
-                | "tests.test_model.A"
+                ObjectC
+                | ObjectB
+                | ObjectA
             ]
             | None
         ) = None,
@@ -202,9 +560,9 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.A"
-                    | "tests.test_model.B"
-                    | "tests.test_model.C"
+                    ObjectA
+                    | ObjectB
+                    | ObjectC
                 ]
             ]
             | None
@@ -214,9 +572,9 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.C"
-                    | "tests.test_model.B"
-                    | "tests.test_model.A"
+                    ObjectC
+                    | ObjectB
+                    | ObjectA
                 ]
             ]
             | None
@@ -244,6 +602,14 @@ class Tesstee(sob.model.Object):
         required_integer_or_string: (
             int
             | str
+            | None
+        ) = None,
+        array_a: (
+            ArrayA
+            | None
+        ) = None,
+        null_value: (
+            sob.Null
             | None
         ) = None
     ) -> None:
@@ -276,7 +642,7 @@ class Tesstee(sob.model.Object):
             | None
         ) = rainbow
         self.testy: (
-            "tests.test_model.Tesstee"
+            Tesstee
             | None
         ) = testy
         self.boolean_array: (
@@ -313,7 +679,7 @@ class Tesstee(sob.model.Object):
         ) = rainbow_array
         self.testy_array: (
             typing.Sequence[
-                "tests.test_model.Tesstee"
+                Tesstee
             ]
             | None
         ) = testy_array
@@ -326,33 +692,33 @@ class Tesstee(sob.model.Object):
             | None
         ) = string_number_boolean
         self.a: (
-            "tests.test_model.A"
+            ObjectA
             | None
         ) = a
         self.b: (
-            "tests.test_model.B"
+            ObjectB
             | None
         ) = b
         self.c: (
-            "tests.test_model.C"
+            ObjectC
             | None
         ) = c
         self.a_b_c: (
-            "tests.test_model.A"
-            | "tests.test_model.B"
-            | "tests.test_model.C"
+            ObjectA
+            | ObjectB
+            | ObjectC
             | None
         ) = a_b_c
         self.c_b_a: (
-            "tests.test_model.C"
-            | "tests.test_model.B"
-            | "tests.test_model.A"
+            ObjectC
+            | ObjectB
+            | ObjectA
             | None
         ) = c_b_a
         self.string2testy: (
             typing.Mapping[
                 str,
-                "tests.test_model.Tesstee"
+                Tesstee
             ]
             | None
         ) = string2testy
@@ -361,7 +727,7 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.Tesstee"
+                    Tesstee
                 ]
             ]
             | None
@@ -369,18 +735,18 @@ class Tesstee(sob.model.Object):
         self.string2a_b_c: (
             typing.Mapping[
                 str,
-                "tests.test_model.A"
-                | "tests.test_model.B"
-                | "tests.test_model.C"
+                ObjectA
+                | ObjectB
+                | ObjectC
             ]
             | None
         ) = string2a_b_c
         self.string2c_b_a: (
             typing.Mapping[
                 str,
-                "tests.test_model.C"
-                | "tests.test_model.B"
-                | "tests.test_model.A"
+                ObjectC
+                | ObjectB
+                | ObjectA
             ]
             | None
         ) = string2c_b_a
@@ -389,9 +755,9 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.A"
-                    | "tests.test_model.B"
-                    | "tests.test_model.C"
+                    ObjectA
+                    | ObjectB
+                    | ObjectC
                 ]
             ]
             | None
@@ -401,9 +767,9 @@ class Tesstee(sob.model.Object):
                 str,
                 typing.Mapping[
                     str,
-                    "tests.test_model.C"
-                    | "tests.test_model.B"
-                    | "tests.test_model.A"
+                    ObjectC
+                    | ObjectB
+                    | ObjectA
                 ]
             ]
             | None
@@ -433,5 +799,12 @@ class Tesstee(sob.model.Object):
             | str
             | None
         ) = required_integer_or_string
+        self.array_a: (
+            ArrayA
+            | None
+        ) = array_a
+        self.null_value: (
+            sob.Null
+            | None
+        ) = null_value
         super().__init__(_data)
-

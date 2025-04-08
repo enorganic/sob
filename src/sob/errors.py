@@ -5,10 +5,25 @@ from traceback import format_exception
 from typing import TYPE_CHECKING, Any
 
 from sob import abc
+from sob._types import DefinitionExistsError
 from sob.utilities import indent, represent
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+__all__: tuple[str, ...] = (
+    "ValidationError",
+    "VersionError",
+    "DeserializeError",
+    "UnmarshalError",
+    "UnmarshalKeyError",
+    "UnmarshalTypeError",
+    "UnmarshalValueError",
+    "ObjectDiscrepancyError",
+    "get_exception_text",
+    "append_exception_text",
+    "DefinitionExistsError",
+)
 
 
 class ValidationError(Exception):

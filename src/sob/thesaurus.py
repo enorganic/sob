@@ -480,6 +480,8 @@ class Synonyms:
     one type of entity, and is used to infer a model for that entity.
     """
 
+    __module__: str = "sob"
+
     __slots__ = ("_type", "_nullable", "_set")
 
     def __init__(
@@ -986,8 +988,31 @@ def get_class_meta_attribute_assignment_source(
 @collections.abc.MutableMapping.register
 class Thesaurus:
     """
-    TODO
+    An instance of `sob.Thesaurus` is a dictionary-like object wherein
+    each value is an instance of `sob.Synonyms`.
+
+    For example, if you have an API with several GET endpoints, the endpoint
+    paths relative to the API base URL would make ideal keys for your
+    `sob.Thesaurus` instance. After adding a representative sample of responses
+    from each endpoint to the corresponding `sob.Synonyms` instance in your
+    `sob.Thesaurus` instance, your thesaurus will be able to generate a
+    python module with an `sob` based data model for all of your endpoints,
+    including polymorphism where encountered.
+
+    The keys of an `sob.Thesaurus` dictionary are meaningful in that they
+    contribute to the naming of classes (which are formatted to comply with
+    PEP-8, and to avoid collision with builtins, language keywords, etc.).
+
+    For background: The `sob` library was designed for authoring a data model
+    representing schemas defined by an OpenAPI specification. Although
+    OpenAPI specifications are increasingly ubiquitous, there are scenarios
+    where you might need to interact with an API which does not have an
+    OpenAPI specification, or for which the OpenAPI specification is simply
+    not available to *you*. In these cases, you can generate an `sob`
+    model to validate your API responses using `sob.Thesaurus`.
     """
+
+    __module__: str = "sob"
 
     __slots__ = ("_dict",)
 
@@ -1005,6 +1030,13 @@ class Thesaurus:
         | None = None,
         **kwargs: Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> None:
+        """
+        Parameters:
+            _items: A mapping of keys to values, where each value is
+                an iterable of items which are synonymous with the key.
+                This can either be an iterable of key/value pair tuples,
+                or a dictionary-like object.
+        """
         self._dict: abc.OrderedDict[str, Synonyms] = collections.OrderedDict()
         key: str
         value: Iterable[abc.Readable | abc.MarshallableTypes]
@@ -1016,30 +1048,82 @@ class Thesaurus:
     def __setitem__(
         self,
         key: str,
-        value: Iterable[abc.Readable | abc.MarshallableTypes],
+        value: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> None:
+        """
+        This method adds/overwrites the synonyms for the specified `key`.
+        If the `value` is not an instance of `sob.Synonyms`, a new instance
+        of `sob.Synonyms` is created and JSON data items from `value` are
+        added to it.
+
+        Parameters:
+            key: A string to utilize when attributing a unique name to the
+                class representing these synonyms.
+            value: An iterable of JSON data which should be considered
+                synonymous.
+        """
         if not isinstance(value, Synonyms):
             value = Synonyms(value)
         return self._dict.__setitem__(key, value)
 
     def __delitem__(self, key: str) -> None:
+        """
+        This method deletes the synonyms assigned the specified `key`.
+
+        Parameters:
+            key:
+        """
         self._dict.__delitem__(key)
 
     def pop(
         self, key: str, default: Synonyms | Undefined = UNDEFINED
     ) -> Synonyms:
+        """
+        This method removes and returns the synonyms assigned to the specified
+        `key`.
+
+        Parameters:
+            key:
+            default: A value to return if the specified `key` does not exist.
+                If no default is provided, a `KeyError` will be raised if the
+                key is not found.
+        """
         return self._dict.pop(
             key,
             **({} if isinstance(default, Undefined) else {"default": default}),
         )
 
-    def popitem(self) -> tuple[str, Synonyms]:
-        return self._dict.popitem()
+    def popitem(self, *, last: bool = True) -> tuple[str, Synonyms]:
+        """
+        This method removes and returns a tuple of the most recently added
+        key/synonyms pair (by default), or the first added key/synonyms pair
+        if `last` is set to `False`.
+
+        Parameters:
+            last: If `True` (the default), the last item added to the
+                dictionary is returned. Otherwise, the first key/synonyms
+                pair added is removed and returned.
+        """
+        return self._dict.popitem(last=last)
 
     def clear(self) -> None:
+        """
+        This method clears the thesaurus, removing all synonyms.
+        """
         self._dict.clear()
 
-    def update(self, **kwargs: Synonyms) -> None:
+    def update(
+        self,
+        **kwargs: Synonyms | Iterable[abc.Readable | abc.MarshallableTypes],
+    ) -> None:
+        """
+        This method updates the thesaurus with one or more specified synonyms.
+
+        Parameters:
+            kwargs: A mapping of keys to values, where each value is
+                an iterable of items which are synonymous with the key,
+                or is an instance of `sob.Synonyms`.
+        """
         key: str
         value: Iterable[abc.Readable | abc.MarshallableTypes]
         for key, value in kwargs.items():
@@ -1050,6 +1134,11 @@ class Thesaurus:
         key: str,
         default: Iterable[abc.Readable | abc.MarshallableTypes],
     ) -> Synonyms:
+        """
+        This method assigns `default` synonyms to the specified `key` if
+        no synonyms have previously been assigned to the key, and returns
+        either the existing or newly assigned synonyms.
+        """
         if not isinstance(default, Synonyms):
             default = Synonyms(default)
         return self._dict.setdefault(key, default)

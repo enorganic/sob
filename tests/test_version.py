@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 # region Declare classes
 
 
-class MemberObjectA(sob.model.Object):
+class MemberObjectA(sob.Object):
     def __init__(
         self,
         _data: str | bytes | dict | Sequence | IO | None = None,
@@ -32,7 +32,7 @@ class MemberObjectA(sob.model.Object):
         super().__init__(_data)
 
 
-class MemberObjectB(sob.model.Object):
+class MemberObjectB(sob.Object):
     def __init__(
         self,
         _data: str | bytes | dict | Sequence | IO | None = None,
@@ -46,7 +46,7 @@ class MemberObjectB(sob.model.Object):
         super().__init__(_data)
 
 
-class MemberObjectC(sob.model.Object):
+class MemberObjectC(sob.Object):
     def __init__(
         self,
         _data: str | bytes | dict | Sequence | IO | None = None,
@@ -133,7 +133,7 @@ class MemberArrayC(sob.model.Array):
         super().__init__(items)
 
 
-class VersionedObject(sob.model.Object):
+class VersionedObject(sob.Object):
     """
     This class has metadata which dynamically alters constraints on the
     object's polymorphic potential, based on a specification + version.

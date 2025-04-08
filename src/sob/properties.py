@@ -110,7 +110,7 @@ class Property(abc.Property):
 
           Versioning can be applied to a property by calling
           `sob.meta.set_version` in the `__init__` method of an
-          `sob.model.Object` sub-class.
+          `sob.Object` sub-class.
 
         - name (str): The name of the property when loaded from or dumped into
           a JSON object. Specifying a `name` facilitates mapping of PEP8
@@ -120,6 +120,8 @@ class Property(abc.Property):
           infer an appropriate property name programmatically, use the utility
           function `sob.utilities.property_name`.
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types | None = None
 
@@ -274,6 +276,8 @@ class StringProperty(Property, abc.StringProperty):
     See `sob.Property`
     """
 
+    __module__: str = "sob"
+
     _types: abc.Types = Types((str,))  # type: ignore
 
     def __init__(
@@ -312,6 +316,8 @@ class DateProperty(Property, abc.DateProperty):
           date string), and returning a python `date` object. By default,
           this is `iso8601.iso8601.parse_date`.
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types | None = Types((date,))
 
@@ -361,6 +367,8 @@ class DateTimeProperty(Property, abc.DateTimeProperty):
       By default, this is `iso8601.iso8601.parse_date`.
     """
 
+    __module__: str = "sob"
+
     _types: abc.Types = Types((datetime,))  # type: ignore
 
     def __init__(
@@ -401,6 +409,8 @@ class BytesProperty(Property, abc.BytesProperty):
     This class represents a property with binary values
     """
 
+    __module__: str = "sob"
+
     _types: abc.Types = Types((bytes,))  # type: ignore
 
     def __init__(
@@ -437,6 +447,8 @@ class EnumeratedProperty(Property, abc.EnumeratedProperty):
 
     This class exposes public properties matching its keyword parameters.
     """
+
+    __module__: str = "sob"
 
     def __init__(
         self,
@@ -484,6 +496,8 @@ class NumberProperty(Property, abc.NumberProperty):
     See `sob.properties.Property`
     """
 
+    __module__: str = "sob"
+
     _types: abc.Types = Types((Decimal, float, int))  # type: ignore
 
     def __init__(
@@ -507,6 +521,8 @@ class IntegerProperty(Property, abc.IntegerProperty):
     """
     See `sob.properties.Property`
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types = Types((int,))  # type: ignore
 
@@ -535,6 +551,8 @@ class BooleanProperty(Property, abc.BooleanProperty):
     """
     See `sob.properties.Property`
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types = Types((bool,))  # type: ignore
 
@@ -570,6 +588,8 @@ class ArrayProperty(Property, abc.ArrayProperty):
       `sob.properties.Property().types`, but applied to items in the
       array, not the array itself.
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types = Types((abc.Array,))  # type: ignore
     _item_types: abc.Types | None = None
@@ -646,6 +666,8 @@ class DictionaryProperty(Property, abc.DictionaryProperty):
       `sob.properties.Property.types`, but applies to *values* in the
       dictionary object, not the dictionary itself.
     """
+
+    __module__: str = "sob"
 
     _types: abc.Types = Types((abc.Dictionary,))  # type: ignore
     _value_types: abc.Types | None = None

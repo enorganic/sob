@@ -164,7 +164,21 @@
             }
         },
         "requiredInteger": 1,
-        "requiredIntegerOrString": "Two"
+        "requiredIntegerOrString": "Two",
+        "arrayA": [
+            {
+                "is_a_class": true,
+                "boolean": true,
+                "string": "a string",
+                "alpha": 1,
+                "beta": 2,
+                "gamma": 3,
+                "delta": 1,
+                "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                "iso8601Date": "2016-03-28"
+            }
+        ],
+        "nullValue": null
     },
     "booleanArray": [
         true,
@@ -377,7 +391,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -538,7 +566,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -699,7 +741,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -860,7 +916,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1021,7 +1091,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1182,7 +1266,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1343,7 +1441,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1504,7 +1616,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1665,7 +1791,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         {
             "boolean": true,
@@ -1826,7 +1966,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         }
     ],
     "stringNumberBoolean": true,
@@ -2047,7 +2201,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         "B": {
             "boolean": true,
@@ -2208,7 +2376,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         },
         "C": {
             "boolean": true,
@@ -2369,7 +2551,21 @@
                 }
             },
             "requiredInteger": 1,
-            "requiredIntegerOrString": "Two"
+            "requiredIntegerOrString": "Two",
+            "arrayA": [
+                {
+                    "is_a_class": true,
+                    "boolean": true,
+                    "string": "a string",
+                    "alpha": 1,
+                    "beta": 2,
+                    "gamma": 3,
+                    "delta": 1,
+                    "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                    "iso8601Date": "2016-03-28"
+                }
+            ],
+            "nullValue": null
         }
     },
     "string2string2testy": {
@@ -2533,7 +2729,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "B": {
                 "boolean": true,
@@ -2694,7 +2904,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "C": {
                 "boolean": true,
@@ -2855,7 +3079,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             }
         },
         "B": {
@@ -3018,7 +3256,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "B": {
                 "boolean": true,
@@ -3179,7 +3431,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "C": {
                 "boolean": true,
@@ -3340,7 +3606,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             }
         },
         "C": {
@@ -3503,7 +3783,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "B": {
                 "boolean": true,
@@ -3664,7 +3958,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             },
             "C": {
                 "boolean": true,
@@ -3825,7 +4133,21 @@
                     }
                 },
                 "requiredInteger": 1,
-                "requiredIntegerOrString": "Two"
+                "requiredIntegerOrString": "Two",
+                "arrayA": [
+                    {
+                        "is_a_class": true,
+                        "boolean": true,
+                        "string": "a string",
+                        "alpha": 1,
+                        "beta": 2,
+                        "gamma": 3,
+                        "delta": 1,
+                        "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+                        "iso8601Date": "2016-03-28"
+                    }
+                ],
+                "nullValue": null
             }
         }
     },
@@ -4140,5 +4462,19 @@
         }
     },
     "requiredInteger": 1,
-    "requiredIntegerOrString": "Two"
+    "requiredIntegerOrString": "Two",
+    "arrayA": [
+        {
+            "is_a_class": true,
+            "boolean": true,
+            "string": "a string",
+            "alpha": 1,
+            "beta": 2,
+            "gamma": 3,
+            "delta": 1,
+            "iso8601DateTime": "2016-03-28T23:33:41.311662-05:00",
+            "iso8601Date": "2016-03-28"
+        }
+    ],
+    "nullValue": null
 }

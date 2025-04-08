@@ -13,22 +13,20 @@ import pytest
 from iso8601.iso8601 import parse_date
 
 import sob
-import sob._inspect
-import sob._utilities
 from sob import abc, meta, model, properties
 from tests import utilities as tests_utilities
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-TEST_JSON: Path = Path(__file__).parent / "data" / "testy.json"
+TESTY_JSON: Path = Path(__file__).parent / "data" / "testy.json"
 RAINBOW_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
 TESTEE_MODEL_PY: Path = Path(__file__).parent / "data" / "tesstee_model.py"
 
 # region Test Model
 
 
-class A(sob.Object):
+class ObjectA(sob.Object):
     __slots__: tuple[str, ...] = (
         "is_a_class",
         "boolean",
@@ -66,7 +64,7 @@ class A(sob.Object):
         super().__init__(_data)
 
 
-sob.get_writable_object_meta(A).properties = [  # type: ignore
+sob.get_writable_object_meta(ObjectA).properties = [  # type: ignore
     ("is_a_class", sob.BooleanProperty()),
     ("boolean", sob.BooleanProperty()),
     ("string", sob.StringProperty()),
@@ -79,7 +77,20 @@ sob.get_writable_object_meta(A).properties = [  # type: ignore
 ]
 
 
-class B(sob.Object):
+class ArrayA(sob.Array):
+    def __init__(
+        self,
+        items: (
+            Iterable[ObjectA] | sob.abc.Readable | str | bytes | None
+        ) = None,
+    ) -> None:
+        super().__init__(items)
+
+
+sob.get_writable_array_meta(ArrayA).item_types = sob.Types([ObjectA])
+
+
+class ObjectB(sob.Object):
     __slots__: tuple[str, ...] = (
         "is_b_class",
         "boolean",
@@ -120,7 +131,7 @@ class B(sob.Object):
         super().__init__(_)
 
 
-sob.get_writable_object_meta(B).properties = [  # type: ignore
+sob.get_writable_object_meta(ObjectB).properties = [  # type: ignore
     ("is_b_class", sob.BooleanProperty()),
     ("boolean", sob.BooleanProperty()),
     ("string", sob.StringProperty()),
@@ -139,7 +150,7 @@ def test_sequence_properties_assignment() -> None:
     Verify that when a list/tuple is assigned to a model's properties
     metadata, that the resulting property is an instance of `sob.Properties`
     """
-    object_meta: sob.abc.Meta | None = sob.read_object_meta(B)
+    object_meta: sob.abc.Meta | None = sob.read_object_meta(ObjectB)
     if (object_meta is None) or not isinstance(object_meta, meta.ObjectMeta):
         raise TypeError(object_meta)
     properties: sob.abc.Properties | None = object_meta.properties
@@ -147,7 +158,7 @@ def test_sequence_properties_assignment() -> None:
     assert isinstance(properties, meta.Properties)
 
 
-class C(sob.Object):
+class ObjectC(sob.Object):
     """
     TODO
     """
@@ -189,7 +200,7 @@ class C(sob.Object):
         super().__init__(_)
 
 
-meta.get_writable_object_meta(C).properties = [  # type: ignore
+meta.get_writable_object_meta(ObjectC).properties = [  # type: ignore
     ("is_c_class", properties.Boolean()),
     ("string", properties.String()),
     ("integer", properties.Integer()),
@@ -232,6 +243,8 @@ class Tesstee(sob.Object):
         "version_switch",
         "version_1",
         "version_2",
+        "array_a",
+        "null_value",
     )
 
     def __init__(
@@ -245,9 +258,9 @@ class Tesstee(sob.Object):
         decimal_: float | Decimal | None = None,
         integer: int | None = None,
         rainbow: bytes | None = None,
-        a: A | None = None,
-        b: B | None = None,
-        c: C | None = None,
+        a: ObjectA | None = None,
+        b: ObjectB | None = None,
+        c: ObjectC | None = None,
         testy: Tesstee | None = None,
         boolean_array: Iterable[bool] | None = None,
         string_array: Iterable[str] | None = None,
@@ -256,19 +269,25 @@ class Tesstee(sob.Object):
         rainbow_array: Iterable[bytes] | None = None,
         testy_array: Iterable[Tesstee] | None = None,
         string_number_boolean: str | float | Decimal | bool | None = None,
-        a_b_c: A | B | C | None = None,
-        c_b_a: C | B | A | None = None,
+        a_b_c: ObjectA | ObjectB | ObjectC | None = None,
+        c_b_a: ObjectC | ObjectB | ObjectA | None = None,
         string2testy: dict[str, Tesstee] | None = None,
         string2string2testy: dict[str, dict[str, Tesstee]] | None = None,
-        string2a_b_c: dict[str, A | B | C] | None = None,
-        string2c_b_a: dict[str, C | B | A] | None = None,
-        string2string2a_b_c: dict[str, dict[str, A | B | C]] | None = None,
-        string2string2c_b_a: dict[str, dict[str, C | B | A]] | None = None,
+        string2a_b_c: dict[str, ObjectA | ObjectB | ObjectC] | None = None,
+        string2c_b_a: dict[str, ObjectC | ObjectB | ObjectA] | None = None,
+        string2string2a_b_c: (
+            dict[str, dict[str, ObjectA | ObjectB | ObjectC]] | None
+        ) = None,
+        string2string2c_b_a: (
+            dict[str, dict[str, ObjectC | ObjectB | ObjectA]] | None
+        ) = None,
         version_switch: int | str | Iterable[int] | None = None,
         version_1: int | None = None,
         version_2: int | None = None,
         required_integer: int | None = None,
         required_integer_or_string: int | str | None = None,
+        array_a: ArrayA | None = None,
+        null_value: sob.Null | None = None,
     ):
         self.boolean = boolean
         self.string = string
@@ -300,6 +319,8 @@ class Tesstee(sob.Object):
         self.version_2 = version_2
         self.required_integer = required_integer
         self.required_integer_or_string = required_integer_or_string
+        self.array_a = array_a
+        self.null_value = null_value
         super().__init__(_data)
 
 
@@ -330,30 +351,30 @@ testee_meta.properties = {  # type: ignore
         types=(str, properties.Number(), bool), name="stringNumberBoolean"
     ),
     "a": sob.Property(
-        types=(A,),
+        types=(ObjectA,),
     ),
     "b": sob.Property(
-        types=(B,),
+        types=(ObjectB,),
     ),
     "c": sob.Property(
-        types=(C,),
+        types=(ObjectC,),
     ),
-    "a_b_c": sob.Property(types=(A, B, C), name="ABC"),
-    "c_b_a": sob.Property(types=(C, B, A), name="CBA"),
+    "a_b_c": sob.Property(types=(ObjectA, ObjectB, ObjectC), name="ABC"),
+    "c_b_a": sob.Property(types=(ObjectC, ObjectB, ObjectA), name="CBA"),
     "string2testy": sob.DictionaryProperty(value_types=(Tesstee,)),
     "string2string2testy": sob.DictionaryProperty(
         value_types=(sob.DictionaryProperty(value_types=(Tesstee,)),)
     ),
     "string2a_b_c": sob.DictionaryProperty(
-        value_types=(A, B, C), name="string2ABC"
+        value_types=(ObjectA, ObjectB, ObjectC), name="string2ABC"
     ),
     "string2c_b_a": sob.DictionaryProperty(
-        value_types=(C, B, A), name="string2CBA"
+        value_types=(ObjectC, ObjectB, ObjectA), name="string2CBA"
     ),
     "string2string2a_b_c": sob.DictionaryProperty(
         value_types=(
             properties.Dictionary(
-                value_types=(A, B, C),
+                value_types=(ObjectA, ObjectB, ObjectC),
             ),
         ),
         name="string2string2ABC",
@@ -361,7 +382,7 @@ testee_meta.properties = {  # type: ignore
     "string2string2c_b_a": sob.DictionaryProperty(
         value_types=(
             properties.Dictionary(
-                value_types=(C, B, A),
+                value_types=(ObjectC, ObjectB, ObjectA),
             ),
         ),
         name="string2String2CBA",
@@ -388,6 +409,14 @@ testee_meta.properties = {  # type: ignore
         name="requiredIntegerOrString",
         required=True,
     ),
+    "array_a": sob.Property(
+        types=sob.Types([ArrayA]),
+        name="arrayA",
+    ),
+    "null_value": sob.Property(
+        types=(sob.Null,),
+        name="nullValue",
+    ),
 }
 
 with open(
@@ -396,7 +425,7 @@ with open(
 ) as f:
     _rainbow = f.read()
 
-a = A(
+a = ObjectA(
     is_a_class=True,
     boolean=True,
     string="a string",
@@ -408,7 +437,7 @@ a = A(
     iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
-b = B(
+b = ObjectB(
     is_b_class=True,
     boolean=False,
     string="b string",
@@ -421,7 +450,7 @@ b = B(
     iso8601_date=date.fromisoformat("2016-03-28"),
 )
 
-c = C(
+c = ObjectC(
     is_c_class=True,
     string="c string",
     integer=3124,
@@ -460,17 +489,19 @@ testy: Tesstee = Tesstee(
     string2a_b_c={},
     string2c_b_a={},
     string2string2a_b_c={
-        "one": {"a": A(is_a_class=True)},
-        "two": {"b": B(is_b_class=True)},
-        "three": {"c": C(is_c_class=True)},
+        "one": {"a": ObjectA(is_a_class=True)},
+        "two": {"b": ObjectB(is_b_class=True)},
+        "three": {"c": ObjectC(is_c_class=True)},
     },
     string2string2c_b_a={
-        "one": {"c": C(is_c_class=True)},
-        "two": {"b": B(is_b_class=True)},
-        "three": {"a": A(is_a_class=True)},
+        "one": {"c": ObjectC(is_c_class=True)},
+        "two": {"b": ObjectB(is_b_class=True)},
+        "three": {"a": ObjectA(is_a_class=True)},
     },
     required_integer=1,
     required_integer_or_string="Two",
+    array_a=ArrayA([a]),
+    null_value=sob.NULL,
 )
 testy_deep_copy = deepcopy(testy)
 testy.testy = deepcopy(testy)
@@ -618,10 +649,10 @@ def test_serialization_regression() -> None:
     (The file be recreated the next time the test is run).
     """
     serialized_testy: str = model.serialize(testy, indent=4).strip()
-    if not TEST_JSON.exists():
-        with open(TEST_JSON, mode="w", encoding="utf-8") as file:
+    if not TESTY_JSON.exists():
+        with open(TESTY_JSON, mode="w", encoding="utf-8") as file:
             file.write(serialized_testy)
-    with open(TEST_JSON, encoding="utf-8") as file:
+    with open(TESTY_JSON, encoding="utf-8") as file:
         file_testy = file.read().strip()
         if serialized_testy != file_testy:
             message: str = f"{serialized_testy}\n!=\n{file_testy}"
@@ -635,17 +666,30 @@ def test_deserialization_regression() -> None:
     made to `testy`, delete the file ./tests/data/testy.json
     (The file be recreated the next time the test is run).
     """
+    if not TESTY_JSON.exists():
+        test_serialization_regression()
     with open(
-        TEST_JSON,
+        TESTY_JSON,
         encoding="utf-8",
     ) as testee_io:
+        # Construct from a file object
         assert Tesstee(testee_io) == testy
-        error = None
+        # Construct from a string
+        testee_io.seek(0)
+        testee_str: str = testee_io.read()
+        assert Tesstee(testee_str) == testy
+        # Construct from a deserialized JSON object
+        assert Tesstee(model.deserialize(testee_str)) == testy
+        # Construct via copy
+        assert Tesstee(testy) == testy
+        # Ensure deserialization from the incorrect type of input raises a
+        # TypeError
+        error_raised: bool = False
         try:
             Tesstee("[]")
-        except TypeError as e:
-            error = e
-        assert isinstance(error, TypeError)
+        except TypeError:
+            error_raised = True
+        assert error_raised
 
 
 def test_valid_object_validation() -> None:
@@ -687,21 +731,39 @@ def test_get_model_from_meta_regression() -> None:
     made to `Tesstee`, delete the file ./tests/data/tesstee_model.py
     (The file be recreated the next time the test is run).
     """
-    tesstee_meta: sob.abc.ObjectMeta = cast(
-        sob.abc.ObjectMeta, sob.read_object_meta(Tesstee)
-    )
-    tesstee_source: str = sob.utilities.get_source(
-        sob.get_model_from_meta("Tesstee", tesstee_meta)
-    )
-    tesstee_source = tesstee_source.replace(
-        "\nimport sob\n", "\nimport sob\nimport tests.test_model\n"
-    )
+    tesstee_source: str = sob.get_models_source(
+        sob.get_model_from_meta(
+            "ArrayA", cast(sob.ArrayMeta, sob.read_array_meta(ArrayA))
+        ),
+        sob.get_model_from_meta(
+            "ObjectA", cast(sob.ObjectMeta, sob.read_object_meta(ObjectA))
+        ),
+        sob.get_model_from_meta(
+            "ObjectB", cast(sob.ObjectMeta, sob.read_object_meta(ObjectB))
+        ),
+        sob.get_model_from_meta(
+            "ObjectC", cast(sob.ObjectMeta, sob.read_object_meta(ObjectC))
+        ),
+        sob.get_model_from_meta(
+            "Tesstee", cast(sob.ObjectMeta, sob.read_object_meta(Tesstee))
+        ),
+    ).replace("tests.test_model.", "")
     if TESTEE_MODEL_PY.exists():
         with open(TESTEE_MODEL_PY) as testee_model_io:
             assert tesstee_source == testee_model_io.read()
     else:
         with open(TESTEE_MODEL_PY, mode="w") as testee_model_io:
             testee_model_io.write(tesstee_source)
+
+
+def test_replace_model_nulls() -> None:
+    """
+    Verify that `replace_model_nulls` replaces all instances of `sob.NULL`
+    with a specified value.
+    """
+    testy_copy: Tesstee = deepcopy(testy)
+    sob.replace_model_nulls(testy_copy, None)
+    assert testy_copy.null_value is None
 
 
 if __name__ == "__main__":

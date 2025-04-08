@@ -4,7 +4,6 @@ This module defines the building blocks of an `sob` based data model.
 
 from __future__ import annotations
 
-import builtins
 import collections
 import collections.abc
 import json
@@ -54,6 +53,7 @@ from sob.utilities import (
     get_calling_module_name,
     get_method,
     get_qualified_name,
+    get_source,
     represent,
     split_long_docstring_lines,
     suffix_long_lines,
@@ -68,6 +68,8 @@ class Model(abc.Model):
     directly, and should not be sub-classed directly--please use `Object`,
     `Array` and/or `Dictionary` as a superclass instead.
     """
+
+    __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
         "_instance_meta",
@@ -193,6 +195,8 @@ class Array(Model, abc.Array, abc.Model):
     ]
     ```
     """
+
+    __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
         "_list",
@@ -539,6 +543,8 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
     ]
     ```
     """
+
+    __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
         "_dict",
@@ -1027,6 +1033,8 @@ class Object(Model, abc.Object, abc.Model):
     which enforcing adherence to a predetermined attribution and type
     requirements is desirable.
     """
+
+    __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
         "_instance_meta",
@@ -1921,7 +1929,14 @@ class _Unmarshal:
             unmarshalled_data = _unmarshal_property_value(type_, self.data)
         elif isinstance(type_, type):
             if isinstance(
-                self.data, (dict, collections.OrderedDict, abc.Model, Mapping)
+                self.data,
+                (
+                    dict,
+                    collections.OrderedDict,
+                    abc.Object,
+                    abc.Dictionary,
+                    Mapping,
+                ),
             ):
                 unmarshalled_data = self.as_dictionary_type(type_)
             elif _is_non_string_iterable(self.data):
@@ -2087,7 +2102,9 @@ def _default_validate_method(
     return ()
 
 
-def _call_validate_method(data: abc.Model) -> Iterable[str]:
+def _call_validate_method(
+    data: abc.Model,
+) -> Iterable[str]:
     error_message: str
     error_messages: set[str] = set()
     validate_method: Callable[..., Iterable[str]] = get_method(
@@ -2196,7 +2213,7 @@ class _UnmarshalProperty:
             and (self.property.values is not None)
             and (value not in self.property.values)
         ):
-            msg = (
+            message: str = (
                 "The value provided is not a valid option:\n{}\n\n"
                 "Valid options include:\n{}".format(
                     repr(value),
@@ -2206,7 +2223,7 @@ class _UnmarshalProperty:
                     ),
                 )
             )
-            raise ValueError(msg)
+            raise ValueError(message)
 
     def unmarshal_enumerated(
         self, value: abc.MarshallableTypes
@@ -2559,31 +2576,19 @@ def _type_hint_from_property_types(
     return type_hint
 
 
-def _type_hint_from_type(type_: type, module: str) -> str:
-    type_hint: str
-    type_hint = get_qualified_name(type_)
-    # If this class was declared in the same module, we put it in
-    # quotes since it won't necessarily have been declared already
-    if (("." not in type_hint) and not hasattr(builtins, type_hint)) or (
-        type_.__module__ == module
-    ):
-        type_hint = f'"{type_hint}"'
-    return type_hint
-
-
 def _type_hint_from_property(
     property_or_type: abc.Property | type, module: str
 ) -> str:
     type_hint: str
     if isinstance(property_or_type, type):
-        type_hint = _type_hint_from_type(property_or_type, module)
+        type_hint = get_qualified_name(property_or_type)
     elif isinstance(property_or_type, abc.ArrayProperty):
         item_type_hint: str = _type_hint_from_property_types(
             property_or_type.item_types, module
         )
         if item_type_hint:
             if item_type_hint[0] == "(":
-                item_type_hint = item_type_hint[1:-1].strip()
+                item_type_hint = indent_(item_type_hint[1:-1].strip())
             type_hint = f"typing.Sequence[\n    {item_type_hint}\n]"
         else:
             type_hint = "typing.Sequence"
@@ -2713,7 +2718,7 @@ def _repr_class_init_from_meta(metadata: abc.Meta, module: str) -> str:
             "            typing.Iterable[\n"
             f"                {repr_item_typing}\n"
             "            ]\n"
-            "            | sob.abc.Readable,\n"
+            "            | sob.abc.Readable\n"
             "            | str\n"
             "            | bytes\n"
             "            | None\n"
@@ -2899,6 +2904,27 @@ def get_model_from_meta(
     model_class.__module__ = module
     model_class._class_meta = metadata  # noqa: SLF001
     return model_class
+
+
+def get_models_source(*model_classes: type[abc.Model]) -> str:
+    """
+    Get source code for a series of model classes, organized as a module.
+    """
+    import_source_lines: list[str] = []
+    class_sources: list[str] = []
+    model_class: type[abc.Model]
+    for model_class in model_classes:
+        import_source: str
+        class_source: str
+        import_source, class_source = (
+            get_source(model_class).strip().rpartition("\n\n\n")[::2]
+        )
+        import_source_lines.extend(import_source.splitlines())
+        class_sources.append(class_source)
+    # De-duplicate imports while preserving order
+    imports_source = "\n".join(dict.fromkeys(import_source_lines).keys())
+    classes_source: str = "\n\n\n".join(class_sources)
+    return f"{imports_source}\n\n\n{classes_source}"
 
 
 # For backwards compatibility
