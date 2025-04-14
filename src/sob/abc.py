@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import decimal
-import typing
 from abc import ABCMeta, abstractmethod
 from collections.abc import (
     Collection,
@@ -30,7 +29,6 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 __all__: tuple[str, ...] = (
-    "OrderedDict",
     "Types",
     "MutableTypes",
     "Hooks",
@@ -64,13 +62,6 @@ __all__: tuple[str, ...] = (
     "JSONTypes",
     "MarshallableTypes",
 )
-
-if typing.TYPE_CHECKING:
-    import collections
-
-    OrderedDict = collections.OrderedDict
-else:
-    OrderedDict = dict
 
 
 def _check_methods(class_: type, methods: Iterable[str]) -> bool | None:
@@ -658,7 +649,7 @@ class Dictionary(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, JSONTypes]:
+    def _marshal(self) -> dict[str, JSONTypes]:
         pass
 
     @abstractmethod
@@ -761,7 +752,7 @@ class Object(Model, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def _marshal(self) -> OrderedDict[str, JSONTypes]:
+    def _marshal(self) -> dict[str, JSONTypes]:
         pass
 
     @abstractmethod

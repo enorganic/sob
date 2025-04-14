@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 from collections.abc import (
     ItemsView,
     Iterable,
@@ -246,9 +245,7 @@ class Properties(abc.Properties):
         | abc.Properties
         | None = None,
     ) -> None:
-        self._dict: abc.OrderedDict[str, abc.Property] = (
-            collections.OrderedDict()
-        )
+        self._dict: dict[str, abc.Property] = {}
         if items is not None:
             self.update(items)
 
@@ -349,11 +346,11 @@ class Properties(abc.Properties):
         return (
             self._dict.pop(key)
             if isinstance(default, Undefined)
-            else self._dict.pop(key, default=default)
+            else self._dict.pop(key, default=default)  # type: ignore
         )
 
-    def popitem(self, *, last: bool = True) -> tuple[str, abc.Property]:
-        return self._dict.popitem(last=last)
+    def popitem(self) -> tuple[str, abc.Property]:
+        return self._dict.popitem()
 
     def clear(self) -> None:
         self._dict.clear()
@@ -650,7 +647,7 @@ def _read_object_properties(
     metadata: abc.ObjectMeta | None = _read_object(model)
     if metadata is None:
         return None
-    return (metadata.properties or collections.OrderedDict()).items()
+    return (metadata.properties or {}).items()
 
 
 def _read_object_property_names(
@@ -659,7 +656,7 @@ def _read_object_property_names(
     metadata: abc.ObjectMeta | None = _read_object(model)
     if metadata is None:
         return None
-    return (metadata.properties or collections.OrderedDict()).keys()
+    return (metadata.properties or {}).keys()
 
 
 def escape_reference_token(reference_token: str) -> str:

@@ -72,7 +72,7 @@ dependencies = [
 extra-dependencies = [
     "dependence~=1.0",
 ]
-extra-args = ["--doctest-modules"]
+extra-args = ["-s", "-vv", "--doctest-modules"]
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -80,7 +80,7 @@ python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 [tool.ruff]
 line-length = 79
 extend-exclude = [
-    "tests/data/tesstee_model.py",
+    "tests/data/*",
 ]
 
 [tool.ruff.lint]

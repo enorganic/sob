@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import collections
 import json as _json
 from typing import TYPE_CHECKING, Any
 from warnings import warn
@@ -28,14 +27,14 @@ def _get_object_property_names(object_: abc.Object) -> set[str]:
 
 def _object_discrepancies(
     object_a: abc.Object, object_b: abc.Object
-) -> abc.OrderedDict[
+) -> dict[
     str,
     tuple[abc.MarshallableTypes | None, abc.MarshallableTypes | None],
 ]:
-    discrepancies: abc.OrderedDict[
+    discrepancies: dict[
         str,
         tuple[abc.MarshallableTypes | None, abc.MarshallableTypes | None],
-    ] = collections.OrderedDict()
+    ] = {}
     for property_ in sorted(
         (
             _get_object_property_names(object_a)
@@ -154,8 +153,8 @@ def _get_object_discrepancies_error(
 def _remarshal_object(string_object: str, object_instance: abc.Object) -> None:
     reloaded_marshalled_data = _json.loads(
         string_object,
-        object_hook=collections.OrderedDict,
-        object_pairs_hook=collections.OrderedDict,
+        object_hook=dict,
+        object_pairs_hook=dict,
     )
     keys: set[str] = set()
     instance_meta: abc.Meta | None = meta.read_model_meta(object_instance)

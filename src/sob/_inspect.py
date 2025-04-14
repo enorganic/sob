@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import OrderedDict
 from inspect import Parameter, signature
 from typing import Any, Callable
 
@@ -28,7 +27,7 @@ def get_parameters_defaults(function: Callable[..., Any]) -> dict[str, Any]:
     ('e', 2)
     ('f', 3)
     """
-    defaults: dict[str, Any] = OrderedDict()
+    defaults: dict[str, Any] = {}
     parameter_name: str
     parameter: Parameter
     for parameter_name, parameter in signature(function).parameters.items():

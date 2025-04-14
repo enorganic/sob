@@ -575,9 +575,7 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         Model.__init__(self)
         self._instance_hooks: abc.DictionaryHooks | None = None
         self._instance_meta: abc.DictionaryMeta | None = None
-        self._dict: abc.OrderedDict[str, abc.MarshallableTypes] = (
-            collections.OrderedDict()
-        )
+        self._dict: dict[str, abc.MarshallableTypes] = {}
         self._init_url(items)
         deserialized_items: (
             Iterable[abc.MarshallableTypes]
@@ -613,7 +611,7 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         if not isinstance(
             deserialized_items, (abc.Dictionary, Mapping, NoneType)
         ) and isinstance(deserialized_items, Iterable):
-            deserialized_items = collections.OrderedDict(
+            deserialized_items = dict(
                 deserialized_items  # type: ignore
             )
         if (deserialized_items is not None) and not isinstance(
@@ -632,7 +630,7 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
     ) -> None:
         if data is not None:
             items: Iterable[tuple[str, abc.MarshallableTypes]]
-            if isinstance(data, (collections.OrderedDict, abc.Dictionary)) or (
+            if isinstance(data, (dict, abc.Dictionary)) or (
                 isinstance(data, Mapping) and isinstance(data, Reversible)
             ):
                 items = data.items()
@@ -761,11 +759,10 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             new_instance[key] = deepcopy(value, memo=memo)
         return new_instance
 
-    def _marshal(self) -> abc.OrderedDict[str, abc.JSONTypes]:
+    def _marshal(self) -> dict[str, abc.JSONTypes]:
         """
         This method marshals an instance of `Dictionary` as built-in type
-        `OrderedDict` which can be serialized into
-        JSON.
+        `dict` which can be serialized into JSON.
         """
         # Check for hooks
         instance_hooks: abc.DictionaryHooks | None = (
@@ -789,14 +786,10 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             instance_meta.value_types if instance_meta else None
         )
         # Recursively convert the data to generic, serializable, data types
-        marshalled_data: abc.OrderedDict[str, abc.JSONTypes] = (
-            collections.OrderedDict(
-                [
-                    (key, marshal(value, types=value_types))
-                    for key, value in data.items()
-                ]
-            )
-        )
+        marshalled_data: dict[str, abc.JSONTypes] = {
+            key: marshal(value, types=value_types)
+            for key, value in data.items()
+        }
         # Execute after-marshal hooks, if applicable
         if (instance_hooks is not None) and (
             instance_hooks.after_marshal is not None
@@ -804,19 +797,17 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             after_marshal_data: abc.JSONTypes = instance_hooks.after_marshal(
                 marshalled_data
             )
-            after_marshal_dictionary: abc.OrderedDict[str, abc.JSONTypes]
-            if isinstance(after_marshal_data, collections.OrderedDict):
+            after_marshal_dictionary: dict[str, abc.JSONTypes]
+            if isinstance(after_marshal_data, dict):
                 after_marshal_dictionary = after_marshal_data
             elif isinstance(after_marshal_data, Reversible) and isinstance(
                 after_marshal_data, (Mapping, abc.Dictionary)
             ):
-                after_marshal_dictionary = collections.OrderedDict(
-                    after_marshal_data.items()
-                )
+                after_marshal_dictionary = dict(after_marshal_data.items())
             else:
                 if not isinstance(after_marshal_data, Mapping):
                     raise TypeError(after_marshal_data)
-                after_marshal_dictionary = collections.OrderedDict(
+                after_marshal_dictionary = dict(
                     sorted(
                         after_marshal_data.items(), key=lambda item: item[0]
                     )
@@ -1322,7 +1313,7 @@ class Object(Model, abc.Object, abc.Model):
                 self._deepcopy_property(property_name_, new_instance, memo)
         return new_instance
 
-    def _marshal(self) -> abc.OrderedDict[str, abc.JSONTypes]:
+    def _marshal(self) -> dict[str, abc.JSONTypes]:
         object_: abc.Object = self
         instance_hooks: abc.ObjectHooks | None = hooks.read_object_hooks(self)
         if instance_hooks and instance_hooks.before_marshal:
@@ -1332,7 +1323,7 @@ class Object(Model, abc.Object, abc.Model):
             if TYPE_CHECKING:
                 assert isinstance(before_marshal_object, abc.Object)
             object_ = before_marshal_object
-        data: abc.OrderedDict[str, abc.JSONTypes] = collections.OrderedDict()
+        data: dict[str, abc.JSONTypes] = {}
         instance_meta: abc.ObjectMeta | None = meta.read_object_meta(object_)
         if instance_meta and instance_meta.properties is not None:
             property_name_: str
@@ -1348,7 +1339,7 @@ class Object(Model, abc.Object, abc.Model):
                 data
             )
             if TYPE_CHECKING:
-                assert isinstance(after_marshal_data, collections.OrderedDict)
+                assert isinstance(after_marshal_data, dict)
             data = after_marshal_data
         return data
 
@@ -1536,14 +1527,12 @@ def _marshal_collection(
 def _marshal_mapping(
     data: Mapping[str, abc.MarshallableTypes] | abc.Dictionary,
     value_types: Iterable[type | abc.Property] | abc.Types | None = None,
-) -> abc.OrderedDict[str, abc.MarshallableTypes]:
+) -> dict[str, abc.MarshallableTypes]:
     key: str
     value: abc.MarshallableTypes
-    marshalled_data: abc.OrderedDict[str, abc.MarshallableTypes] = (
-        collections.OrderedDict()
-    )
+    marshalled_data: dict[str, abc.MarshallableTypes] = {}
     items: Iterable[tuple[str, abc.MarshallableTypes]]
-    if isinstance(data, (abc.Dictionary, collections.OrderedDict)) or (
+    if isinstance(data, (abc.Dictionary, dict)) or (
         isinstance(data, Reversible) and isinstance(data, Mapping)
     ):
         items = data.items()
@@ -1932,7 +1921,6 @@ class _Unmarshal:
                 self.data,
                 (
                     dict,
-                    collections.OrderedDict,
                     abc.Object,
                     abc.Dictionary,
                     Mapping,
@@ -2049,8 +2037,8 @@ def serialize(
 
 def _object_pairs_hook(
     pairs: Iterable[tuple[str, Any]],
-) -> abc.OrderedDict[str, Any]:
-    return collections.OrderedDict(pairs)
+) -> dict[str, Any]:
+    return dict(pairs)
 
 
 def deserialize(
@@ -2072,7 +2060,7 @@ def deserialize(
         try:
             deserialized_data = json.loads(
                 data,
-                object_hook=collections.OrderedDict,
+                object_hook=dict,
                 object_pairs_hook=_object_pairs_hook,
                 strict=False,
             )

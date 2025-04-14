@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import doctest
 from base64 import b64encode
-from collections import OrderedDict
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
@@ -483,9 +482,7 @@ testy: Tesstee = Tesstee(
     a_b_c=deepcopy(b),
     c_b_a=deepcopy(c),
     string2testy={},
-    string2string2testy=OrderedDict(
-        [("A", {}), ("B", OrderedDict()), ("C", {})]
-    ),
+    string2string2testy={"A": {}, "B": {}, "C": {}},
     string2a_b_c={},
     string2c_b_a={},
     string2string2a_b_c={

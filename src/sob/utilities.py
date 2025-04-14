@@ -706,7 +706,7 @@ def get_source(object_: type | Callable | ModuleType) -> str:
 def _repr_items(items: Iterable) -> str:
     """
     Returns a string representation of the items in a `list`, `tuple`,
-    `set`, or `collections.OrderedDict().items()`.
+    `set`, or `dict.items()`.
     """
     return ",\n".join(indent(represent(item), start=0) for item in items)
 
@@ -766,17 +766,6 @@ def _repr_dict(dict_instance: dict) -> str:
     return "{}"
 
 
-def _repr_ordered_dict(ordered_dict_instance: collections.OrderedDict) -> str:
-    """
-    Returns a string representation of `collections.OrderedDict` argument
-    values
-    """
-    items: tuple[tuple[Any, Any], ...] = tuple(ordered_dict_instance.items())
-    if items:
-        return f"collections.OrderedDict([\n{_repr_items(items)}\n])"
-    return "collections.OrderedDict()"
-
-
 def represent(value: Any) -> str:
     """
     Returns a string representation of a value, formatted to minimize
@@ -800,8 +789,6 @@ def represent(value: Any) -> str:
             value_representation = _repr_set(value)
         elif value_type is dict:
             value_representation = _repr_dict(value)
-        elif value_type is collections.OrderedDict:
-            value_representation = _repr_ordered_dict(value)
         else:
             value_representation = repr(value)
             if (

@@ -8,12 +8,13 @@ from __future__ import annotations
 import binascii
 import collections
 import collections.abc
+import decimal
 import functools
 import os
 import re
 from base64 import b64decode
 from collections.abc import (
-    Collection,
+    Hashable,
     ItemsView,
     Iterable,
     Iterator,
@@ -25,6 +26,7 @@ from collections.abc import (
 from copy import copy, deepcopy
 from datetime import date, datetime
 from itertools import chain
+from pathlib import Path
 from types import ModuleType
 from typing import (
     Any,
@@ -36,19 +38,23 @@ from urllib.parse import quote_plus
 from iso8601.iso8601 import ParseError, parse_date
 from typing_extensions import Self
 
-from sob import __name__ as _parent_module_name
 from sob import abc, meta
 from sob._io import read
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
 from sob.abc import MARSHALLABLE_TYPES
 from sob.meta import escape_reference_token
-from sob.model import deserialize, get_model_from_meta, unmarshal
+from sob.model import (
+    Array,
+    Dictionary,
+    deserialize,
+    get_model_from_meta,
+    unmarshal,
+)
 from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
-from sob.types import MutableTypes
+from sob.types import MutableTypes, Types
 from sob.utilities import (
     class_name,
     get_calling_module_name,
-    get_qualified_name,
     get_source,
     property_name,
     suffix_long_lines,
@@ -145,9 +151,9 @@ def _update_dictionary_meta(
 
     Parameters:
 
-    - metadata (sob.meta.Dictionary)
-    - new_metadata (sob.meta.Dictionary)
-    - memo (dict)
+        metadata:
+        new_metadata:
+        memo:
     """
     if memo is None:
         raise ValueError(memo)
@@ -487,7 +493,7 @@ class Synonyms:
     def __init__(
         self, items: Iterable[abc.Readable | abc.MarshallableTypes] = ()
     ) -> None:
-        self._type: type | None = None
+        self._type: set[type] = set()
         self._nullable: bool = False
         self._set: set[abc.MarshallableTypes] = set()
         if items:
@@ -502,14 +508,8 @@ class Synonyms:
         deserialized, and unmarshalled.
 
         Parameters:
-
-        - item ({}): A file-like or a JSON-serializable python object.
-        """.format(
-            "|".join(
-                get_qualified_name(item_type)
-                for item_type in ((abc.Readable, *abc.MARSHALLABLE_TYPES))
-            )
-        )
+            item: A file-like or a JSON-serializable python object.
+        """
         if not isinstance(item, (abc.Readable, *abc.MARSHALLABLE_TYPES)):
             raise TypeError(item)
         if isinstance(item, abc.Readable):
@@ -526,22 +526,27 @@ class Synonyms:
         if isinstance(item, Null):
             self._nullable = True
         elif item is not None:
-            if self._type is None:
-                self._type = type(item)
-            elif (
-                issubclass(self._type, (int, float))
-                and isinstance(item, (int, float))
-                and (type(item) is not self._type)
-            ):
-                self._type = float
-            elif not isinstance(item, self._type):
-                # If there is a discrepancy where a data type can
-                # be either simple of a container, we infer
-                # unrestricted polymorphism, and indicate this by
-                # setting `._type` to `object`
-                self._type = object
             if not isinstance(item, MARSHALLABLE_TYPES):
                 raise TypeError(item)
+            item_type: type = (
+                list
+                if isinstance(item, abc.Array)
+                else dict
+                if isinstance(item, abc.Dictionary)
+                else type(item)
+            )
+            if (item_type is int) and float in self._type:
+                pass
+            elif (item_type is float) and int in self._type:
+                self._type.remove(int)
+                self._type.add(item_type)
+            else:
+                self._type.add(item_type)
+            if not isinstance(item, Hashable):
+                if isinstance(item, Mapping):
+                    item = Dictionary(item)
+                if isinstance(item, Sequence):
+                    item = Array(item)
             self._set.add(item)  # type: ignore
 
     def discard(self, item: abc.MarshallableTypes) -> None:
@@ -564,7 +569,7 @@ class Synonyms:
         return item
 
     def clear(self) -> None:
-        self._type = None
+        self._type.clear()
         self._nullable = False
         self._set.clear()
 
@@ -655,7 +660,7 @@ class Synonyms:
     def __copy__(self) -> Self:
         new_synonyms: Self = self.__class__()
         new_synonyms._set = copy(self._set)  # noqa: SLF001
-        new_synonyms._type = self._type  # noqa: SLF001
+        new_synonyms._type = copy(self._type)  # noqa: SLF001
         new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
@@ -666,39 +671,52 @@ class Synonyms:
         new_synonyms._nullable = self._nullable  # noqa: SLF001
         return new_synonyms
 
-    def _get_type(self) -> type:
-        data_type: type = cast(type, self._type)
-        if self._type is not None:
+    def _iter_simple_types(self) -> Iterable[type]:
+        type_: type
+        if self._type and len(self._type) == 1:
+            type_ = next(iter(self._type))
             # Determine if this is a string encoded to represent a `date`,
             # `datetime`, or base-64 encoded `bytes`.
-            if issubclass(self._type, str):
+            if issubclass(type_, str):
                 if all(map(_is_base64, filter(_is_not_null_or_none, self))):
-                    data_type = bytes
+                    yield bytes
+                    return
                 elif all(
                     map(_is_datetime_str, filter(_is_not_null_or_none, self))
                 ):
-                    data_type = datetime
+                    yield datetime
+                    return
                 elif all(
                     map(_is_date_str, filter(_is_not_null_or_none, self))
                 ):
-                    data_type = date
-            elif issubclass(self._type, (abc.Model, Mapping, Collection)):
-                raise TypeError(self._type)
-        if data_type is None:
-            message: str = "A data type could not be identified"
-            raise RuntimeError(message)
-        return data_type
+                    yield date
+                    return
+        yield from filter(
+            lambda type_: issubclass(
+                type_,
+                (
+                    str,
+                    bytes,
+                    bytearray,
+                    bool,
+                    int,
+                    float,
+                    decimal.Decimal,
+                    date,
+                    datetime,
+                ),
+            ),
+            self._type,
+        )
 
     def _get_property_names_values(
         self,
-    ) -> abc.OrderedDict[str, list[abc.MarshallableTypes]]:
-        keys_values: abc.OrderedDict[str, list[abc.MarshallableTypes]] = (
-            collections.OrderedDict()
-        )
+    ) -> dict[str, list[abc.MarshallableTypes]]:
+        keys_values: dict[str, list[abc.MarshallableTypes]] = {}
         item: abc.MarshallableTypes
         for item in self:
             if not isinstance(item, (Mapping, abc.Dictionary)):
-                raise TypeError(item)
+                continue
             value: abc.MarshallableTypes
             item_: tuple[str, Any]
             for key, value in sorted(
@@ -713,24 +731,7 @@ class Synonyms:
                 keys_values[key].append(value)
         return keys_values
 
-    def _get_dictionary_models(
-        self,
-        pointer: str,
-        module: str = "__main__",
-        name: Callable[[str], str] = get_class_name_from_pointer,
-        memo: dict[str, type] | None = None,
-    ) -> Iterable[type]:
-        metadata: abc.DictionaryMeta = meta.DictionaryMeta()
-        metadata.value_types: abc.Types = meta.MutableTypes()  # type: ignore
-        key: str
-        property_name_: str
-        values: list[abc.MarshallableTypes]
-        model_class: type
-        yield from _get_models_from_meta(
-            pointer, metadata, module=module, memo=memo, name=name
-        )
-
-    def _get_object_models(
+    def _iter_object_models(  # noqa: C901
         self,
         pointer: str,
         module: str = "__main__",
@@ -741,6 +742,7 @@ class Synonyms:
         metadata.properties = meta.Properties()  # type: ignore
         key: str
         property_name_: str
+        property_: abc.Property
         values: list[abc.MarshallableTypes]
         visited_property_names: set[str] = set()
         for key, values in self._get_property_names_values().items():
@@ -749,46 +751,66 @@ class Synonyms:
                 property_name_ = f"{property_name_}_"
             visited_property_names.add(property_name_)
             item_type: type | None = None
-            is_model: bool = False
             property_synonyms: Synonyms = type(self)(values)
-            for item_type in property_synonyms._get_types(  # noqa: SLF001
+            for item_type in property_synonyms._iter_types(  # noqa: SLF001
                 pointer=f"{pointer}/{escape_reference_token(property_name_)}",
                 module=module,
                 memo=memo,
                 name=name,
             ):
                 if issubclass(item_type, abc.Model):
-                    is_model = True
                     yield item_type
+                if property_name_ in metadata.properties:
+                    if item_type not in cast(
+                        abc.MutableTypes,
+                        cast(
+                            Property,
+                            metadata.properties[property_name_],
+                        ).types,
+                    ):
+                        cast(
+                            abc.MutableTypes,
+                            cast(
+                                Property,
+                                metadata.properties[property_name_],
+                            ).types,
+                        ).append(item_type)
                 else:
-                    is_model = False
-            if item_type:
-                if is_model:
                     metadata.properties[property_name_] = Property(
                         name=key,
-                        types=[item_type]
-                        + (
-                            [Null]
-                            if property_synonyms._nullable  # noqa: SLF001
-                            else []
+                        types=MutableTypes(
+                            (item_type,)
+                            + (
+                                (Null,)
+                                if property_synonyms._nullable  # noqa: SLF001
+                                else ()
+                            )
                         ),
                     )
-                elif property_synonyms._nullable:  # noqa: SLF001
-                    metadata.properties[property_name_] = Property(
-                        name=key, types=[TYPES_PROPERTIES[item_type](), Null]
-                    )
-                else:
-                    metadata.properties[property_name_] = TYPES_PROPERTIES[
-                        item_type
-                    ](name=key)
-            else:
+            if property_name_ not in metadata.properties:
                 metadata.properties[property_name_] = Property(name=key)
-        model_class: type
-        yield from _get_models_from_meta(
-            pointer, metadata, module=module, memo=memo, name=name
-        )
+        if metadata.properties:
+            for property_name_, property_ in metadata.properties.items():
+                if property_.types:
+                    if len(property_.types) == 1:
+                        property_type: type | abc.Property = next(
+                            iter(property_.types)
+                        )
+                        if (
+                            isinstance(property_type, type)
+                            and property_type in TYPES_PROPERTIES
+                        ):
+                            metadata.properties[property_name_] = (
+                                TYPES_PROPERTIES[property_type]
+                            )(name=property_.name)
+                    else:
+                        # Make the property types immutable
+                        property_.types = Types(property_.types)
+            yield from _get_models_from_meta(
+                pointer, metadata, module=module, memo=memo, name=name
+            )
 
-    def _get_array_models(
+    def _iter_array_models(
         self,
         pointer: str,
         module: str = "__main__",
@@ -798,23 +820,25 @@ class Synonyms:
         unified_items: Synonyms = type(self)()
         items: abc.MarshallableTypes
         for items in self:
-            if not isinstance(items, Iterable):
-                raise TypeError(items)
-            unified_items |= items
-        item_type: type | None = None
-        for item_type in unified_items._get_types(  # noqa: SLF001
-            pointer=f"{pointer}/0", module=module, memo=memo, name=name
-        ):
-            yield item_type
+            if isinstance(items, Iterable) and not isinstance(
+                items, (str, Mapping, abc.Dictionary, abc.Object)
+            ):
+                unified_items |= items
+        if not unified_items:
+            return
         metadata: abc.ArrayMeta = meta.ArrayMeta(
-            item_types=(None if item_type is None else [item_type])
+            item_types=filter(
+                None,
+                unified_items._iter_types(  # noqa: SLF001
+                    pointer=f"{pointer}/0", module=module, memo=memo, name=name
+                ),
+            )
         )
-        array_type: type
         yield from _get_models_from_meta(
             pointer, metadata, module=module, memo=memo, name=name
         )
 
-    def _get_types(
+    def _iter_types(
         self,
         pointer: str,
         module: str = "__main__",
@@ -827,29 +851,21 @@ class Synonyms:
         if memo is None:
             memo = {}
             memo_is_new = True
-        type_iterator: Iterable[type]
-        if self._type is None:
-            type_iterator = []
-        elif issubclass(self._type, (Mapping, abc.Object, abc.Dictionary)):
-            type_iterator = self._get_object_models(
+        type_iterator: Iterable[type] = chain(
+            self._iter_simple_types(),
+            self._iter_object_models(
                 pointer, module=module, memo=memo, name=name
-            )
-        elif issubclass(self._type, (Iterable, abc.Array)) and not issubclass(
-            self._type, str
-        ):
-            type_iterator = self._get_array_models(
+            ),
+            self._iter_array_models(
                 pointer, module=module, memo=memo, name=name
-            )
-        else:
-            data_type: type = self._get_type()
-            type_iterator = [] if data_type is object else [data_type]
+            ),
+        )
         # If this was the call which initialized our `_memo`, we want to
         # force the iterator to run, in order to fully update all models before
         # returning them to the user (as some will be updated over the course
         # of traversal when analogous elements are encountered).
-        if memo_is_new:
-            type_iterator = list(type_iterator)
-        type_: type
+        if memo_is_new and not isinstance(type_iterator, tuple):
+            type_iterator = tuple(type_iterator)
         yield from type_iterator
 
     def get_models(
@@ -882,19 +898,14 @@ class Synonyms:
         if not self._type:
             message = "No type could be identified"
             raise RuntimeError(message)
-        if issubclass(self._type, (str, bytes, bytearray)):
-            raise TypeError(self._type)
-        if (self._type is not object) and not issubclass(
-            self._type, (Mapping, abc.Dictionary, Iterable)
-        ):
-            raise TypeError(self._type)
-        for model_class in self._get_types(
-            pointer="{}#".format(quote_plus(pointer, safe="/+")),
+        quoted_pointer: str = "{}#".format(quote_plus(pointer, safe="/+"))
+        for model_class in self._iter_types(
+            pointer=quoted_pointer,
             module=module,
             name=name,
         ):
             if not issubclass(model_class, abc.Model):
-                raise TypeError(model_class)
+                raise TypeError((quoted_pointer, model_class))
             yield model_class
 
     def __len__(self) -> int:
@@ -961,17 +972,10 @@ def get_class_meta_attribute_assignment_source(
     - metadata (sob.abc.Meta): The metadata from which to take the assigned
       value.
     """
-    writable_function_name: str = "{}.meta.{}_writable".format(
-        _parent_module_name,
-        (
-            "object"
-            if isinstance(metadata, abc.ObjectMeta)
-            else (
-                "array"
-                if isinstance(metadata, abc.ArrayMeta)
-                else "dictionary"
-            )
-        ),
+    writable_function_name: str = "sob.get_writable_{}_meta".format(
+        "object"
+        if isinstance(metadata, abc.ObjectMeta)
+        else ("array" if isinstance(metadata, abc.ArrayMeta) else "dictionary")
     )
     # We insert "  # type: ignore" at the end of the first line where the value
     # is assigned due to mypy issues with properties having getters and setters
@@ -1037,10 +1041,10 @@ class Thesaurus:
                 This can either be an iterable of key/value pair tuples,
                 or a dictionary-like object.
         """
-        self._dict: abc.OrderedDict[str, Synonyms] = collections.OrderedDict()
+        self._dict: dict[str, Synonyms] = {}
         key: str
         value: Iterable[abc.Readable | abc.MarshallableTypes]
-        for key, value in collections.OrderedDict(
+        for key, value in dict(
             *((_items,) if _items else ()), **kwargs
         ).items():
             self[key] = value
@@ -1093,7 +1097,7 @@ class Thesaurus:
             **({} if isinstance(default, Undefined) else {"default": default}),
         )
 
-    def popitem(self, *, last: bool = True) -> tuple[str, Synonyms]:
+    def popitem(self) -> tuple[str, Synonyms]:
         """
         This method removes and returns a tuple of the most recently added
         key/synonyms pair (by default), or the first added key/synonyms pair
@@ -1104,7 +1108,7 @@ class Thesaurus:
                 dictionary is returned. Otherwise, the first key/synonyms
                 pair added is removed and returned.
         """
-        return self._dict.popitem(last=last)
+        return self._dict.popitem()
 
     def clear(self) -> None:
         """
@@ -1212,9 +1216,9 @@ class Thesaurus:
         module_name: str = "__main__",
         name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> str:
-        class_names_metadata: abc.OrderedDict[
+        class_names_metadata: dict[
             str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
-        ] = collections.OrderedDict()
+        ] = {}
         imports: set[str] = set()
         classes: list[str] = []
         metadatas: list[str] = []
@@ -1266,9 +1270,7 @@ class Thesaurus:
             chain(
                 sorted(
                     imports,
-                    key=lambda line: (
-                        1 if line == f"import {_parent_module_name}" else 0
-                    ),
+                    key=lambda line: (1 if line == "import sob" else 0),
                 ),
                 ("\n",),
                 classes,
@@ -1322,7 +1324,7 @@ class Thesaurus:
 
     def save_module(
         self,
-        path: str,
+        path: str | Path,
         name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> None:
         """
@@ -1339,7 +1341,9 @@ class Thesaurus:
           "key#/body/items/0") and which returns a `str` which will be the
           resulting class name (for example: "KeyBodyItemsItem").
         """
-        os.makedirs(os.path.dirname(path), exist_ok=True)
+        if isinstance(path, str):
+            path = Path(path)
+        os.makedirs(path.parent, exist_ok=True)
         module_source: str = self.get_module_source(name=name)
         with open(path, "w") as module_io:
             module_io.write(f"{module_source}\n")
