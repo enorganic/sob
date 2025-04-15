@@ -304,7 +304,7 @@ class LotteryNumbersPowerBall(sob.Array):
         super().__init__(items)
 
 
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     AnimalMammal
 ).properties = sob.Properties([
     (
@@ -340,7 +340,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     AnimalBivalve
 ).properties = sob.Properties([
     (
@@ -368,7 +368,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     PlantVegetable
 ).properties = sob.Properties([
     (
@@ -402,7 +402,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     Mineral
 ).properties = sob.Properties([
     (
@@ -440,7 +440,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_array_meta(  # type: ignore
+sob.get_writable_array_meta(
     LotteryNumbersPowerBall
 ).item_types = sob.Types([
     int

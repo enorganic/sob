@@ -810,12 +810,12 @@ class Tesstee(sob.Object):
         super().__init__(_data)
 
 
-sob.get_writable_array_meta(  # type: ignore
+sob.get_writable_array_meta(
     ArrayA
 ).item_types = sob.Types([
     ObjectA
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     ObjectA
 ).properties = sob.Properties([
     ('is_a_class', sob.BooleanProperty()),
@@ -874,7 +874,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     ObjectB
 ).properties = sob.Properties([
     ('is_b_class', sob.BooleanProperty()),
@@ -934,7 +934,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     ObjectC
 ).properties = sob.Properties([
     ('is_c_class', sob.BooleanProperty()),
@@ -989,7 +989,7 @@ sob.get_writable_object_meta(  # type: ignore
         )
     )
 ])
-sob.get_writable_object_meta(  # type: ignore
+sob.get_writable_object_meta(
     Tesstee
 ).properties = sob.Properties([
     ('boolean', sob.BooleanProperty()),

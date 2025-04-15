@@ -2920,7 +2920,7 @@ def _get_class_meta_attribute_assignment_source(
     # is assigned due to mypy issues with properties having getters and setters
     return suffix_long_lines(
         (
-            f"{writable_function_name}(  # type: ignore\n"
+            f"{writable_function_name}(\n"
             f"    {suffix_long_lines(class_name_, -4)}\n"
             f").{attribute_name} = {getattr(metadata, attribute_name)!r}"
         ),
