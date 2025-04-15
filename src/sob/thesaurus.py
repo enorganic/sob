@@ -199,10 +199,10 @@ def _update_object_meta(
     new_metadata_keys: set[str] = set(new_metadata.properties.keys())
     # Add properties that don't exist
     key: str
-    for key in metadata_keys - new_metadata_keys:
+    for key in sorted(metadata_keys - new_metadata_keys):
         metadata.properties[key] = new_metadata.properties[key]
     # Update shared properties
-    for key in metadata_keys & new_metadata_keys:
+    for key in sorted(metadata_keys & new_metadata_keys):
         types_: abc.Types | None = metadata.properties[key].types
         new_types: abc.Types | None = new_metadata.properties[key].types
         if new_types is not None:
@@ -692,22 +692,25 @@ class Synonyms:
                 ):
                     yield date
                     return
-        yield from filter(
-            lambda type_: issubclass(
-                type_,
-                (
-                    str,
-                    bytes,
-                    bytearray,
-                    bool,
-                    int,
-                    float,
-                    decimal.Decimal,
-                    date,
-                    datetime,
+        yield from sorted(
+            filter(
+                lambda type_: issubclass(
+                    type_,
+                    (
+                        str,
+                        bytes,
+                        bytearray,
+                        bool,
+                        int,
+                        float,
+                        decimal.Decimal,
+                        date,
+                        datetime,
+                    ),
                 ),
+                self._type,
             ),
-            self._type,
+            key=lambda type_: type_.__name__,
         )
 
     def _get_property_names_values(
@@ -828,11 +831,16 @@ class Synonyms:
         if not unified_items:
             return
         metadata: abc.ArrayMeta = meta.ArrayMeta(
-            item_types=filter(
-                None,
-                unified_items._iter_types(  # noqa: SLF001
-                    pointer=f"{pointer}/0", module=module, memo=memo, name=name
-                ),
+            item_types=Types(
+                filter(
+                    None,
+                    unified_items._iter_types(  # noqa: SLF001
+                        pointer=f"{pointer}/0",
+                        module=module,
+                        memo=memo,
+                        name=name,
+                    ),
+                )
             )
         )
         yield from _get_models_from_meta(
@@ -1219,67 +1227,6 @@ class Thesaurus:
     ) -> str:
         return get_models_source(
             *self.get_models(module=module_name, name=name)
-        )
-        class_names_metadata: dict[
-            str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
-        ] = {}
-        imports: set[str] = set()
-        classes: list[str] = []
-        metadatas: list[str] = []
-        model_class: type
-        for model_class in self.get_models(module=module_name, name=name):
-            class_imports: str
-            class_source: str = get_source(model_class)
-            if "\n\n\n" not in class_source:
-                raise ValueError(class_source)
-            class_imports, class_source = class_source.split("\n\n\n")
-            collections.deque(
-                map(imports.add, filter(None, class_imports.split("\n"))),
-                maxlen=0,
-            )
-            classes.append(class_source)
-            meta_instance: abc.Meta | None = meta.read_model_meta(model_class)
-            if not isinstance(
-                meta_instance,
-                (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
-            ):
-                raise TypeError(meta_instance)
-            class_names_metadata[model_class.__name__] = meta_instance
-        class_name_: str
-        metadata: abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
-        for class_name_, metadata in class_names_metadata.items():
-            if not isinstance(
-                metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)
-            ):
-                raise TypeError(metadata)
-            if isinstance(metadata, abc.ObjectMeta):
-                metadatas.append(
-                    get_class_meta_attribute_assignment_source(
-                        class_name_, "properties", metadata
-                    )
-                )
-            elif isinstance(metadata, abc.ArrayMeta):
-                metadatas.append(
-                    get_class_meta_attribute_assignment_source(
-                        class_name_, "item_types", metadata
-                    )
-                )
-            else:
-                metadatas.append(
-                    get_class_meta_attribute_assignment_source(
-                        class_name_, "value_types", metadata
-                    )
-                )
-        return "\n".join(
-            chain(
-                sorted(
-                    imports,
-                    key=lambda line: (1 if line == "import sob" else 0),
-                ),
-                ("\n",),
-                classes,
-                metadatas,
-            )
         )
 
     def get_module_source(

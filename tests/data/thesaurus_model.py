@@ -442,6 +442,6 @@ sob.get_writable_object_meta(  # type: ignore
 ])
 sob.get_writable_array_meta(  # type: ignore
     LotteryNumbersPowerBall
-).item_types = sob.MutableTypes([
+).item_types = sob.Types([
     int
 ])
