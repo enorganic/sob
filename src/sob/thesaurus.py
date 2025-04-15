@@ -48,6 +48,7 @@ from sob.model import (
     Dictionary,
     deserialize,
     get_model_from_meta,
+    get_models_source,
     unmarshal,
 )
 from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
@@ -1216,6 +1217,9 @@ class Thesaurus:
         module_name: str = "__main__",
         name: Callable[[str], str] = get_class_name_from_pointer,
     ) -> str:
+        return get_models_source(
+            *self.get_models(module=module_name, name=name)
+        )
         class_names_metadata: dict[
             str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
         ] = {}
@@ -1294,7 +1298,9 @@ class Thesaurus:
           "key#/body/items/0") and which returns a `str` which will be the
           resulting class name (for example: "KeyBodyItemsItem").
         """
-        return self._get_module_source("__main__", name=name)
+        return get_models_source(
+            *self.get_models(module="__main__", name=name)
+        )
 
     def get_module(
         self, name: Callable[[str], str] = get_class_name_from_pointer

@@ -19,7 +19,6 @@ __all__: tuple[str, ...] = (
     "UnmarshalKeyError",
     "UnmarshalTypeError",
     "UnmarshalValueError",
-    "ObjectDiscrepancyError",
     "get_exception_text",
     "append_exception_text",
     "DefinitionExistsError",
@@ -27,20 +26,35 @@ __all__: tuple[str, ...] = (
 
 
 class ValidationError(Exception):
-    pass
+    """
+    This error is raised when `sob.validate` encounters extraneous attributes
+    associated with a model instance, or discovers missing required attributes.
+    """
 
 
 class VersionError(AttributeError):
-    pass
+    """
+    This error is raised when versioning an object fails due to
+    having data which is incompatible with the target error.
+    """
 
 
 class DeserializeError(ValueError):
     """
     This error is raised when data is encountered during deserialization which
     cannot be parsed.
+
+    Attributes:
+        data: The data that could not be parsed.
+        message: Additional information about the error.
     """
 
     def __init__(self, data: str, message: str = "") -> None:
+        """
+        Parameters:
+            data: The data that could not be parsed.
+            message: An optional message to include with the error.
+        """
         self.data: str = data
         self.message: str = message
         super().__init__(*((data,) + ((message,) if message else ())))
@@ -59,6 +73,10 @@ class UnmarshalError(Exception):
     """
     This is an error message raised when data cannot be un-marshalled due to
     not matching metadata specs.
+
+    Attributes:
+        message:
+        parameter:
     """
 
     def __init__(
@@ -69,10 +87,6 @@ class UnmarshalError(Exception):
         item_types: Iterable[abc.Property | type] | abc.Types | None = None,
         value_types: Iterable[abc.Property | type] | abc.Types | None = None,
     ) -> None:
-        self._message: str | None = None
-        self._parameter: str | None = None
-        self._index: str | int | None = None
-        self._key: str | None = None
         error_message_lines: list[str] = []
         # Identify which parameter is being used for type validation
         types_label: str = (
@@ -103,56 +117,7 @@ class UnmarshalError(Exception):
         error_message_lines.append(f"- {types_label}: {type_representation}")
         if message:
             error_message_lines += ["", message]
-        self.message = "\n".join(error_message_lines)
-
-    @property  # type: ignore
-    def parameter(self) -> str | None:
-        return self._parameter
-
-    @parameter.setter  # type: ignore
-    def parameter(self, parameter_name: str) -> None:
-        if parameter_name != self.parameter:
-            self._parameter = parameter_name
-            self.assemble_message()
-
-    @property  # type: ignore
-    def message(self) -> str | None:
-        return self._message
-
-    @message.setter
-    def message(self, message_text: str) -> None:
-        if message_text != self.message:
-            self._message = message_text
-            self.assemble_message()
-
-    @property  # type: ignore
-    def index(self) -> str | int | None:
-        return self._index
-
-    @index.setter
-    def index(self, index_or_key: str | int | None) -> None:
-        if index_or_key != self.index:
-            self._index = index_or_key
-            self.assemble_message()
-
-    def assemble_message(self) -> None:
-        """
-        Assemble the text of the error message.
-        """
-        messages = []
-        if self.parameter:
-            messages.append(
-                "Errors encountered in attempting to un-marshal "
-                f"{self.parameter}:"
-            )
-        if self.index is not None:
-            messages.append(
-                "Errors encountered in attempting to un-marshal the value at "
-                f"index {self.index}:"
-            )
-        if self.message:
-            messages.append(self.message)
-        super().__init__("\n".join(messages))
+        super().__init__("\n".join(error_message_lines))
 
 
 class UnmarshalTypeError(UnmarshalError, TypeError):
@@ -169,10 +134,6 @@ class UnmarshalKeyError(KeyError):
 
     def __str__(self) -> str:
         return self.message
-
-
-class ObjectDiscrepancyError(AssertionError):
-    pass
 
 
 def get_exception_text() -> str:

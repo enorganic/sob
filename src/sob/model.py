@@ -2894,6 +2894,40 @@ def get_model_from_meta(
     return model_class
 
 
+def _get_class_meta_attribute_assignment_source(
+    class_name_: str,
+    attribute_name: str,
+    metadata: abc.Meta,
+) -> str:
+    """
+    This function generates source code for setting a metadata attribute on
+    a class.
+
+    Parameters:
+
+    - class_name (str): The name of the class to which we want to assign a
+      metadata attribute.
+    - attribute_name (str): The name of the attribute we want to assign.
+    - metadata (sob.abc.Meta): The metadata from which to take the assigned
+      value.
+    """
+    writable_function_name: str = "sob.get_writable_{}_meta".format(
+        "object"
+        if isinstance(metadata, abc.ObjectMeta)
+        else ("array" if isinstance(metadata, abc.ArrayMeta) else "dictionary")
+    )
+    # We insert "  # type: ignore" at the end of the first line where the value
+    # is assigned due to mypy issues with properties having getters and setters
+    return suffix_long_lines(
+        (
+            f"{writable_function_name}(  # type: ignore\n"
+            f"    {suffix_long_lines(class_name_, -4)}\n"
+            f").{attribute_name} = {getattr(metadata, attribute_name)!r}"
+        ),
+        -4,
+    )
+
+
 def get_models_source(*model_classes: type[abc.Model]) -> str:
     """
     Get source code for a series of model classes, organized as a module.
@@ -2901,6 +2935,9 @@ def get_models_source(*model_classes: type[abc.Model]) -> str:
     import_source_lines: list[str] = []
     class_sources: list[str] = []
     model_class: type[abc.Model]
+    class_names_metadata: dict[
+        str, abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
+    ] = {}
     for model_class in model_classes:
         import_source: str
         class_source: str
@@ -2909,10 +2946,44 @@ def get_models_source(*model_classes: type[abc.Model]) -> str:
         )
         import_source_lines.extend(import_source.splitlines())
         class_sources.append(class_source)
+        meta_instance: abc.Meta | None = meta.read_model_meta(model_class)
+        if not isinstance(
+            meta_instance,
+            (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta),
+        ):
+            raise TypeError(meta_instance)
+        class_names_metadata[model_class.__name__] = meta_instance
+    class_name: str
+    metadata: abc.ObjectMeta | abc.ArrayMeta | abc.DictionaryMeta
+    metadata_sources: list[str] = []
+    for class_name, metadata in class_names_metadata.items():
+        if not isinstance(
+            metadata, (abc.ObjectMeta, abc.ArrayMeta, abc.DictionaryMeta)
+        ):
+            raise TypeError(metadata)
+        if isinstance(metadata, abc.ObjectMeta):
+            metadata_sources.append(
+                _get_class_meta_attribute_assignment_source(
+                    class_name, "properties", metadata
+                )
+            )
+        elif isinstance(metadata, abc.ArrayMeta):
+            metadata_sources.append(
+                _get_class_meta_attribute_assignment_source(
+                    class_name, "item_types", metadata
+                )
+            )
+        else:
+            metadata_sources.append(
+                _get_class_meta_attribute_assignment_source(
+                    class_name, "value_types", metadata
+                )
+            )
     # De-duplicate imports while preserving order
     imports_source = "\n".join(dict.fromkeys(import_source_lines).keys())
     classes_source: str = "\n\n\n".join(class_sources)
-    return f"{imports_source}\n\n\n{classes_source}"
+    metadata_source: str = "\n".join(metadata_sources)
+    return f"{imports_source}\n\n\n{classes_source}\n\n\n{metadata_source}"
 
 
 # For backwards compatibility

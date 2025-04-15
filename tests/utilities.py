@@ -6,12 +6,15 @@ from warnings import warn
 
 from sob import abc, meta
 from sob._types import NoneType
-from sob.errors import ObjectDiscrepancyError
 from sob.model import serialize, validate
 from sob.utilities import get_qualified_name
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
+
+class ObjectDiscrepancyError(AssertionError):
+    pass
 
 
 def _get_object_property_names(object_: abc.Object) -> set[str]:
@@ -187,8 +190,8 @@ def _reload_object(object_instance: abc.Object) -> None:
         )
     reloaded_string = str(reloaded_object_instance)
     if string_object != reloaded_string:
-        msg = f"\n{string_object}\n!=\n{reloaded_string}"
-        raise ObjectDiscrepancyError(msg)
+        message: str = f"\n{string_object}\n!=\n{reloaded_string}"
+        raise ObjectDiscrepancyError(message)
     _remarshal_object(string_object, object_instance)
 
 

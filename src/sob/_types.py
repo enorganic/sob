@@ -69,7 +69,10 @@ NoneType.register(type(None))
 
 
 class DefinitionExistsError(Exception):
-    pass
+    """
+    This error is raised when an attempt is made to redefine
+    a singleton class instance.
+    """
 
 
 class Null:
@@ -79,8 +82,9 @@ class Null:
     of `None`.
 
     Note: Like the built-in value `None`, only one instance of this class is
-    permitted, so this class should never be instantiated, it should always be
-    referenced through the constant `NULL` from this same module.
+    permitted (it's a singleton), so this class should never be instantiated,
+    it should always be referenced through the constant `NULL` from this
+    module.
     """
 
     __module__ = "sob"
