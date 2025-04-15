@@ -156,8 +156,6 @@ def _get_object_discrepancies_error(
 def _remarshal_object(string_object: str, object_instance: abc.Object) -> None:
     reloaded_marshalled_data = _json.loads(
         string_object,
-        object_hook=dict,
-        object_pairs_hook=dict,
     )
     keys: set[str] = set()
     instance_meta: abc.Meta | None = meta.read_model_meta(object_instance)

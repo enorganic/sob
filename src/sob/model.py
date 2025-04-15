@@ -2035,12 +2035,6 @@ def serialize(
 # region deserialize
 
 
-def _object_pairs_hook(
-    pairs: Iterable[tuple[str, Any]],
-) -> dict[str, Any]:
-    return dict(pairs)
-
-
 def deserialize(
     data: str | bytes | abc.Readable | None,
 ) -> Any:
@@ -2060,8 +2054,6 @@ def deserialize(
         try:
             deserialized_data = json.loads(
                 data,
-                object_hook=dict,
-                object_pairs_hook=_object_pairs_hook,
                 strict=False,
             )
         except ValueError as error:
