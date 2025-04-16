@@ -30,8 +30,8 @@ When authoring server-side code for your web API, I recommend
 [pydantic](https://docs.pydantic.dev/latest/). The `sob` library is designed
 primarily to support API *client* data models, and for automated model module
 creation based on metadata generated either using
-[sob.thesaurus](https://enorganic.github.io/oapi/api/thesaurus) or
-[oapi](https://enorganic.github.io/oapi/).
+[sob.thesaurus](https://sob.enorganic.org/api/thesaurus) or
+[oapi](https://oapi.enorganic.org/).
 
 The name "sob" is not a profane acronym (in this case), it is a portmanteau
 of "serial" and "object". Originally, this library was named "serial",
