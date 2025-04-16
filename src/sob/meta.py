@@ -60,7 +60,12 @@ def _is_model(_model: Any) -> bool:
 
 class Meta(abc.Meta):  # pragma: no cover
     """
-    TODO
+    This is a base class for
+    [`sob.ObjectMeta`](https://sob.enorganic.org/api/types/#sob.meta.ObjectMeta),
+    [`sob.ArrayMeta`](https://sob.enorganic.org/api/types/#sob.meta.ArrayMeta),
+    and
+    [`sob.DictionaryMeta`](https://sob.enorganic.org/api/types/#sob.meta.DictionaryMeta),
+    and implements methods common to these three classes.
     """
 
     __module__: str = "sob"
@@ -107,7 +112,25 @@ class Meta(abc.Meta):  # pragma: no cover
 
 class ObjectMeta(Meta, abc.ObjectMeta):
     """
-    TODO
+    This class holds metadata for a sub-class or instance of
+    [`sob.Object`](https://sob.enorganic.org/api/model/#sob.model.Object).
+
+    Attributes:
+        properties: This is a dictionary-like object mapping property names
+            to a corresponding instance (or sub-class instance) of
+            [`sob.Property`
+            ](https://sob.enorganic.org/api/properties/#sob.properties.Property)
+            for a sub-class or sub-class instance of [`sob.Object`
+            ](https://sob.enorganic.org/api/properties/#sob.model.Object).
+            Attempting to set values for a property which do not correspond
+            to the property metadata will raise a `TypeError`. Deserializing
+            data with dictionary keys not corresponding to a defined
+            property will not raise an error on deserializing, but will raise
+            an [`sob.ValidationError`
+            ](https://sob.enorganic.org/api/errors/#sob.errors.ValidationError)
+            when/if the instance is validated using
+            [`sob.validate`
+            ](https://sob.enorganic.org/api/model/#sob.model.validate).
     """
 
     __module__: str = "sob"
@@ -147,7 +170,19 @@ Object = ObjectMeta
 
 class DictionaryMeta(Meta, abc.DictionaryMeta):
     """
-    TODO
+    This class holds metadata for a sub-class or instance of
+    [`sob.Dictionary`](https://sob.enorganic.org/api/model/#sob.model.Dictionary).
+
+    Attributes:
+        value_types: This is a sequence of types and/or instances of
+            [`sob.Property`
+            ](https://sob.enorganic.org/api/properties/#sob.properties.Property)
+            or one of its sub-classes determining the types of values
+            which can be stored in a sub-class or sub-class instance of
+            [`sob.Dictionary`
+            ](https://sob.enorganic.org/api/model/#sob.model.Dictionary).
+            Attempting to set values of a type not described by the
+            dictionary value types will raise a `TypeError`.
     """
 
     __module__: str = "sob"
@@ -191,7 +226,19 @@ Dictionary = DictionaryMeta
 
 class ArrayMeta(Meta, abc.ArrayMeta):
     """
-    TODO
+    This class holds metadata for a sub-class or instance of
+    [`sob.Array`](https://sob.enorganic.org/api/model/#sob.model.Array).
+
+    Attributes:
+        item_types: This is a sequence of types and/or instances of
+            [`sob.Property`
+            ](https://sob.enorganic.org/api/properties/#sob.properties.Property)
+            or one of its sub-classes determining the types of items
+            which can be stored in a sub-class or sub-class instance of
+            [`sob.Array`
+            ](https://sob.enorganic.org/api/model/#sob.model.Array).
+            Attempting to insert or append items of a type not described by the
+            array item types will raise a `TypeError`.
     """
 
     __module__: str = "sob"
@@ -233,7 +280,10 @@ Array = ArrayMeta
 
 class Properties(abc.Properties):
     """
-    TODO
+    Instances of this class are dictionary-like objects mapping property names
+    to a corresponding instance (or sub-class instance) of
+    [`sob.Property`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.Property).
     """
 
     __module__: str = "sob"
@@ -409,6 +459,14 @@ class Properties(abc.Properties):
 
 
 def read_model_meta(model: type | abc.Model) -> abc.Meta | None:
+    """
+    Read the metadata associated with a sub-class or instance of `sob.Model`,
+    or return `None` if no metadata is defined.
+
+    Please note that the returned metadata may be inherited,
+    and therefore should not be modified. Use `get_writable_model_meta` to
+    retrieve an instance of this metadata suitable for modification.
+    """
     message: str
     if isinstance(model, abc.Model):
         return getattr(model, "_instance_meta", None) or read_model_meta(
@@ -438,43 +496,83 @@ def read_model_meta(model: type | abc.Model) -> abc.Meta | None:
     raise TypeError(message)
 
 
-# For backwards compatibility
-read = read_model_meta
+read = deprecated(
+    "`sob.meta.read` is deprecated and will be removed in "
+    "sob 3. Please use `sob.read_model_meta` instead."
+)(read_model_meta)
 
 
 def read_object_meta(model: type | abc.Object) -> abc.ObjectMeta | None:
+    """
+    Read the metadata associated with a sub-class or instance of `sob.Object`,
+    or return `None` if no metadata is defined.
+
+    Please note that the returned metadata may be inherited,
+    and therefore should not be modified. Use `get_writable_object_meta` to
+    retrieve an instance of this metadata suitable for modification.
+    """
     return read_model_meta(model)  # type: ignore
 
 
-# For backwards compatibility
-object_read = read_object_meta
+object_read = deprecated(
+    "`sob.meta.object_read` is deprecated and will be removed in "
+    "sob 3. Please use `sob.read_object_meta` instead."
+)(read_object_meta)
 
 
 def read_array_meta(model: type | abc.Array) -> abc.ArrayMeta | None:
+    """
+    Read the metadata associated with a sub-class or instance of `sob.Array`,
+    or return `None` if no metadata is defined.
+
+    Please note that the returned metadata may be inherited,
+    and therefore should not be modified. Use `get_writable_array_meta` to
+    retrieve an instance of this metadata suitable for modification.
+    """
     return read_model_meta(model)  # type: ignore
 
 
-# For backwards compatibility
-array_read = read_array_meta
+array_read = deprecated(
+    "`sob.meta.array_read` is deprecated and will be removed in "
+    "sob 3. Please use `sob.read_array_meta` instead."
+)(read_array_meta)
 
 
 def read_dictionary_meta(
     model: type[abc.Dictionary] | abc.Dictionary,
 ) -> abc.DictionaryMeta | None:
+    """
+    Read metadata from a sub-class or instance of `sob.Dictionary`.
+
+    Please note that the returned metadata may be inherited,
+    and therefore should not be modified. Use `get_writable_dictionary_hooks`
+    to retrieve an instance of this metadata suitable for modification.
+    """
     return read_model_meta(model)  # type: ignore
 
 
-# For backwards compatibility
-dictionary_read = read_dictionary_meta
+dictionary_read = deprecated(
+    "`sob.meta.dictionary_read` is deprecated and will be removed in "
+    "sob 3. Please use `sob.read_dictionary_meta` instead."
+)(read_dictionary_meta)
 
 
 def get_writable_model_meta(model: type | abc.Model) -> abc.Meta:
     """
-    This function returns an instance of [sob.meta.Meta](#Meta) which can
-    be safely modified. If the class or model instance inherits its metadata
-    from a class or base class, this function will create and return a
-    duplicate of that metadata assigned directly to the class or instance
-    represented by `model`.
+    Retrieve an instance of `sob.Meta` which is associated directly with the
+    `model` class or instance, and therefore suitable for modifying.
+
+    If `model` is an instance of an `sob.Model` sub-class, and the instance
+    does not have any metadata associated, the class hooks will be
+    copied to the instance and returned
+
+    If `model` is a sub-class of `sob.Model`, but does not have any metadata
+    associated, hooks will be copied from the first parent class which
+    has metadata attributed, and the copy will be returned.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any metadata associated—a new instance of `sob.Meta` will be
+    created, attributed to `model`, and returned.
     """
     if not _is_model(model):
         raise TypeError(model)
@@ -526,11 +624,20 @@ def get_writable_object_meta(
     object_: type[abc.Object] | abc.Object,
 ) -> abc.ObjectMeta:
     """
-    This function returns an instance of [sob.meta.Object](#meta-Object) which
-    can be safely modified. If the class or model instance inherits its
-    metadata from a class or base class, this function will create and return a
-    duplicate of that metadata assigned directly to the class or instance
-    represented by `model`.
+    Retrieve an instance of `sob.ObjectMeta` which is associated directly with
+    the `model` class or instance, and therefore suitable for modifying.
+
+    If `model` is an instance of an `sob.Object` sub-class, and the instance
+    does not have any metadata associated, the class metadata will be
+    copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Object`, but does not have any metadata
+    associated, metadata will be copied from the first parent class which
+    has metadata attributed, and the copy will be returned.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any metadata associated—a new instance of `sob.ObjectMeta` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_meta(object_)  # type: ignore
 
@@ -541,97 +648,131 @@ object_writable = get_writable_object_meta
 
 def get_writable_array_meta(model: type | abc.Array) -> abc.ArrayMeta:
     """
-    This function returns an instance of [sob.meta.Array](#meta-Array) which
-    can be safely modified. If the class or model instance inherits its
-    metadata from a class or base class, this function will create and return a
-    duplicate of that metadata assigned directly to the class or instance
-    represented by `model`.
+    Retrieve an instance of `sob.ArrayMeta` which is associated directly with
+    the `model` class or instance, and therefore suitable for modifying.
+
+    If `model` is an instance of an `sob.Array` sub-class, and the instance
+    does not have any metadata associated, the class metadata will be
+    copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Array`, but does not have any metadata
+    associated, metadata will be copied from the first parent class which
+    has metadata attributed, and the copy will be returned.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any metadata associated—a new instance of `sob.ArrayMeta` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_meta(model)  # type: ignore
 
 
-# For backwards compatibility
-array_writable = get_writable_array_meta
+array_writable = deprecated(
+    "`sob.meta.array_writable` is deprecated and will be removed in "
+    "sob 3. Please use `sob.get_writable_array_meta` instead."
+)(get_writable_array_meta)
 
 
 def get_writable_dictionary_meta(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryMeta:
     """
-    This function returns an instance of
-    [sob.meta.Dictionary](#meta-Dictionary) which can be safely modified. If
-    the class or model instance inherits its metadata from a class or base
-    class, this function will create and return a duplicate of that metadata
-    assigned directly to the class or instance represented by `model`.
+    Retrieve an instance of `sob.DictionaryMeta` which is associated directly
+    with the `model` class or instance, and therefore suitable for writing
+    metadata to.
+
+    If `model` is an instance of an `sob.Dictionary` sub-class, and the
+    instance does not have any metadata associated, the parent class metadata
+    will be copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Dictionary`, but does not have any
+    metadata associated, metadata will be copied from the first parent class
+    which does have metadata attributed.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any metadata associated—a new instance of `sob.DictionaryMeta` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_meta(model)  # type: ignore
 
 
-# For backwards compatibility
-dictionary_writable = get_writable_dictionary_meta
+dictionary_writable = deprecated(
+    "`sob.meta.dictionary_writable` is deprecated and will be removed in "
+    "sob 3. Please use `sob.get_writable_dictionary_meta` instead."
+)(get_writable_dictionary_meta)
+
+
+def get_model_meta_type(model: type | abc.Model) -> type:
+    """
+    Determine the type of metadata required for the specified `model`
+    class or instance.
+    """
+    meta_type: type | None
+    if not isinstance(model, (type, abc.Object, abc.Dictionary, abc.Array)):
+        raise TypeError(model)
+    if isinstance(model, type):
+        if not issubclass(model, (abc.Object, abc.Dictionary, abc.Array)):
+            raise TypeError(model)
+        meta_type = (
+            ObjectMeta
+            if issubclass(model, abc.Object)
+            else ArrayMeta
+            if issubclass(model, abc.Array)
+            else DictionaryMeta
+        )
+    else:
+        meta_type = (
+            ObjectMeta
+            if isinstance(model, abc.Object)
+            else ArrayMeta
+            if isinstance(model, abc.Array)
+            else DictionaryMeta
+        )
+    return meta_type
 
 
 def write_model_meta(
     model: type[abc.Model] | abc.Model, meta: abc.Meta | None
 ) -> None:
-    message: str
-    model_type: type
-    if isinstance(model, abc.Model):
-        model_type = type(model)
-    elif isinstance(model, type) and issubclass(model, abc.Model):
-        model_type = model
-    else:
-        repr_model: str = repr(model)
-        message = (
-            "{} requires a value for the parameter `model` which is an "
-            "instance or sub-class of `{}`, not{}".format(
-                get_calling_function_qualified_name(),
-                get_qualified_name(abc.Model),
-                (
-                    ":\n" + repr_model
-                    if "\n" in repr_model
-                    else f" `{repr_model}`"
-                ),
+    """
+    Write metadata to a sub-class or instance of `sob.Model`.
+    """
+    if meta is not None:
+        # Verify that the metadata is of the correct type
+        meta_type: type[abc.Meta] = get_model_meta_type(model)
+        if not isinstance(meta, meta_type):
+            message: str = (
+                f"Metadata assigned to `{get_qualified_name(type(model))}` "
+                f"must be of type `{get_qualified_name(meta_type)}`"
             )
-        )
-        raise TypeError(message)
-    metadata_type: type = (
-        ObjectMeta
-        if issubclass(model_type, abc.Object)
-        else (
-            ArrayMeta
-            if issubclass(model_type, abc.Array)
-            else (
-                DictionaryMeta
-                if issubclass(model_type, abc.Dictionary)
-                else Meta
-            )
-        )
-    )
-    if (meta is not None) and not isinstance(meta, metadata_type):
-        message = (
-            f"Metadata assigned to `{get_qualified_name(model_type)}` "
-            f"must be of type `{get_qualified_name(metadata_type)}`"
-        )
-        raise TypeError(message)
-    if TYPE_CHECKING:
-        assert meta is None or isinstance(meta, abc.Meta)
+            raise ValueError(message)
     if isinstance(model, abc.Model):
         model._instance_meta = meta  # noqa: SLF001
     else:
+        if not issubclass(model, abc.Model):
+            raise TypeError(model)
         model._class_meta = meta  # noqa: SLF001
 
 
-# For backwards compatibility
-write = write_model_meta
+write = deprecated(
+    "`sob.meta.write` is deprecated and will be removed in sob 3. "
+    "Please use `sob.write_model_meta` instead."
+)(write_model_meta)
 
 
 def get_model_pointer(model: abc.Model) -> str | None:
+    """
+    Get the JSON pointer associated with this model. Please note that this
+    will typically only be available for models which have been deserialized
+    from JSON data, otherwise, this function will return `None` (unless
+    explicitly set using `set_model_pointer` on this instance, or a parent).
+    """
     return model._pointer  # noqa: SLF001
 
 
-# For backwards compatibility
-get_pointer = get_model_pointer
+get_pointer = deprecated(
+    "`sob.meta.get_pointer` is deprecated and will be removed in sob 3. "
+    "Please use `sob.get_model_pointer` instead."
+)(get_model_pointer)
 
 
 def _read_object(model: abc.Object | type) -> abc.ObjectMeta | None:
@@ -663,7 +804,12 @@ def escape_reference_token(reference_token: str) -> str:
     return reference_token.replace("~", "~0").replace("/", "~1")
 
 
-def set_model_pointer(model: abc.Model, pointer_: str) -> None:
+def set_model_pointer(model: abc.Model, pointer_: str | None) -> None:
+    """
+    Set the JSON pointer associated with this model, and all models
+    assigned to object properties, array items, or dictionary values
+    of this model.
+    """
     key: str
     value: Any
     model._pointer = pointer_  # noqa: SLF001
@@ -673,7 +819,7 @@ def set_model_pointer(model: abc.Model, pointer_: str) -> None:
                 value,
                 (abc.Object, abc.Dictionary, abc.Array),
             ):
-                pointer(
+                set_model_pointer(
                     value,
                     "{}/{}".format(
                         pointer_,
@@ -694,7 +840,7 @@ def set_model_pointer(model: abc.Model, pointer_: str) -> None:
                 value,
                 (abc.Object, abc.Dictionary, abc.Array),
             ):
-                pointer(
+                set_model_pointer(
                     value,
                     "{}/{}".format(
                         pointer_,
@@ -713,11 +859,13 @@ def set_model_pointer(model: abc.Model, pointer_: str) -> None:
                 value,
                 (abc.Object, abc.Dictionary, abc.Array),
             ):
-                pointer(value, f"{pointer_}/{index!s}")
+                set_model_pointer(value, f"{pointer_}/{index!s}")
 
 
-# For backwards compatibility
-set_pointer = set_model_pointer
+set_pointer = deprecated(
+    "`sob.meta.set_pointer` is deprecated and will be removed in sob 3. "
+    "Please use `sob.set_model_pointer` instead."
+)(set_model_pointer)
 
 
 @deprecated(
@@ -768,6 +916,11 @@ def _traverse_models(
 
 
 def set_model_url(model_instance: abc.Model, source_url: str | None) -> None:
+    """
+    Set a source URL to be associated with this model, and all models
+    assigned to object properties, array items, or dictionary values
+    of this model.
+    """
     if not isinstance(model_instance, (abc.Object, abc.Dictionary, abc.Array)):
         raise TypeError(model_instance)
     if (source_url is not None) and not isinstance(source_url, str):
@@ -778,16 +931,23 @@ def set_model_url(model_instance: abc.Model, source_url: str | None) -> None:
         set_model_url(child_model, source_url)
 
 
-# For backwards compatibility
-set_url = set_model_url
+set_url = deprecated(
+    "`sob.meta.set_url` is deprecated and will be removed in sob 3. "
+    "Please use `sob.set_model_url` instead."
+)(set_model_url)
 
 
 def get_model_url(model: abc.Model) -> str | None:
+    """
+    Get the source URL from which this model was deserialized.
+    """
     return model._url  # noqa: SLF001
 
 
-# For backwards compatibility
-get_url = get_model_url
+get_url = deprecated(
+    "`sob.meta.get_url` is deprecated and will be removed in sob 3. "
+    "Please use `sob.get_model_url` instead."
+)(get_model_url)
 
 
 @deprecated(
@@ -1025,8 +1185,10 @@ def version_model(
         _version_array(data, specification, version_number)
 
 
-# For backwards compatibility
-version = version_model
+version = deprecated(
+    "`sob.meta.version` is deprecated and will be removed in "
+    "sob 3. Please use `sob.version_model` instead."
+)(version_model)
 
 
 def _copy_object_to(

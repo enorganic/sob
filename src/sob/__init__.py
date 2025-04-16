@@ -21,7 +21,6 @@ from sob import (
 from sob.errors import (
     DeserializeError,
     UnmarshalError,
-    UnmarshalKeyError,
     UnmarshalTypeError,
     UnmarshalValueError,
     ValidationError,
@@ -189,7 +188,6 @@ __all__: tuple[str, ...] = (
     "VersionError",
     "DeserializeError",
     "UnmarshalError",
-    "UnmarshalKeyError",
     "UnmarshalTypeError",
     "UnmarshalValueError",
     "ValidationError",

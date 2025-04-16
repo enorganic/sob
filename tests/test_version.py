@@ -24,7 +24,7 @@ class MemberObjectA(sob.Object):
         _data: str | bytes | dict | Sequence | IO | None = None,
         property_a: int | None = None,
         property_b: str | None = None,
-        property_c: str | int | sob.types.Null | None = None,
+        property_c: str | int | sob.Null | None = None,
     ) -> None:
         self.property_a = property_a
         self.property_b = property_b
@@ -36,7 +36,7 @@ class MemberObjectB(sob.Object):
     def __init__(
         self,
         _data: str | bytes | dict | Sequence | IO | None = None,
-        property_a: str | int | sob.types.Null | None = None,
+        property_a: str | int | sob.Null | None = None,
         property_b: int | None = None,
         property_c: str | None = None,
     ) -> None:
@@ -50,7 +50,7 @@ class MemberObjectC(sob.Object):
     def __init__(
         self,
         _data: str | bytes | dict | Sequence | IO | None = None,
-        property_a: str | int | sob.types.Null | None = None,
+        property_a: str | int | sob.Null | None = None,
         property_b: int | None = None,
         property_c: str | None = None,
         property_d: str | None = None,
@@ -196,7 +196,7 @@ sob.meta.get_writable_object_meta(
                 types=[
                     # For versions prior to 1.2, the property value *must* be a
                     # string
-                    sob.properties.String(versions=["test-specification<1.2"]),
+                    sob.StringProperty(versions=["test-specification<1.2"]),
                     # For versions greater than or equal to 1.2 and less than
                     # 2.0, the property value can be a string, float, or
                     # integer.

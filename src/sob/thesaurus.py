@@ -41,6 +41,7 @@ from typing_extensions import Self
 from sob import abc, meta
 from sob._io import read
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
+from sob._utilities import deprecated
 from sob.abc import MARSHALLABLE_TYPES
 from sob.meta import escape_reference_token
 from sob.model import (
@@ -380,8 +381,11 @@ def get_class_name_from_pointer(pointer: str) -> str:
     )
 
 
-# For backwards compatibility
-class_name_from_pointer = get_class_name_from_pointer
+class_name_from_pointer = deprecated(
+    "`sob.thesaurus.class_name_from_pointer` is deprecated and will be "
+    "removed in sob 3. Please use "
+    "`sob.thesaurus.get_class_name_from_pointer` instead."
+)(get_class_name_from_pointer)
 
 
 def _get_models_from_meta(
@@ -893,7 +897,7 @@ class Synonyms:
           infer class names.
         - module (str): The name of the module in which model classes will be
           defined. This defaults to "__main__".
-        - name (str) = sob.thesaurus.class_name_from_pointer:
+        - name (str) = sob.thesaurus.get_class_name_from_pointer:
           A function which accepts one `str` argument—a synonym key
           concatenated with "#" and JSON pointer (for example:
           "key#/body/items/0") and which returns a `str` which will be the
@@ -1111,11 +1115,6 @@ class Thesaurus:
         This method removes and returns a tuple of the most recently added
         key/synonyms pair (by default), or the first added key/synonyms pair
         if `last` is set to `False`.
-
-        Parameters:
-            last: If `True` (the default), the last item added to the
-                dictionary is returned. Otherwise, the first key/synonyms
-                pair added is removed and returned.
         """
         return self._dict.popitem()
 
@@ -1239,7 +1238,7 @@ class Thesaurus:
 
         Parameters:
 
-        - name (str) = sob.thesaurus.class_name_from_pointer:
+        - name (str) = sob.thesaurus.get_class_name_from_pointer:
           A function which accepts one `str` argument—a synonym key
           concatenated with "#" and JSON pointer (for example:
           "key#/body/items/0") and which returns a `str` which will be the
@@ -1260,7 +1259,7 @@ class Thesaurus:
 
         Parameters:
 
-        - name (str) = sob.thesaurus.class_name_from_pointer:
+        - name (str) = sob.thesaurus.get_class_name_from_pointer:
           A function which accepts one `str` argument—a synonym key
           concatenated with "#" and JSON pointer (for example:
           "key#/body/items/0") and which returns a `str` which will be the
@@ -1288,7 +1287,7 @@ class Thesaurus:
         Parameters:
 
         - path (str): The file path where the data will be written.
-        - name (str) = sob.thesaurus.class_name_from_pointer:
+        - name (str) = sob.thesaurus.get_class_name_from_pointer:
           A function which accepts one `str` argument—a synonym key
           concatenated with "#" and JSON pointer (for example:
           "key#/body/items/0") and which returns a `str` which will be the

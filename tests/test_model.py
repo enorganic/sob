@@ -12,7 +12,6 @@ import pytest
 from iso8601.iso8601 import parse_date
 
 import sob
-from sob import abc, meta, model, properties
 from tests import utilities as tests_utilities
 
 if TYPE_CHECKING:
@@ -150,11 +149,11 @@ def test_sequence_properties_assignment() -> None:
     metadata, that the resulting property is an instance of `sob.Properties`
     """
     object_meta: sob.abc.Meta | None = sob.read_object_meta(ObjectB)
-    if (object_meta is None) or not isinstance(object_meta, meta.ObjectMeta):
+    if (object_meta is None) or not isinstance(object_meta, sob.ObjectMeta):
         raise TypeError(object_meta)
     properties: sob.abc.Properties | None = object_meta.properties
     assert properties is not None
-    assert isinstance(properties, meta.Properties)
+    assert isinstance(properties, sob.Properties)
 
 
 class ObjectC(sob.Object):
@@ -199,16 +198,16 @@ class ObjectC(sob.Object):
         super().__init__(_)
 
 
-meta.get_writable_object_meta(ObjectC).properties = [  # type: ignore
-    ("is_c_class", properties.Boolean()),
-    ("string", properties.String()),
-    ("integer", properties.Integer()),
-    ("alpha", properties.Enumerated(values=(True, False))),
-    ("beta", properties.Enumerated(values=(True, False))),
-    ("gamma", properties.Enumerated(values=(True, False))),
-    ("delta", properties.Enumerated(values=(True, False))),
-    ("iso8601_datetime", properties.DateTime(name="iso8601DateTime")),
-    ("iso8601_date", properties.Date(name="iso8601Date")),
+sob.get_writable_object_meta(ObjectC).properties = [  # type: ignore
+    ("is_c_class", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("integer", sob.IntegerProperty()),
+    ("alpha", sob.EnumeratedProperty(values=(True, False))),
+    ("beta", sob.EnumeratedProperty(values=(True, False))),
+    ("gamma", sob.EnumeratedProperty(values=(True, False))),
+    ("delta", sob.EnumeratedProperty(values=(True, False))),
+    ("iso8601_datetime", sob.DateTimeProperty(name="iso8601DateTime")),
+    ("iso8601_date", sob.DateProperty(name="iso8601Date")),
 ]
 
 
@@ -249,7 +248,7 @@ class Tesstee(sob.Object):
     def __init__(
         self,
         _data: (
-            str | bytes | dict | abc.Readable | abc.Object | IO | None
+            str | bytes | dict | sob.abc.Readable | sob.abc.Object | IO | None
         ) = None,
         boolean: bool | None = None,
         string: str | None = None,
@@ -323,7 +322,7 @@ class Tesstee(sob.Object):
         super().__init__(_data)
 
 
-testee_meta: sob.abc.ObjectMeta = meta.get_writable_object_meta(Tesstee)
+testee_meta: sob.abc.ObjectMeta = sob.get_writable_object_meta(Tesstee)
 testee_meta.properties = {  # type: ignore
     "boolean": sob.BooleanProperty(),
     "string": sob.StringProperty(),
@@ -337,17 +336,17 @@ testee_meta.properties = {  # type: ignore
     ),
     "string_array": sob.ArrayProperty(item_types=(str,), name="stringArray"),
     "number_array": sob.ArrayProperty(
-        item_types=(properties.Number(),), name="numberArray"
+        item_types=(sob.NumberProperty(),), name="numberArray"
     ),
     "integer_array": sob.ArrayProperty(
-        item_types=(properties.Integer(),), name="integerArray"
+        item_types=(sob.IntegerProperty(),), name="integerArray"
     ),
     "rainbow_array": sob.ArrayProperty(
-        item_types=(properties.Bytes(),), name="rainbowArray"
+        item_types=(sob.BytesProperty(),), name="rainbowArray"
     ),
     "testy_array": sob.ArrayProperty(item_types=(Tesstee,), name="testyArray"),
     "string_number_boolean": sob.Property(
-        types=(str, properties.Number(), bool), name="stringNumberBoolean"
+        types=(str, sob.NumberProperty(), bool), name="stringNumberBoolean"
     ),
     "a": sob.Property(
         types=(ObjectA,),
@@ -372,7 +371,7 @@ testee_meta.properties = {  # type: ignore
     ),
     "string2string2a_b_c": sob.DictionaryProperty(
         value_types=(
-            properties.Dictionary(
+            sob.DictionaryProperty(
                 value_types=(ObjectA, ObjectB, ObjectC),
             ),
         ),
@@ -380,7 +379,7 @@ testee_meta.properties = {  # type: ignore
     ),
     "string2string2c_b_a": sob.DictionaryProperty(
         value_types=(
-            properties.Dictionary(
+            sob.DictionaryProperty(
                 value_types=(ObjectC, ObjectB, ObjectA),
             ),
         ),
@@ -594,7 +593,7 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(model)
+    doctest.testmod(sob.model)
 
 
 def test_copy() -> None:
@@ -624,7 +623,7 @@ def test_bytes_serialization() -> None:
     ) as file:
         rainbow_bytes = file.read()
         assert testy.rainbow == rainbow_bytes
-        assert cast(dict, model.marshal(testy))["rainbow"] == str(
+        assert cast(dict, sob.marshal(testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
 
@@ -645,7 +644,7 @@ def test_serialization_regression() -> None:
     are made to `testy`, delete the file ./tests/data/testy.json
     (The file be recreated the next time the test is run).
     """
-    serialized_testy: str = model.serialize(testy, indent=4).strip()
+    serialized_testy: str = sob.serialize(testy, indent=4).strip()
     if not TESTY_JSON.exists():
         with open(TESTY_JSON, mode="w", encoding="utf-8") as file:
             file.write(serialized_testy)
@@ -676,7 +675,7 @@ def test_deserialization_regression() -> None:
         testee_str: str = testee_io.read()
         assert Tesstee(testee_str) == testy
         # Construct from a deserialized JSON object
-        assert Tesstee(model.deserialize(testee_str)) == testy
+        assert Tesstee(sob.deserialize(testee_str)) == testy
         # Construct via copy
         assert Tesstee(testy) == testy
         # Ensure deserialization from the incorrect type of input raises a

@@ -23,6 +23,7 @@ from sob._datetime import str2date as _str2date
 from sob._datetime import str2datetime as _str2datetime
 from sob._inspect import get_parameters_defaults
 from sob._types import UNDEFINED, NoneType, Undefined
+from sob._utilities import deprecated
 from sob.types import MutableTypes, Types
 from sob.utilities import (
     get_qualified_name,
@@ -297,8 +298,10 @@ class StringProperty(Property, abc.StringProperty):
         )
 
 
-# For backwards compatibility
-String = StringProperty
+String = deprecated(
+    "`sob.properties.String` is deprecated and will be removed in "
+    "sob 3. Please use `sob.StringProperty` instead."
+)(StringProperty)
 
 
 class DateProperty(Property, abc.DateProperty):
@@ -348,8 +351,10 @@ class DateProperty(Property, abc.DateProperty):
         return self._str2date(value)
 
 
-# For backwards compatibility
-Date = DateProperty
+Date = deprecated(
+    "`sob.properties.Date` is deprecated and will be removed in "
+    "sob 3. Please use `sob.DateProperty` instead."
+)(DateProperty)
 
 
 class DateTimeProperty(Property, abc.DateTimeProperty):
@@ -398,8 +403,10 @@ class DateTimeProperty(Property, abc.DateTimeProperty):
         return self._str2datetime(value)
 
 
-# For backwards compatibility
-DateTime = DateTimeProperty
+DateTime = deprecated(
+    "`sob.properties.DateTime` is deprecated and will be removed in "
+    "sob 3. Please use `sob.DateTimeProperty` instead."
+)(DateTimeProperty)
 
 
 class BytesProperty(Property, abc.BytesProperty):
@@ -430,8 +437,10 @@ class BytesProperty(Property, abc.BytesProperty):
         )
 
 
-# For backwards compatibility
-Bytes = BytesProperty
+Bytes = deprecated(
+    "`sob.properties.Bytes` is deprecated and will be removed in "
+    "sob 3. Please use `sob.BytesProperty` instead."
+)(BytesProperty)
 
 
 class EnumeratedProperty(Property, abc.EnumeratedProperty):
@@ -487,8 +496,10 @@ class EnumeratedProperty(Property, abc.EnumeratedProperty):
             self._values = set(values)
 
 
-# For backwards compatibility
-Enumerated = EnumeratedProperty
+Enumerated = deprecated(
+    "`sob.properties.Enumerated` is deprecated and will be removed in "
+    "sob 3. Please use `sob.EnumeratedProperty` instead."
+)(EnumeratedProperty)
 
 
 class NumberProperty(Property, abc.NumberProperty):
@@ -513,8 +524,10 @@ class NumberProperty(Property, abc.NumberProperty):
         super().__init__(name=name, required=required, versions=versions)
 
 
-# For backwards compatibility
-Number = NumberProperty
+Number = deprecated(
+    "`sob.properties.Number` is deprecated and will be removed in "
+    "sob 3. Please use `sob.NumberProperty` instead."
+)(NumberProperty)
 
 
 class IntegerProperty(Property, abc.IntegerProperty):
@@ -543,8 +556,10 @@ class IntegerProperty(Property, abc.IntegerProperty):
         )
 
 
-# For backwards compatibility
-Integer = IntegerProperty
+Integer = deprecated(
+    "`sob.properties.Integer` is deprecated and will be removed in "
+    "sob 3. Please use `sob.IntegerProperty` instead."
+)(IntegerProperty)
 
 
 class BooleanProperty(Property, abc.BooleanProperty):
@@ -573,8 +588,10 @@ class BooleanProperty(Property, abc.BooleanProperty):
         )
 
 
-# For backwards compatibility
-Boolean = BooleanProperty
+Boolean = deprecated(
+    "`sob.properties.Boolean` is deprecated and will be removed in "
+    "sob 3. Please use `sob.BooleanProperty` instead."
+)(BooleanProperty)
 
 
 class ArrayProperty(Property, abc.ArrayProperty):
@@ -651,8 +668,10 @@ class ArrayProperty(Property, abc.ArrayProperty):
         self._item_types = item_types
 
 
-# For backwards compatibility
-Array = ArrayProperty
+Array = deprecated(
+    "`sob.properties.Array` is deprecated and will be removed in "
+    "sob 3. Please use `sob.ArrayProperty` instead."
+)(ArrayProperty)
 
 
 class DictionaryProperty(Property, abc.DictionaryProperty):
@@ -726,8 +745,10 @@ class DictionaryProperty(Property, abc.DictionaryProperty):
         self._value_types = value_types
 
 
-# For backwards compatibility
-Dictionary = DictionaryProperty
+Dictionary = deprecated(
+    "`sob.properties.Dictionary` is deprecated and will be removed in "
+    "sob 3. Please use `sob.DictionaryProperty` instead."
+)(DictionaryProperty)
 
 # This constant maps data types to their corresponding properties
 TYPES_PROPERTIES: dict[type, type] = {

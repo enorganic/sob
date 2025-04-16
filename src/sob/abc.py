@@ -33,6 +33,7 @@ from typing import (
 from typing_extensions import Self
 
 from sob._types import UNDEFINED, NoneType, Null, Undefined
+from sob._utilities import deprecated
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -1018,8 +1019,10 @@ class StringProperty(Property, metaclass=ABCMeta):
     """
 
 
-# For backwards compatibility
-String = StringProperty
+String = deprecated(
+    "`sob.abc.String` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.StringProperty` instead."
+)(StringProperty)
 
 
 class DateProperty(Property, metaclass=ABCMeta):
@@ -1038,8 +1041,10 @@ class DateProperty(Property, metaclass=ABCMeta):
         pass
 
 
-# For backwards compatibility
-Date = DateProperty
+Date = deprecated(
+    "`sob.abc.Date` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.DateProperty` instead."
+)(DateProperty)
 
 
 class DateTimeProperty(Property, metaclass=ABCMeta):
@@ -1058,8 +1063,10 @@ class DateTimeProperty(Property, metaclass=ABCMeta):
         pass
 
 
-# For backwards compatibility
-DateTime = DateTimeProperty
+DateTime = deprecated(
+    "`sob.abc.DateTime` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.DateTimeProperty` instead."
+)(DateTimeProperty)
 
 
 class BytesProperty(Property, metaclass=ABCMeta):
@@ -1070,8 +1077,10 @@ class BytesProperty(Property, metaclass=ABCMeta):
     """
 
 
-# For backwards compatibility
-Bytes = BytesProperty
+Bytes = deprecated(
+    "`sob.abc.Bytes` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.BytesProperty` instead."
+)(BytesProperty)
 
 
 class EnumeratedProperty(Property, metaclass=ABCMeta):
@@ -1090,8 +1099,10 @@ class EnumeratedProperty(Property, metaclass=ABCMeta):
         pass
 
 
-# For backwards compatibility
-Enumerated = EnumeratedProperty
+Enumerated = deprecated(
+    "`sob.abc.Enumerated` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.EnumeratedProperty` instead."
+)(EnumeratedProperty)
 
 
 class NumberProperty(Property, metaclass=ABCMeta):
@@ -1102,8 +1113,10 @@ class NumberProperty(Property, metaclass=ABCMeta):
     """
 
 
-# For backwards compatibility
-Number = NumberProperty
+Number = deprecated(
+    "`sob.abc.Number` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.NumberProperty` instead."
+)(NumberProperty)
 
 
 class IntegerProperty(Property, metaclass=ABCMeta):
@@ -1114,8 +1127,10 @@ class IntegerProperty(Property, metaclass=ABCMeta):
     """
 
 
-# For backwards compatibility
-Integer = IntegerProperty
+Integer = deprecated(
+    "`sob.abc.Integer` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.IntegerProperty` instead."
+)(IntegerProperty)
 
 
 class BooleanProperty(Property, metaclass=ABCMeta):
@@ -1126,8 +1141,10 @@ class BooleanProperty(Property, metaclass=ABCMeta):
     """
 
 
-# For backwards compatibility
-Boolean = BooleanProperty
+Boolean = deprecated(
+    "`sob.abc.Boolean` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.abc.BooleanProperty` instead."
+)(BooleanProperty)
 
 
 class ArrayProperty(Property, metaclass=ABCMeta):

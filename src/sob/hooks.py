@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import TYPE_CHECKING, Callable, cast
 
 from sob import abc
+from sob._utilities import deprecated
 from sob.utilities import (
     get_calling_function_qualified_name,
     get_qualified_name,
@@ -253,8 +254,10 @@ class ObjectHooks(Hooks, abc.ObjectHooks):
         self.after_setitem = after_setitem
 
 
-# For backwards compatibility
-Object = ObjectHooks
+Object = deprecated(
+    "`sob.hooks.Object` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.ObjectHooks` instead."
+)(ObjectHooks)
 
 
 class ArrayHooks(Hooks, abc.ArrayHooks):
@@ -389,8 +392,10 @@ class ArrayHooks(Hooks, abc.ArrayHooks):
         self.after_append = after_append
 
 
-# For backwards compatibility
-Array = ArrayHooks
+Array = deprecated(
+    "`sob.hooks.Array` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.ArrayHooks` instead."
+)(ArrayHooks)
 
 
 class DictionaryHooks(Hooks, abc.DictionaryHooks):
@@ -508,8 +513,10 @@ class DictionaryHooks(Hooks, abc.DictionaryHooks):
         self.after_setitem = after_setitem
 
 
-# For backwards compatibility
-Dictionary = DictionaryHooks
+Dictionary = deprecated(
+    "`sob.hooks.Dictionary` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.DictionaryHooks` instead."
+)(DictionaryHooks)
 
 
 def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
@@ -518,9 +525,8 @@ def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
     or return `None` if no hooks are defined.
 
     Please note that the returned hooks may be inherited,
-    and therefore should not be written to. Use
-    `get_writable_model_hooks` to retrieve an instance of this metadata
-    suitable for writing to for a model class or instance.
+    and therefore should not be modified. Use `get_writable_model_hooks` to
+    retrieve an instance of these hooks suitable for modification.
     """
     message: str
     if isinstance(model, abc.Model):
@@ -551,8 +557,10 @@ def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
     raise TypeError(message)
 
 
-# For backwards compatibility
-read = read_model_hooks
+read = deprecated(
+    "`sob.hooks.read` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.read_model_hooks` instead."
+)(read_model_hooks)
 
 
 def read_object_hooks(model: type | abc.Object) -> abc.ObjectHooks | None:
@@ -561,15 +569,16 @@ def read_object_hooks(model: type | abc.Object) -> abc.ObjectHooks | None:
     or return `None` if no hooks are defined.
 
     Please note that the returned hooks may be inherited,
-    and therefore should not be written to. Use
-    `get_writable_object_hooks` to retrieve an instance of this metadata
-    suitable for writing to a model class or instance.
+    and therefore should not be modified. Use `get_writable_object_hooks` to
+    retrieve an instance of these hooks suitable for modification.
     """
     return read_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-object_read = read_object_hooks
+object_read = deprecated(
+    "`sob.hooks.object_read` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.read_object_hooks` instead."
+)(read_object_hooks)
 
 
 def read_array_hooks(model: type | abc.Array) -> abc.ArrayHooks | None:
@@ -578,47 +587,50 @@ def read_array_hooks(model: type | abc.Array) -> abc.ArrayHooks | None:
     or return `None` if no hooks are defined.
 
     Please note that the returned hooks may be inherited,
-    and therefore should not be written to. Use
-    `get_writable_array_hooks` to retrieve an instance of this metadata
-    suitable for writing to a model class or instance.
+    and therefore should not be modified. Use
+    `get_writable_array_hooks` to retrieve an instance of these hooks
+    suitable for modification.
     """
     return read_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-array_read = read_array_hooks
+array_read = deprecated(
+    "`sob.hooks.array_read` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.read_array_hooks` instead."
+)(read_array_hooks)
 
 
 def read_dictionary_hooks(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryHooks | None:
     """
-    Read metadata from a sub-class or instance of `sob.Dictionary`.
+    Read hooks from a sub-class or instance of `sob.Dictionary`.
 
     Please note that the returned hooks may be inherited,
-    and therefore should not be written to. Use
-    `get_writable_dictionary_hooks` to retrieve an instance of this metadata
-    suitable for writing to a model class or instance.
+    and therefore should not be modified. Use `get_writable_dictionary_hooks`
+    to retrieve an instance of these hooks suitable for modification.
     """
     return read_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-dictionary_read = read_dictionary_hooks
+dictionary_read = deprecated(
+    "`sob.hooks.dictionary_read` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.read_dictionary_hooks` instead."
+)(read_dictionary_hooks)
 
 
 def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     """
     Retrieve an instance of `sob.Hooks` which is associated directly with the
-    `model` class or instance, and therefore suitable for writing hooks to.
+    `model` class or instance, and therefore suitable for modifying.
 
     If `model` is an instance of an `sob.Model` sub-class, and the instance
-    does not have any hooks associated, the parent class'es hooks will be
+    does not have any hooks associated, the class hooks will be
     copied to the instance and returned.
 
     If `model` is a sub-class of `sob.Model`, but does not have any hooks
-    associated, hooks will be copied from the first parent class which does
-    have hooks attributed.
+    associated, hooks will be copied from the first parent class which
+    has hooks attributed, and the copy will be returned.
 
     If neither the `model` class or instance, nor any parent classes,
     have any hooks associated—a new instance of `sob.Hooks` will be
@@ -669,22 +681,24 @@ def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     return cast(abc.Hooks, writable_hooks)
 
 
-# For backwards compatibility
-writable = get_writable_model_hooks
+writable = deprecated(
+    "`sob.hooks.writable` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.get_writable_model_hooks` instead."
+)(get_writable_model_hooks)
 
 
 def get_writable_object_hooks(model: type | abc.Object) -> abc.ObjectHooks:
     """
     Retrieve an instance of `sob.ObjectHooks` which is associated directly with
-    the `model` class or instance, and therefore suitable for writing hooks to.
+    the `model` class or instance, and therefore suitable for modifying.
 
     If `model` is an instance of an `sob.Object` sub-class, and the instance
-    does not have any hooks associated, the parent class'es hooks will be
+    does not have any hooks associated, the class hooks will be
     copied to the instance and returned.
 
     If `model` is a sub-class of `sob.Object`, but does not have any hooks
-    associated, hooks will be copied from the first parent class which does
-    have hooks attributed.
+    associated, hooks will be copied from the first parent class which
+    has hooks attributed, and the copy will be returned.
 
     If neither the `model` class or instance, nor any parent classes,
     have any hooks associated—a new instance of `sob.ObjectHooks` will be
@@ -693,22 +707,24 @@ def get_writable_object_hooks(model: type | abc.Object) -> abc.ObjectHooks:
     return get_writable_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-object_writable = get_writable_object_hooks
+object_writable = deprecated(
+    "`sob.hooks.object_writable` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.get_writable_object_hooks` instead."
+)(get_writable_object_hooks)
 
 
 def get_writable_array_hooks(model: type | abc.Array) -> abc.ArrayHooks:
     """
     Retrieve an instance of `sob.ArrayHooks` which is associated directly with
-    the `model` class or instance, and therefore suitable for writing hooks to.
+    the `model` class or instance, and therefore suitable for modifying.
 
     If `model` is an instance of an `sob.Array` sub-class, and the instance
-    does not have any hooks associated, the parent class'es hooks will be
+    does not have any hooks associated, the class hooks will be
     copied to the instance and returned.
 
     If `model` is a sub-class of `sob.Array`, but does not have any hooks
-    associated, hooks will be copied from the first parent class which does
-    have hooks attributed.
+    associated, hooks will be copied from the first parent class which
+    has hooks attributed, and the copy will be returned.
 
     If neither the `model` class or instance, nor any parent classes,
     have any hooks associated—a new instance of `sob.ArrayHooks` will be
@@ -717,8 +733,10 @@ def get_writable_array_hooks(model: type | abc.Array) -> abc.ArrayHooks:
     return get_writable_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-array_writable = get_writable_array_hooks
+array_writable = deprecated(
+    "`sob.hooks.array_writable` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.get_writable_array_hooks` instead."
+)(get_writable_array_hooks)
 
 
 def get_writable_dictionary_hooks(
@@ -744,8 +762,10 @@ def get_writable_dictionary_hooks(
     return get_writable_model_hooks(model)  # type: ignore
 
 
-# For backwards compatibility
-dictionary_writable = get_writable_dictionary_hooks
+dictionary_writable = deprecated(
+    "`sob.hooks.dictionary_writable` is deprecated, and will be removed in "
+    "sob 3. Please use `sob.get_writable_dictionary_hooks` instead."
+)(get_writable_dictionary_hooks)
 
 
 def get_model_hooks_type(model: type | abc.Model) -> type:
@@ -757,6 +777,8 @@ def get_model_hooks_type(model: type | abc.Model) -> type:
     if not isinstance(model, (type, abc.Object, abc.Dictionary, abc.Array)):
         raise TypeError(model)
     if isinstance(model, type):
+        if not issubclass(model, (abc.Object, abc.Dictionary, abc.Array)):
+            raise TypeError(model)
         hooks_type = (
             ObjectHooks
             if issubclass(model, abc.Object)
@@ -775,15 +797,17 @@ def get_model_hooks_type(model: type | abc.Model) -> type:
     return hooks_type
 
 
-# For backwards compatibility
-type_ = get_model_hooks_type
+type_ = deprecated(
+    "`sob.hooks.type_` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.get_model_hooks_type` instead."
+)(get_model_hooks_type)
 
 
 def write_model_hooks(
     model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None
 ) -> None:
     """
-    Write metadata to a sub-class or instance of `sob.Model`.
+    Write hooks to a sub-class or instance of `sob.Model`.
     """
     if hooks is not None:
         # Verify that the metadata is of the correct type
@@ -802,5 +826,7 @@ def write_model_hooks(
         model._class_hooks = hooks  # noqa: SLF001
 
 
-# For backwards compatibility
-write = write_model_hooks
+write = deprecated(
+    "`sob.hooks.write` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.write_model_hooks` instead."
+)(write_model_hooks)

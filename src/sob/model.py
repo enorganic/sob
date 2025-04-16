@@ -43,6 +43,7 @@ from sob import abc, errors, hooks, meta, utilities
 from sob._datetime import date2str, datetime2str
 from sob._io import read
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
+from sob._utilities import deprecated
 from sob.errors import (
     DeserializeError,
     append_exception_text,
@@ -190,8 +191,8 @@ class Array(Model, abc.Array, abc.Model):
 
 
     sob.meta.writable(ArraySubClass).item_types = [
-        sob.properties.String,
-        sob.properties.Integer,
+        sob.StringProperty,
+        sob.IntegerProperty,
     ]
     ```
     """
@@ -1090,15 +1091,7 @@ class Object(Model, abc.Object, abc.Model):
         for key, value in dictionary.items():
             if value is None:
                 value = NULL  # noqa: PLW2901
-            try:
-                self.__setitem__(key, value)
-            except KeyError as error:
-                message: str = (
-                    f"{errors.get_exception_text()}\n\n"
-                    f"{get_qualified_name(type(self))}."
-                    f"{error.args[0]}: {represent(dictionary)}"
-                )
-                raise errors.UnmarshalKeyError(message) from error
+            self.__setitem__(key, value)
 
     def _copy_init(self, other: abc.Object) -> None:
         """
@@ -1128,8 +1121,8 @@ class Object(Model, abc.Object, abc.Model):
                     else:
                         error.args = (label + serialize(other),)
                     raise
-            meta.url(self, meta.url(other))
-            meta.pointer(self, meta.pointer(other))
+            meta.set_model_url(self, meta.get_model_url(other))
+            meta.set_model_pointer(self, meta.get_model_pointer(other))
 
     def __hash__(self) -> int:
         """
@@ -2522,8 +2515,10 @@ def replace_model_nulls(
         _replace_dictionary_nulls(model_instance, replacement_value)
 
 
-# For backwards compatibility
-replace_nulls = replace_model_nulls
+replace_nulls = deprecated(
+    "`sob.model.replace_nulls` is deprecated and will be removed in "
+    "sob 3. Please use `sob.replace_model_nulls` instead."
+)(replace_model_nulls)
 
 
 # endregion
@@ -2977,8 +2972,10 @@ def get_models_source(*model_classes: type[abc.Model]) -> str:
     return f"{imports_source}\n\n\n{classes_source}\n\n\n{metadata_source}"
 
 
-# For backwards compatibility
-from_meta = get_model_from_meta
+from_meta = deprecated(
+    "`sob.model.from_meta` is deprecated and will be removed in "
+    "sob 3. Please use `sob.get_model_from_meta` instead."
+)(get_model_from_meta)
 
 
 # endregion

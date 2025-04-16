@@ -16,7 +16,6 @@ __all__: tuple[str, ...] = (
     "VersionError",
     "DeserializeError",
     "UnmarshalError",
-    "UnmarshalKeyError",
     "UnmarshalTypeError",
     "UnmarshalValueError",
     "get_exception_text",
@@ -126,14 +125,6 @@ class UnmarshalTypeError(UnmarshalError, TypeError):
 
 class UnmarshalValueError(UnmarshalError, ValueError):
     pass
-
-
-class UnmarshalKeyError(KeyError):
-    def __init__(self, message: str) -> None:
-        self.message = message
-
-    def __str__(self) -> str:
-        return self.message
 
 
 def get_exception_text() -> str:
