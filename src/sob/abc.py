@@ -1,3 +1,12 @@
+"""
+This module contains abstract base classes declaring the interface for classes
+defined in [`sob.model`](https://sob.enorganic.org/api/model/),
+[`sob.properties`](https://sob.enorganic.org/api/properties/),
+[`sob.types`](https://sob.enorganic.org/api/types/),
+[`sob.meta`](https://sob.enorganic.org/api/meta/), and
+[`sob.hooks`](https://sob.enorganic.org/api/hooks/).
+"""
+
 from __future__ import annotations
 
 import decimal
@@ -81,7 +90,8 @@ def _check_methods(class_: type, methods: Iterable[str]) -> bool | None:
 
 class Types(metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.types.Types` class.
+    This class is an abstract base for
+    [`sob.Types`](https://sob.enorganic.org/api/types/#sob.types.Types).
     """
 
     @abstractmethod
@@ -128,7 +138,8 @@ class Types(metaclass=ABCMeta):
 
 class MutableTypes(Types, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.types.MutableTypes` class.
+    This class is an abstract base for
+    [`sob.MutableTypes`](https://sob.enorganic.org/api/types/#sob.types.MutableTypes).
     """
 
     @abstractmethod
@@ -156,7 +167,8 @@ class MutableTypes(Types, metaclass=ABCMeta):
 
 class Hooks(metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Hooks` class.
+    This class is an abstract base for
+    [`sob.Hooks`](https://sob.enorganic.org/api/hooks/#sob.hooks.Hooks).
     """
 
     before_marshal: Callable[[Model], Any] | None
@@ -200,7 +212,8 @@ class Hooks(metaclass=ABCMeta):
 
 class ObjectHooks(Hooks, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.ObjectHooks` class.
+    This class is an abstract base for
+    [`sob.ObjectHooks`](https://sob.enorganic.org/api/hooks/#sob.hooks.ObjectHooks).
     """
 
     before_setattr: (
@@ -244,7 +257,8 @@ class ObjectHooks(Hooks, metaclass=ABCMeta):
 
 class ArrayHooks(Hooks, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.ArrayHooks` class.
+    This class is an abstract base for
+    [`sob.ArrayHooks`](https://sob.enorganic.org/api/hooks/#sob.hooks.ArrayHooks).
     """
 
     before_setitem: (
@@ -282,7 +296,9 @@ class ArrayHooks(Hooks, metaclass=ABCMeta):
 
 class DictionaryHooks(Hooks, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.DictionaryHooks` class.
+    This class is an abstract base for
+    [`sob.DictionaryHooks`
+    ](https://sob.enorganic.org/api/hooks/#sob.hooks.DictionaryHooks).
     """
 
     before_setitem: (
@@ -363,13 +379,15 @@ class Readable(metaclass=ABCMeta):
 
 class Meta(metaclass=ABCMeta):  # noqa: B024
     """
-    This is an abstract base for the `sob.Meta` class.
+    This class is an abstract base for
+    [`sob.Meta`](https://sob.enorganic.org/api/meta/#sob.meta.Meta).
     """
 
 
 class ObjectMeta(Meta, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.ObjectMeta` class.
+    This class is an abstract base for
+    [`sob.ObjectMeta`](https://sob.enorganic.org/api/meta/#sob.meta.ObjectMeta).
     """
 
     @abstractmethod
@@ -401,7 +419,8 @@ class ObjectMeta(Meta, metaclass=ABCMeta):
 
 class DictionaryMeta(Meta, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.DictionaryMeta` class.
+    This class is an abstract base for
+    [`sob.DictionaryMeta`](https://sob.enorganic.org/api/meta/#sob.meta.DictionaryMeta).
     """
 
     @abstractmethod
@@ -435,7 +454,8 @@ class DictionaryMeta(Meta, metaclass=ABCMeta):
 
 class ArrayMeta(Meta, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.ArrayMeta` class.
+    This class is an abstract base for
+    [`sob.ArrayMeta`](https://sob.enorganic.org/api/meta/#sob.meta.ArrayMeta).
     """
 
     @abstractmethod
@@ -465,7 +485,8 @@ class ArrayMeta(Meta, metaclass=ABCMeta):
 
 class Properties(Meta, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Properties` class.
+    This class is an abstract base for
+    [`sob.Properties`](https://sob.enorganic.org/api/meta/#sob.meta.Properties).
     """
 
     @abstractmethod
@@ -567,7 +588,8 @@ class Properties(Meta, metaclass=ABCMeta):
 
 class Model(metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Model` class.
+    This class is an abstract base for
+    [`sob.Model`](https://sob.enorganic.org/api/model/#sob.model.Model).
     """
 
     _source: str | None
@@ -622,7 +644,8 @@ class Model(metaclass=ABCMeta):
 
 class Dictionary(Model, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Dictionary` class.
+    This class is an abstract base for
+    [`sob.Dictionary`](https://sob.enorganic.org/api/model/#sob.model.Dictionary).
     """
 
     _class_meta: DictionaryMeta | None
@@ -728,7 +751,8 @@ class Dictionary(Model, metaclass=ABCMeta):
 
 class Object(Model, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Object` class.
+    This class is an abstract base for
+    [`sob.Object`](https://sob.enorganic.org/api/model/#sob.model.Object).
     """
 
     _class_meta: ObjectMeta | None
@@ -817,7 +841,8 @@ class Object(Model, metaclass=ABCMeta):
 
 class Array(Model, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Array` class.
+    This class is an abstract base for
+    [`sob.Array`](https://sob.enorganic.org/api/model/#sob.model.Array).
     """
 
     _class_meta: ArrayMeta | None
@@ -935,7 +960,8 @@ class Array(Model, metaclass=ABCMeta):
 
 class Property(metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Property` class.
+    This class is an abstract base for
+    [`sob.Property`](https://sob.enorganic.org/api/properties/#sob.properties.Property).
     """
 
     name: str | None
@@ -986,7 +1012,9 @@ class Property(metaclass=ABCMeta):
 
 class StringProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.StringProperty` class.
+    This class is an abstract base for
+    [`sob.StringProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.StringProperty).
     """
 
 
@@ -996,7 +1024,9 @@ String = StringProperty
 
 class DateProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.DateProperty` class.
+    This class is an abstract base for
+    [`sob.DateProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.DateProperty).
     """
 
     @abstractmethod
@@ -1014,7 +1044,9 @@ Date = DateProperty
 
 class DateTimeProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.StringProperty` class.
+    This class is an abstract base for
+    [`sob.DateTimeProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.DateTimeProperty).
     """
 
     @abstractmethod
@@ -1032,7 +1064,9 @@ DateTime = DateTimeProperty
 
 class BytesProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.BytesProperty` class.
+    This class is an abstract base for
+    [`sob.BytesProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.BytesProperty).
     """
 
 
@@ -1042,7 +1076,9 @@ Bytes = BytesProperty
 
 class EnumeratedProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.EnumeratedProperty` class.
+    This class is an abstract base for
+    [`sob.EnumeratedProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.EnumeratedProperty).
     """
 
     @property  # type: ignore
@@ -1060,7 +1096,9 @@ Enumerated = EnumeratedProperty
 
 class NumberProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.NumberProperty` class.
+    This class is an abstract base for
+    [`sob.NumberProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.NumberProperty).
     """
 
 
@@ -1070,7 +1108,9 @@ Number = NumberProperty
 
 class IntegerProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.IntegerProperty` class.
+    This class is an abstract base for
+    [`sob.IntegerProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.IntegerProperty).
     """
 
 
@@ -1080,7 +1120,9 @@ Integer = IntegerProperty
 
 class BooleanProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.BooleanProperty` class.
+    This class is an abstract base for
+    [`sob.BooleanProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.BooleanProperty).
     """
 
 
@@ -1090,7 +1132,9 @@ Boolean = BooleanProperty
 
 class ArrayProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.ArrayProperty` class.
+    This class is an abstract base for
+    [`sob.ArrayProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.ArrayProperty).
     """
 
     @property  # type: ignore
@@ -1109,7 +1153,9 @@ class ArrayProperty(Property, metaclass=ABCMeta):
 
 class DictionaryProperty(Property, metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.DictionaryProperty` class.
+    This class is an abstract base for
+    [`sob.DictionaryProperty`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.DictionaryProperty).
     """
 
     @property  # type: ignore
@@ -1127,7 +1173,9 @@ class DictionaryProperty(Property, metaclass=ABCMeta):
 
 class Version(metaclass=ABCMeta):
     """
-    This is an abstract base for the `sob.Version` class.
+    This class is an abstract base for
+    [`sob.Version`
+    ](https://sob.enorganic.org/api/properties/#sob.properties.Version).
     """
 
     specification: str | None

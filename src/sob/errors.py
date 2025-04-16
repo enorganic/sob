@@ -35,7 +35,7 @@ class ValidationError(Exception):
 class VersionError(AttributeError):
     """
     This error is raised when versioning an object fails due to
-    having data which is incompatible with the target error.
+    having data which is incompatible with the target version.
     """
 
 

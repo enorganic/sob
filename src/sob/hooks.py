@@ -15,7 +15,71 @@ if TYPE_CHECKING:
 
 class Hooks(abc.Hooks):  # pragma: no cover
     """
-    TODO
+    Instances of this class hold functions ("hooks") to be executed
+    at various points during marshalling, un-marshalling, serializing,
+    de-serializing or validation.
+
+    Please note the following context-specific definitions:
+
+    - marshal: To convert an instance of an `sob.Model` sub-class into data
+        suitable for serializing with `json.dumps`. For example, marshalling
+        an instance of `sob.Dictionary`, or marshalling an instance of a
+        sub-class of `sob.Object`, would result in a `dict` object.
+    - unmarshal: To convert data de-serialized using `json.loads` into an
+        instance of an `sob.Model` sub-class. For example, un-marshalling a
+        `dict` object could return in an instance of `sob.Dictionary`
+        (this would be the default if no types were specified), or could
+        return an instance of one of the `sob.Model` sub-classes
+        specified in the `types` parameter passed to `sob.unmarshal`.
+    - serialize: To convert a marshalled object into a JSON string.
+    - deserialize: To convert a JSON string into a python-native object.
+    - validate: To check that the data held by a model instance is in
+        compliance with that model's metadata. Because data types are
+        enforced when attributes are set, validation only entails verifying
+        that all required attributes are present, and that no extraneous
+        attributes are present. Validation is only initiated explicitly,
+        by passing a model instance to the `sob.validate` function.
+
+    Attributes:
+        before_marshal: A function called *before* marshalling a model.
+            The `before_marshal` function should accept deserialized JSON
+            data (pre-marshalling) as the first argument, and return the
+            same type of data (or `None`) as the return value.
+        after_marshal: A function to be called *after* marshalling a model.
+            The `after_marshal` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_unmarshal: A function to be called *before* un-marshalling a
+            model. The `before_unmarshal` function should accept an
+            instance of the class to which it is associated as the only
+            argument, and must return an instance of that class as the
+            return value.
+        after_unmarshal: A function to be called *after* un-marshalling a
+            model. The `after_unmarshal` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value.
+        before_serialize: A function to be called before serializing a
+            model. The `before_serialize` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value. For most use cases, assigning a
+            function to `after_unmarshal` and to `before_serialize` will
+            produce the same result, however it is technically possible to
+            unmarshal data without ever serializing it, so both hooks are
+            provided.
+        after_serialize: A function to be called after serializing a model.
+            The `after_serialize` function should accept a JSON string as
+            the only argument, and return a JSON string as the return
+            value.
+        before_validate: A function to be called before validating a model.
+            The `before_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        after_validate: A function to be called after validating a model.
+            The `after_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
     """
 
     __module__: str = "sob"
@@ -58,7 +122,93 @@ class Hooks(abc.Hooks):  # pragma: no cover
 
 class ObjectHooks(Hooks, abc.ObjectHooks):
     """
-    TODO
+    Instances of this class hold functions ("hooks") to be executed
+    at various points during marshalling, un-marshalling, serializing,
+    de-serializing or validation.
+
+    Please note the following context-specific definitions:
+
+    - marshal: To convert an instance of an `sob.Model` sub-class into data
+        suitable for serializing with `json.dumps`. For example, marshalling
+        an instance of `sob.Dictionary`, or marshalling an instance of a
+        sub-class of `sob.Object`, would result in a `dict` object.
+    - unmarshal: To convert data de-serialized using `json.loads` into an
+        instance of an `sob.Model` sub-class. For example, un-marshalling a
+        `dict` object could return in an instance of `sob.Dictionary`
+        (this would be the default if no types were specified), or could
+        return an instance of one of the `sob.Model` sub-classes
+        specified in the `types` parameter passed to `sob.unmarshal`.
+    - serialize: To convert a marshalled object into a JSON string.
+    - deserialize: To convert a JSON string into a python-native object.
+    - validate: To check that the data held by a model instance is in
+        compliance with that model's metadata. Because data types are
+        enforced when attributes are set, validation only entails verifying
+        that all required attributes are present, and that no extraneous
+        attributes are present. Validation is only initiated explicitly,
+        by passing a model instance to the `sob.validate` function.
+
+    Attributes:
+        before_marshal: A function called *before* marshalling a model.
+            The `before_marshal` function should accept deserialized JSON
+            data (pre-marshalling) as the first argument, and return the
+            same type of data (or `None`) as the return value.
+        after_marshal: A function to be called *after* marshalling a model.
+            The `after_marshal` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_unmarshal: A function to be called *before* un-marshalling a
+            model. The `before_unmarshal` function should accept an
+            instance of the class to which it is associated as the only
+            argument, and must return an instance of that class as the
+            return value.
+        after_unmarshal: A function to be called *after* un-marshalling a
+            model. The `after_unmarshal` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value.
+        before_serialize: A function to be called before serializing a
+            model. The `before_serialize` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value. For most use cases, assigning a
+            function to `after_unmarshal` and to `before_serialize` will
+            produce the same result, however it is technically possible to
+            unmarshal data without ever serializing it, so both hooks are
+            provided.
+        after_serialize: A function to be called after serializing a model.
+            The `after_serialize` function should accept a JSON string as
+            the only argument, and return a JSON string as the return
+            value.
+        before_validate: A function to be called before validating a model.
+            The `before_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        after_validate: A function to be called after validating a model.
+            The `after_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_setattr: A function to be called before setting an attribute.
+            The `before_setattr` function should accept 3 positional
+            arguments: an instance of the class to which it is associated,
+            the attribute name, and the value to be assigned to that
+            attribute. The function should return a tuple containing an
+            attribute name and a value to be assigned to that attribute.
+        after_setattr: A function to be called after setting an attribute.
+            The `after_setattr` function should accept 3 positional
+            arguments: an instance of the class to which it is associated,
+            the attribute name, and the value assigned to that
+            attribute. The function should return `None`.
+        before_setitem: A function to be called before assigning a value
+            to an object by key. The `before_setitem` function should accept 3
+            positional arguments: an instance of the class to which it is
+            associated, the item key, and the value to be assigned to that
+            key. The function should return a tuple containing a
+            key and a value to be assigned.
+        after_setitem: A function to be called after assigning a value
+            to an object by key. The `before_setitem` function should accept 3
+            positional arguments: an instance of the class to which it is
+            associated, the item key, and the value assigned to that
+            key. The function should return `None`.
     """
 
     __module__: str = "sob"
@@ -109,7 +259,92 @@ Object = ObjectHooks
 
 class ArrayHooks(Hooks, abc.ArrayHooks):
     """
-    TODO
+    Instances of this class hold functions ("hooks") to be executed
+    at various points during marshalling, un-marshalling, serializing,
+    de-serializing or validation.
+
+    Please note the following context-specific definitions:
+
+    - marshal: To convert an instance of an `sob.Model` sub-class into data
+        suitable for serializing with `json.dumps`. For example, marshalling
+        an instance of `sob.Dictionary`, or marshalling an instance of a
+        sub-class of `sob.Object`, would result in a `dict` object.
+    - unmarshal: To convert data de-serialized using `json.loads` into an
+        instance of an `sob.Model` sub-class. For example, un-marshalling a
+        `dict` object could return in an instance of `sob.Dictionary`
+        (this would be the default if no types were specified), or could
+        return an instance of one of the `sob.Model` sub-classes
+        specified in the `types` parameter passed to `sob.unmarshal`.
+    - serialize: To convert a marshalled object into a JSON string.
+    - deserialize: To convert a JSON string into a python-native object.
+    - validate: To check that the data held by a model instance is in
+        compliance with that model's metadata. Because data types are
+        enforced when attributes are set, validation only entails verifying
+        that all required attributes are present, and that no extraneous
+        attributes are present. Validation is only initiated explicitly,
+        by passing a model instance to the `sob.validate` function.
+
+    Attributes:
+        before_marshal: A function called *before* marshalling a model.
+            The `before_marshal` function should accept deserialized JSON
+            data (pre-marshalling) as the first argument, and return the
+            same type of data (or `None`) as the return value.
+        after_marshal: A function to be called *after* marshalling a model.
+            The `after_marshal` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_unmarshal: A function to be called *before* un-marshalling a
+            model. The `before_unmarshal` function should accept an
+            instance of the class to which it is associated as the only
+            argument, and must return an instance of that class as the
+            return value.
+        after_unmarshal: A function to be called *after* un-marshalling a
+            model. The `after_unmarshal` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value.
+        before_serialize: A function to be called before serializing a
+            model. The `before_serialize` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value. For most use cases, assigning a
+            function to `after_unmarshal` and to `before_serialize` will
+            produce the same result, however it is technically possible to
+            unmarshal data without ever serializing it, so both hooks are
+            provided.
+        after_serialize: A function to be called after serializing a model.
+            The `after_serialize` function should accept a JSON string as
+            the only argument, and return a JSON string as the return
+            value.
+        before_validate: A function to be called before validating a model.
+            The `before_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        after_validate: A function to be called after validating a model.
+            The `after_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_setitem: A function to be called before assigning a value
+            to an object by index. The `before_setitem` function should accept
+            3 positional arguments: an instance of the class to which it is
+            associated, the index, and the value to be assigned to that index
+            position. The function should return a tuple containing an
+            index and a value to be assigned to that position.
+        after_setitem: A function to be called after assigning a value
+            to an object by index. The `before_setitem` function should accept
+            3 positional arguments: an instance of the class to which it is
+            associated, the index, and the value assigned to that
+            position. The function should return `None`.
+        before_append: A function to be called before appending a value
+            to the array. The `before_append` function should accept 2
+            positional arguments: an instance of the class to which it is
+            associated, and the value to be appended. The function should
+            return the value to be appended.
+        after_append: A function to be called after appending a value
+            to the array. The `after_append` function should accept 2
+            positional arguments: an instance of the class to which it is
+            associated, and the value appended. The function should
+            return `None`.
     """
 
     __module__: str = "sob"
@@ -160,7 +395,82 @@ Array = ArrayHooks
 
 class DictionaryHooks(Hooks, abc.DictionaryHooks):
     """
-    TODO
+    Instances of this class hold functions ("hooks") to be executed
+    at various points during marshalling, un-marshalling, serializing,
+    de-serializing or validation.
+
+    Please note the following context-specific definitions:
+
+    - marshal: To convert an instance of an `sob.Dictionary` sub-class into
+        data suitable for serializing with `json.dumps`. For example,
+        marshalling an instance of `sob.Dictionary` would result in a `dict`
+        object.
+    - unmarshal: To convert data de-serialized using `json.loads` into an
+        instance of an `sob.Model` sub-class. For example, un-marshalling a
+        `dict` object could return in an instance of `sob.Dictionary`
+        (this would be the default if no types were specified), or could
+        return an instance of one of the `sob.Model` sub-classes
+        specified in the `types` parameter passed to `sob.unmarshal`.
+    - serialize: To convert a marshalled object into a JSON string.
+    - deserialize: To convert a JSON string into a python-native object.
+    - validate: To check that the data held by a model instance is in
+        compliance with that model's metadata. Because data types are
+        enforced when attributes are set, validation only entails verifying
+        that all required attributes are present, and that no extraneous
+        attributes are present. Validation is only initiated explicitly,
+        by passing a model instance to the `sob.validate` function.
+
+    Attributes:
+        before_marshal: A function called *before* marshalling a model.
+            The `before_marshal` function should accept deserialized JSON
+            data (pre-marshalling) as the first argument, and return the
+            same type of data (or `None`) as the return value.
+        after_marshal: A function to be called *after* marshalling a model.
+            The `after_marshal` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_unmarshal: A function to be called *before* un-marshalling a
+            model. The `before_unmarshal` function should accept an
+            instance of the class to which it is associated as the only
+            argument, and must return an instance of that class as the
+            return value.
+        after_unmarshal: A function to be called *after* un-marshalling a
+            model. The `after_unmarshal` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value.
+        before_serialize: A function to be called before serializing a
+            model. The `before_serialize` function should accept
+            unmarshalled, but pre-serialized, JSON serializable data as
+            the first argument, and return the same type of data (or
+            `None`) as the return value. For most use cases, assigning a
+            function to `after_unmarshal` and to `before_serialize` will
+            produce the same result, however it is technically possible to
+            unmarshal data without ever serializing it, so both hooks are
+            provided.
+        after_serialize: A function to be called after serializing a model.
+            The `after_serialize` function should accept a JSON string as
+            the only argument, and return a JSON string as the return
+            value.
+        before_validate: A function to be called before validating a model.
+            The `before_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        after_validate: A function to be called after validating a model.
+            The `after_validate` function should accept an instance of the
+            class to which it is associated as the only argument, and must
+            return an instance of that class as the return value.
+        before_setitem: A function to be called before assigning a value
+            to an object by key. The `before_setitem` function should accept 3
+            positional arguments: an instance of the class to which it is
+            associated, the item key, and the value to be assigned to that
+            key. The function should return a tuple containing a
+            key and a value to be assigned.
+        after_setitem: A function to be called after assigning a value
+            to an object by key. The `before_setitem` function should accept 3
+            positional arguments: an instance of the class to which it is
+            associated, the item key, and the value assigned to that
+            key. The function should return `None`.
     """
 
     __module__: str = "sob"
@@ -204,8 +514,13 @@ Dictionary = DictionaryHooks
 
 def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
     """
-    Read metadata from a model class or instance (the returned metadata may be
-    inherited, and therefore should not be written to)
+    Read the hooks associated with a sub-class or instance of `sob.Model`,
+    or return `None` if no hooks are defined.
+
+    Please note that the returned hooks may be inherited,
+    and therefore should not be written to. Use
+    `get_writable_model_hooks` to retrieve an instance of this metadata
+    suitable for writing to for a model class or instance.
     """
     message: str
     if isinstance(model, abc.Model):
@@ -242,9 +557,13 @@ read = read_model_hooks
 
 def read_object_hooks(model: type | abc.Object) -> abc.ObjectHooks | None:
     """
-    Read metadata from an `sob.Object` sub-class or instance (the
-    returned metadata may be inherited, and therefore should not be written
-    to).
+    Read the hooks associated with a sub-class or instance of `sob.Object`,
+    or return `None` if no hooks are defined.
+
+    Please note that the returned hooks may be inherited,
+    and therefore should not be written to. Use
+    `get_writable_object_hooks` to retrieve an instance of this metadata
+    suitable for writing to a model class or instance.
     """
     return read_model_hooks(model)  # type: ignore
 
@@ -255,9 +574,13 @@ object_read = read_object_hooks
 
 def read_array_hooks(model: type | abc.Array) -> abc.ArrayHooks | None:
     """
-    Read metadata from an `sob.model.Array` sub-class or instance (the
-    returned metadata may be inherited, and therefore should not be written
-    to).
+    Read the hooks associated with a sub-class or instance of `sob.Array`,
+    or return `None` if no hooks are defined.
+
+    Please note that the returned hooks may be inherited,
+    and therefore should not be written to. Use
+    `get_writable_array_hooks` to retrieve an instance of this metadata
+    suitable for writing to a model class or instance.
     """
     return read_model_hooks(model)  # type: ignore
 
@@ -270,9 +593,12 @@ def read_dictionary_hooks(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryHooks | None:
     """
-    Read metadata from an `sob.model.Dictionary` sub-class or instance (the
-    returned metadata may be inherited, and therefore should not be written
-    to).
+    Read metadata from a sub-class or instance of `sob.Dictionary`.
+
+    Please note that the returned hooks may be inherited,
+    and therefore should not be written to. Use
+    `get_writable_dictionary_hooks` to retrieve an instance of this metadata
+    suitable for writing to a model class or instance.
     """
     return read_model_hooks(model)  # type: ignore
 
@@ -283,9 +609,20 @@ dictionary_read = read_dictionary_hooks
 
 def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     """
-    Retrieve a metadata instance. If the instance currently inherits its
-    metadata from a class or superclass, this function will copy that
-    metadata and assign it directly to the model instance.
+    Retrieve an instance of `sob.Hooks` which is associated directly with the
+    `model` class or instance, and therefore suitable for writing hooks to.
+
+    If `model` is an instance of an `sob.Model` sub-class, and the instance
+    does not have any hooks associated, the parent class'es hooks will be
+    copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Model`, but does not have any hooks
+    associated, hooks will be copied from the first parent class which does
+    have hooks attributed.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any hooks associated—a new instance of `sob.Hooks` will be
+    created, attributed to `model`, and returned.
     """
     instance_hooks: abc.Hooks | None = model._instance_hooks  # noqa: SLF001
     writable_hooks: abc.Hooks | None = None
@@ -338,9 +675,20 @@ writable = get_writable_model_hooks
 
 def get_writable_object_hooks(model: type | abc.Object) -> abc.ObjectHooks:
     """
-    Retrieve a metadata instance. If the instance currently inherits its
-    metadata from a class or superclass, this function will copy that
-    metadata and assign it directly to the model instance.
+    Retrieve an instance of `sob.ObjectHooks` which is associated directly with
+    the `model` class or instance, and therefore suitable for writing hooks to.
+
+    If `model` is an instance of an `sob.Object` sub-class, and the instance
+    does not have any hooks associated, the parent class'es hooks will be
+    copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Object`, but does not have any hooks
+    associated, hooks will be copied from the first parent class which does
+    have hooks attributed.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any hooks associated—a new instance of `sob.ObjectHooks` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_hooks(model)  # type: ignore
 
@@ -351,9 +699,20 @@ object_writable = get_writable_object_hooks
 
 def get_writable_array_hooks(model: type | abc.Array) -> abc.ArrayHooks:
     """
-    Retrieve a metadata instance. If the instance currently inherits its
-    metadata from a class or superclass, this function will copy that
-    metadata and assign it directly to the model instance.
+    Retrieve an instance of `sob.ArrayHooks` which is associated directly with
+    the `model` class or instance, and therefore suitable for writing hooks to.
+
+    If `model` is an instance of an `sob.Array` sub-class, and the instance
+    does not have any hooks associated, the parent class'es hooks will be
+    copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Array`, but does not have any hooks
+    associated, hooks will be copied from the first parent class which does
+    have hooks attributed.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any hooks associated—a new instance of `sob.ArrayHooks` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_hooks(model)  # type: ignore
 
@@ -366,9 +725,21 @@ def get_writable_dictionary_hooks(
     model: type | abc.Dictionary,
 ) -> abc.DictionaryHooks:
     """
-    Retrieve a metadata instance. If the instance currently inherits its
-    metadata from a class or superclass, this function will copy that
-    metadata and assign it directly to the model instance.
+    Retrieve an instance of `sob.DictionaryHooks` which is associated directly
+    with the `model` class or instance, and therefore suitable for writing
+    hooks to.
+
+    If `model` is an instance of an `sob.Dictionary` sub-class, and the
+    instance does not have any hooks associated, the parent class'es hooks will
+    be copied to the instance and returned.
+
+    If `model` is a sub-class of `sob.Dictionary`, but does not have any hooks
+    associated, hooks will be copied from the first parent class which does
+    have hooks attributed.
+
+    If neither the `model` class or instance, nor any parent classes,
+    have any hooks associated—a new instance of `sob.DictionaryHooks` will be
+    created, attributed to `model`, and returned.
     """
     return get_writable_model_hooks(model)  # type: ignore
 
@@ -379,7 +750,8 @@ dictionary_writable = get_writable_dictionary_hooks
 
 def get_model_hooks_type(model: type | abc.Model) -> type:
     """
-    Get the type of metadata required for an object
+    Determine the type of metadata required for the specified `model`
+    class or instance.
     """
     hooks_type: type
     if not isinstance(model, (type, abc.Object, abc.Dictionary, abc.Array)):
@@ -411,7 +783,7 @@ def write_model_hooks(
     model: type[abc.Model] | abc.Model, hooks: abc.Hooks | None
 ) -> None:
     """
-    Write metadata to a class or instance
+    Write metadata to a sub-class or instance of `sob.Model`.
     """
     if hooks is not None:
         # Verify that the metadata is of the correct type

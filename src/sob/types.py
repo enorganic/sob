@@ -24,6 +24,11 @@ if TYPE_CHECKING:
 
 
 class Types(abc.Types):
+    """
+    Instances of this class are immutable lists of types and/or
+    property definitions.
+    """
+
     __module__: str = "sob"
 
     def __init__(
@@ -108,13 +113,8 @@ class Types(abc.Types):
 
 class MutableTypes(Types, abc.MutableTypes):
     """
-    Instances of this class are lists which will only take values which are
-    valid types for describing a property definition.
-
-    Parameters:
-
-    - items ([type|sob.properties.Property])
-    - mutable (bool)
+    Instances of this class are (mutable) lists of types and/or
+    property definitions.
     """
 
     __module__: str = "sob"

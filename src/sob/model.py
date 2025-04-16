@@ -2042,9 +2042,8 @@ def deserialize(
     This function deserializes JSON encoded data.
 
     Parameters:
-
-    - data (str|abc.Readable): This can be a string or file-like object
-      containing JSON serialized data.
+        data: This can be a string or file-like object
+            containing JSON serialized data.
 
     This function returns `None` (for JSON null values), or an instance of
     `str`, `dict`, `list`, `int`, `float` or `bool`.
