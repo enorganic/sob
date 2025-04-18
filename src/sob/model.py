@@ -64,10 +64,11 @@ from sob.utilities import indent as indent_
 
 class Model(abc.Model):
     """
-    This serves as a base class for the [Object](#Object), [Array](#Array) and
-    [Dictionary](#Dictionary) classes. This class should not be instantiated
-    directly, and should not be sub-classed directly--please use `Object`,
-    `Array` and/or `Dictionary` as a superclass instead.
+    This class serves as a base class for
+    [`sob.Object`](https://sob.enorganic.org/api/model/#sob.model.Object),
+    [`sob.Dictionary`](https://sob.enorganic.org/api/model/#sob.model.Dictionary),
+    and [`sob.Array`](https://sob.enorganic.org/api/model/#sob.model.Array).
+    This class should not be instantiated or sub-classed directly.
     """
 
     __module__: str = "sob"
@@ -166,36 +167,181 @@ class Model(abc.Model):
 
 
 class Array(Model, abc.Array, abc.Model):
-    """
-    This can serve as either a base-class for typed (or untyped) sequences, or
-    can be instantiated directly.
+    '''
+    This class may either be instantiated directly or serve as a base
+    class for defining typed JSON arrays (python lists).
 
-    Parameters:
+    Typing can be set at the instance level by
+    providing the keyword argument `item_types` when initializing an
+    instance of `sob.Array`, or by assigning item types to the class
+    or instance metadata.
 
-    - items (list|set|abc.Readable|str|bytes)
-    - item_types ([type|sob.properties.Property])
+    Example:
 
-    Typing can be enforced at the instance level by
-    passing the keyword argument `item_types` with a list of types or
-    properties.
+        from __future__ import annotations
+        from io import StringIO
+        from typing import IO, Iterable
+        import sob
+        from datetime import datetime, date
 
-    Typing can be enforced at the class level by assigning a list
-    of types as follows:
+        class ObjectA(sob.Object):
+            __slots__: tuple[str, ...] = (
+                "name",
+                "iso8601_datetime",
+            )
 
-    ```python
-    import sob
+            def __init__(
+                self,
+                _data: str | IO | dict | None = None,
+                name: str | None = None,
+                iso8601_datetime: datetime | None = None,
+            ) -> None:
+                self.name: str | None = name
+                self.iso8601_datetime: datetime | None = iso8601_datetime
+                super().__init__(_data)
 
 
-    class ArraySubClass(sob.model.Array):
-        pass
+        sob.get_writable_object_meta(ObjectA).properties = sob.Properties([
+            ("name", sob.StringProperty()),
+            (
+                "iso8601_datetime",
+                sob.DateTimeProperty(name="iso8601DateTime")
+            ),
+        ])
+
+        class ObjectB(sob.Object):
+            __slots__: tuple[str, ...] = (
+                "name",
+                "iso8601_date",
+            )
+
+            def __init__(
+                self,
+                _data: str | IO | dict | None = None,
+                name: str | None = None,
+                iso8601_date: date | None = None,
+            ) -> None:
+                self.name: str | None = name
+                self.iso8601_date: date | None = iso8601_date
+                super().__init__(_data)
 
 
-    sob.meta.writable(ArraySubClass).item_types = [
-        sob.StringProperty,
-        sob.IntegerProperty,
-    ]
-    ```
-    """
+        sob.get_writable_object_meta(ObjectB).properties = sob.Properties([
+            ("name", sob.StringProperty()),
+            ("iso8601_date", sob.DateProperty(name="iso8601Date")),
+        ])
+
+        class ArrayA(sob.Array):
+            def __init__(
+                self,
+                items: (
+                    Iterable[ObjectA|ObjectB|dict]
+                    | IO
+                    | str
+                    | bytes
+                    | None
+                ) = None,
+            ) -> None:
+                super().__init__(items)
+
+
+        sob.get_writable_array_meta(ArrayA).item_types = sob.Types([
+            ObjectA, ObjectB
+        ])
+
+
+        # Instances can be initialized using attribute parameters
+        array_a_instance_1: ArrayA = ArrayA(
+            [
+                ObjectA(
+                    name="Object A",
+                    iso8601_datetime=datetime(1999, 12, 31, 23, 59, 59),
+                ),
+                ObjectB(
+                    name="Object B",
+                    iso8601_date=date(1999, 12, 31),
+                ),
+            ]
+        )
+
+        # ...or by passing the JSON data, either as a string, bytes, sequence,
+        # or file-like object, as the first positional argument when
+        # initializing the class:
+        assert array_a_instance_1 == ArrayA(
+            """
+            [
+                {
+                    "name": "Object A",
+                    "iso8601DateTime": "1999-12-31T23:59:59Z"
+                },
+                {
+                    "name": "Object B",
+                    "iso8601Date": "1999-12-31"
+                }
+            ]
+            """
+        ) == ArrayA(
+            [
+                {
+                    "name": "Object A",
+                    "iso8601DateTime": datetime(1999, 12, 31, 23, 59, 59)
+                },
+                {
+                    "name": "Object B",
+                    "iso8601Date": date(1999, 12, 31)
+                }
+            ]
+        ) == ArrayA(
+            StringIO(
+                """
+                [
+                    {
+                        "name": "Object A",
+                        "iso8601DateTime": "1999-12-31T23:59:59Z"
+                    },
+                    {
+                        "name": "Object B",
+                        "iso8601Date": "1999-12-31"
+                    }
+                ]
+                """
+            )
+        )
+
+        # An array instance can be serialized to JSON using the `sob.serialize`
+        # function, or by simply casting it as a string
+
+        assert sob.serialize(array_a_instance_1, indent=4) == """
+        [
+            {
+                "name": "Object A",
+                "iso8601DateTime": "1999-12-31T23:59:59Z"
+            },
+            {
+                "name": "Object B",
+                "iso8601Date": "1999-12-31"
+            }
+        ]
+        """.strip()
+
+        assert str(array_a_instance_1) == (
+            '[{"name": "Object A", "iso8601DateTime": "1999-12-31T23:59:59Z"}'
+            ', {"name": "Object B", "iso8601Date": "1999-12-31"}]'
+        )
+
+        # An array can be converted into a list of JSON-serializable
+        # python objects using `sob.marshal`
+        assert sob.marshal(array_a_instance_1) == [
+            {
+                "name": "Object A",
+                "iso8601DateTime": "1999-12-31T23:59:59Z"
+            },
+            {
+                "name": "Object B",
+                "iso8601Date": "1999-12-31"
+            }
+        ]
+    '''
 
     __module__: str = "sob"
 
@@ -224,6 +370,11 @@ class Array(Model, abc.Array, abc.Model):
         | abc.Property
         | None = None,
     ) -> None:
+        """
+        Parameters:
+            items:
+            item_types:
+        """
         Model.__init__(self)
         self._instance_meta: abc.ArrayMeta | None = None
         self._instance_hooks: abc.ArrayHooks | None = None
@@ -293,7 +444,9 @@ class Array(Model, abc.Array, abc.Model):
     def count(self, value: abc.MarshallableTypes) -> int:
         return self._list.count(value)
 
-    def __hash__(self) -> int:  # type: ignore
+    def __hash__(self) -> int:
+        # For the purpose of use in sets and dictionary keys,
+        # we want to consider the memory ID of the object to be the hash
         return id(self)
 
     def __setitem__(self, index: int, value: abc.MarshallableTypes) -> None:
@@ -453,10 +606,8 @@ class Array(Model, abc.Array, abc.Model):
         return f"        {item_representation},"
 
     def __repr__(self) -> str:
-        """
-        A string representation of this array which can be used to recreate the
-        array
-        """
+        # This returns a string representation of this array which can be
+        # used to recreate the array
         instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
         class_meta: abc.ArrayMeta | None = meta.read_array_meta(type(self))
         representation_lines = [get_qualified_name(type(self)) + "("]
@@ -514,36 +665,190 @@ class Array(Model, abc.Array, abc.Model):
 
 
 class Dictionary(Model, abc.Dictionary, abc.Model):
-    """
-    This can serve as either a base-class for typed (or untyped) dictionaries,
-    or can be instantiated directly.
+    '''
+    This class may either be instantiated directly or serve as a base
+    class for defining JSON objects for which there is not a
+    predetermined set of properties/attributes, but for which there may
+    be a pre-determined set of permitted value types.
 
-    Parameters:
+    Typing can be set at the instance level by
+    providing the keyword argument `value_types` when initializing an
+    instance of `sob.Dictionary`, or by assigning value types to the class
+    or instance metadata.
 
-    - items (list|set|abc.Readable|str|bytes)
-    - value_types ([type|sob.properties.Property])
+    Example:
 
-    Typing can be enforced at the instance level by
-    passing the keyword argument `value_types` with a list of types or
-    properties.
+        from __future__ import annotations
+        import sob
+        from io import StringIO
+        from typing import IO, Any, Iterable, Mapping
+        from datetime import datetime, date
 
-    Typing can be enforced at the class level by assigning a list
-    of types as follows:
+        class ObjectA(sob.Object):
+            __slots__: tuple[str, ...] = (
+                "name",
+                "iso8601_datetime",
+            )
 
-    ```python
-    import sob
+            def __init__(
+                self,
+                _data: str | IO | dict | None = None,
+                name: str | None = None,
+                iso8601_datetime: datetime | None = None,
+            ) -> None:
+                self.name: str | None = name
+                self.iso8601_datetime: datetime | None = iso8601_datetime
+                super().__init__(_data)
 
 
-    class DictionarySubClass(sob.model.Dictionary):
-        pass
+        sob.get_writable_object_meta(ObjectA).properties = sob.Properties([
+            ("name", sob.StringProperty()),
+            (
+                "iso8601_datetime",
+                sob.DateTimeProperty(name="iso8601DateTime")
+            ),
+        ])
+
+        class ObjectB(sob.Object):
+            __slots__: tuple[str, ...] = (
+                "name",
+                "iso8601_date",
+            )
+
+            def __init__(
+                self,
+                _data: str | IO | dict | None = None,
+                name: str | None = None,
+                iso8601_date: date | None = None,
+            ) -> None:
+                self.name: str | None = name
+                self.iso8601_date: date | None = iso8601_date
+                super().__init__(_data)
 
 
-    sob.meta.writable(DictionarySubClass).value_types = [
-        sob.properties.String,
-        sob.properties.Integer,
-    ]
-    ```
-    """
+        sob.get_writable_object_meta(ObjectB).properties = sob.Properties([
+            ("name", sob.StringProperty()),
+            ("iso8601_date", sob.DateProperty(name="iso8601Date")),
+        ])
+
+        class DictionaryA(sob.Dictionary):
+            def __init__(
+                self,
+                items: (
+                    Mapping[str, Any]
+                    | Iterable[tuple[str, ObjectA|ObjectB|dict]]
+                    | IO
+                    | str
+                    | bytes
+                    | None
+                ) = None,
+            ) -> None:
+                super().__init__(items)
+
+
+        sob.get_writable_dictionary_meta(DictionaryA).value_types = sob.Types([
+            ObjectA, ObjectB
+        ])
+
+
+        # Instances can be initialized with a dictionary
+        dictionary_a_instance_1: DictionaryA = DictionaryA(
+            {
+                "a": ObjectA(
+                    name="Object A",
+                    iso8601_datetime=datetime(1999, 12, 31, 23, 59, 59),
+                ),
+                "b": ObjectB(
+                    name="Object B",
+                    iso8601_date=date(1999, 12, 31),
+                ),
+            }
+        )
+
+        # ...or by passing the JSON data, either as a string, bytes, sequence,
+        # or file-like object, as the first positional argument when
+        # initializing the class:
+        assert dictionary_a_instance_1 == DictionaryA(
+            """
+            {
+                "a": {
+                    "name": "Object A",
+                    "iso8601DateTime": "1999-12-31T23:59:59Z"
+                },
+                "b": {
+                    "name": "Object B",
+                    "iso8601Date": "1999-12-31"
+                }
+            }
+            """
+        ) == DictionaryA(
+            StringIO(
+                """
+                {
+                    "a": {
+                        "name": "Object A",
+                        "iso8601DateTime": "1999-12-31T23:59:59Z"
+                    },
+                    "b": {
+                        "name": "Object B",
+                        "iso8601Date": "1999-12-31"
+                    }
+                }
+                """
+            )
+        ) == DictionaryA(
+            (
+                (
+                    "a",
+                    ObjectA(
+                        name="Object A",
+                        iso8601_datetime=datetime(1999, 12, 31, 23, 59, 59),
+                    )
+                ),
+                (
+                    "b",
+                    ObjectB(
+                        name="Object B",
+                        iso8601_date=date(1999, 12, 31),
+                    )
+                ),
+            )
+        )
+
+        # A dictionary instance can be serialized to JSON using the
+        # `sob.serialize` function, or by simply casting it as a string
+        assert sob.serialize(dictionary_a_instance_1, indent=4) == """
+        {
+            "a": {
+                "name": "Object A",
+                "iso8601DateTime": "1999-12-31T23:59:59Z"
+            },
+            "b": {
+                "name": "Object B",
+                "iso8601Date": "1999-12-31"
+            }
+        }
+        """.strip()
+
+        assert str(dictionary_a_instance_1) == (
+            '{"a": {"name": "Object A", "iso8601DateTime": '
+            '"1999-12-31T23:59:59Z"}, "b": {"name": "Object B", '
+            '"iso8601Date": "1999-12-31"}}'
+        )
+
+        # A dictionary can be converted into a JSON-serializable
+        # objects using `sob.marshal`
+        assert sob.marshal(dictionary_a_instance_1) == {
+            "a": {
+                "name": "Object A",
+                "iso8601DateTime": "1999-12-31T23:59:59Z"
+            },
+            "b": {
+                "name": "Object B",
+                "iso8601Date": "1999-12-31"
+            }
+        }
+    '''
 
     __module__: str = "sob"
 
@@ -673,6 +978,8 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             writable_meta.value_types = value_types  # type: ignore
 
     def __hash__(self) -> int:
+        # For the purpose of use in sets and dictionary keys,
+        # we want to consider the memory ID of the object to be the hash
         return id(self)
 
     def __setitem__(self, key: str, value: abc.MarshallableTypes) -> None:
@@ -873,10 +1180,8 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         return representation
 
     def __repr__(self) -> str:
-        """
-        Return a string representation of this object which can be used to
-        re-assemble the object programmatically
-        """
+        # This returns a string representation of this dictionary which can be
+        # used to recreate the dictionary
         class_meta: abc.DictionaryMeta | None = meta.read_dictionary_meta(
             type(self)
         )
@@ -1019,12 +1324,169 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
 
 class Object(Model, abc.Object, abc.Model):
-    """
-    This serves as a base class for representing deserialized and un-marshalled
-    data for which a discrete set of properties are known in advance, and for
-    which enforcing adherence to a predetermined attribution and type
-    requirements is desirable.
-    """
+    '''
+    This class serves as a base for defining models for JSON objects
+    (python dictionaries) which have a predetermined set of properties
+    (attributes). This class should not be instantiated directly, but rather
+    sub-classed to create object models.
+
+    Example:
+
+        from __future__ import annotations
+        from io import StringIO
+        from typing import IO, Iterable
+        import sob
+        from datetime import datetime, date
+
+        class ObjectA(sob.Object):
+            __slots__: tuple[str, ...] = (
+                "boolean",
+                "boolean_or_string",
+                "integer",
+                "number",
+                "object_a",
+                "iso8601_datetime",
+                "iso8601_date",
+            )
+
+            def __init__(
+                self,
+                _data: str | IO | dict | Iterable | None = None,
+                boolean: bool | None = None,
+                boolean_or_string: bool | str | None = None,
+                integer: int | None = None,
+                enumerated: int | None = None,
+                number: float | None = None,
+                object_a: ObjectA | None = None,
+                iso8601_datetime: datetime | None = None,
+                iso8601_date: date | None = None,
+            ) -> None:
+                self.boolean: bool | None = boolean
+                self.boolean_or_string: bool | str | None = boolean_or_string
+                self.integer: int | None = integer
+                self.enumerated: int | None = enumerated
+                self.number: float | None = integer
+                self.object_a: ObjectA | None = None
+                self.iso8601_datetime: datetime | None = iso8601_datetime
+                self.iso8601_date: date | None = iso8601_date
+                super().__init__(_data)
+
+
+        sob.get_writable_object_meta(ObjectA).properties = sob.Properties([
+            ("boolean", sob.BooleanProperty()),
+            (
+                "boolean_or_string",
+                sob.Property(
+                    name="booleanOrString",
+                    types=sob.Types([bool, str])
+                )
+            ),
+            ("integer", sob.IntegerProperty()),
+            ("enumerated", sob.EnumeratedProperty(values=(1, 2, 3))),
+            ("number", sob.NumberProperty()),
+            (
+                "iso8601_datetime",
+                sob.DateTimeProperty(name="iso8601DateTime")
+            ),
+            ("iso8601_date", sob.DateProperty(name="iso8601Date")),
+        ])
+
+        # Instances can be initialized using attribute parameters
+        object_a_instance_1: ObjectA = ObjectA(
+            boolean=True,
+            boolean_or_string="Maybe",
+            integer=99,
+            enumerated=2,
+            number=3.14,
+            iso8601_datetime=datetime(1999, 12, 31, 23, 59, 59),
+            iso8601_date=date(1999, 12, 31),
+        )
+
+        # ...or by passing the JSON data, either as a string, bytes, dict, or
+        # file-like object, as the first positional argument when initializing
+        # the class:
+        assert object_a_instance_1 == ObjectA(
+            """
+            {
+                "boolean": true,
+                "booleanOrString": "Maybe",
+                "integer": 99,
+                "enumerated": 2,
+                "number": 99,
+                "iso8601DateTime": "1999-12-31T23:59:59Z",
+                "iso8601Date": "1999-12-31"
+            }
+            """
+        ) == ObjectA(
+            {
+                "boolean": True,
+                "booleanOrString": "Maybe",
+                "integer": 99,
+                "enumerated": 2,
+                "number": 99,
+                "iso8601DateTime": datetime(1999, 12, 31, 23, 59, 59),
+                "iso8601Date": date(1999, 12, 31)
+            }
+        ) == ObjectA(
+            (
+                ("boolean", True),
+                ("booleanOrString", "Maybe"),
+                ("integer", 99),
+                ("enumerated", 2),
+                ("number", 99),
+                ("iso8601DateTime", datetime(1999, 12, 31, 23, 59, 59)),
+                ("iso8601Date", date(1999, 12, 31))
+            )
+        ) == ObjectA(
+            StringIO(
+                """
+                {
+                    "boolean": true,
+                    "booleanOrString": "Maybe",
+                    "integer": 99,
+                    "enumerated": 2,
+                    "number": 99,
+                    "iso8601DateTime": "1999-12-31T23:59:59Z",
+                    "iso8601Date": "1999-12-31"
+                }
+                """
+            )
+        )
+
+        # An object instance can be serialized to JSON using the
+        # `sob.serialize` function, or by simply casting it as a string
+
+        assert sob.serialize(object_a_instance_1, indent=4) == """
+        {
+            "boolean": true,
+            "booleanOrString": "Maybe",
+            "integer": 99,
+            "enumerated": 2,
+            "number": 99,
+            "iso8601DateTime": "1999-12-31T23:59:59Z",
+            "iso8601Date": "1999-12-31"
+        }
+        """.strip()
+
+        assert str(object_a_instance_1) == (
+            '{"boolean": true, "booleanOrString": "Maybe", "integer": 99, '
+            '"enumerated": 2, "number": 99, '
+            '"iso8601DateTime": "1999-12-31T23:59:59Z", '
+            '"iso8601Date": "1999-12-31"}'
+        )
+
+        # An object can be converted into a dictionary of JSON-serializable
+        # python objects using `sob.marshal`
+        assert sob.marshal(object_a_instance_1) == {
+            "boolean": True,
+            "booleanOrString": "Maybe",
+            "integer": 99,
+            "enumerated": 2,
+            "number": 99,
+            "iso8601DateTime": "1999-12-31T23:59:59Z",
+            "iso8601Date": "1999-12-31"
+        }
+    '''
 
     __module__: str = "sob"
 
@@ -1048,6 +1510,13 @@ class Object(Model, abc.Object, abc.Model):
         | bytes
         | None = None,
     ) -> None:
+        """
+        Parameters:
+            _data: JSON data with which to initialize this object. This may
+                be a dictionary/mapping, a JSON string or bytes, a
+                file-like object containing JSON data, or an iterable of
+                key/value tuples.
+        """
         self._instance_meta: abc.ObjectMeta | None = None
         self._instance_hooks: abc.ObjectHooks | None = None
         self._extra: dict[str, abc.MarshallableTypes] | None = None
@@ -1125,9 +1594,8 @@ class Object(Model, abc.Object, abc.Model):
             meta.set_model_pointer(self, meta.get_model_pointer(other))
 
     def __hash__(self) -> int:
-        """
-        Make this usable in contexts requiring a hashable object
-        """
+        # For the purpose of use in sets and dictionary keys,
+        # we want to consider the memory ID of the object to be the hash
         return id(self)
 
     def _get_property_definition(self, property_name_: str) -> abc.Property:
@@ -1231,10 +1699,8 @@ class Object(Model, abc.Object, abc.Model):
                 hooks_.after_setitem(self, key, value)
 
     def __delattr__(self, key: str) -> None:
-        """
-        Deleting attributes with defined metadata is not allowed--doing this
-        is instead interpreted as setting that attribute to `None`.
-        """
+        # Deleting attributes with defined metadata is not allowed—doing this
+        # is instead interpreted as setting that attribute to `None`.
         instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if (
             instance_meta
@@ -1255,9 +1721,8 @@ class Object(Model, abc.Object, abc.Model):
             self.__delattr__(property_name)
 
     def __getitem__(self, key: str) -> abc.MarshallableTypes:
-        """
-        Retrieve a value using the item assignment operators `[]`.
-        """
+        # This retrieves an attribute value using the item assignment
+        # operators `[]` by looking up the attributes in the object metadata.
         property_name: str | None = self._get_key_property_name(key)
         if property_name is None:
             if self._extra is None:
@@ -1354,6 +1819,8 @@ class Object(Model, abc.Object, abc.Model):
         return f"    {parameter}={value_representation},"
 
     def __repr__(self) -> str:
+        # This returns a string representation of this object which can be
+        # used to recreate the object
         representation = [f"{get_qualified_name(type(self))}("]
         instance_meta: abc.ObjectMeta | None = meta.read_object_meta(self)
         if instance_meta and instance_meta.properties:
@@ -1576,10 +2043,23 @@ def marshal(  # noqa: C901
     types: Iterable[type | abc.Property] | abc.Types | None = None,
     value_types: Iterable[type | abc.Property] | abc.Types | None = None,
     item_types: Iterable[type | abc.Property] | abc.Types | None = None,
-) -> abc.JSONTypes:
+) -> Any:
     """
-    Recursively converts data which is not serializable using the `json` module
-    into formats which *can* be represented as JSON.
+    This function recursively converts data which is not serializable using
+    `json.dumps` into data which *can* be represented as JSON.
+
+    Parameters:
+        data: The data to be marshalled, typically an instance of `sob.Model`.
+        types: Property definitions or type(s) associated with this data.
+            This is typically only used for recursive calls, so not typically
+            provided explicitly by client applications.
+        value_types: Property definitions or type(s) associated with this
+            objects' dictionary values. This is typically only used for
+            recursive calls, so not typically provided explicitly by client
+            applications.
+        item_types: Property definitions or type(s) associated with this
+            array's items. This is typically only used for recursive calls,
+            so not typically provided explicitly by client applications.
     """
     marshalled_data: abc.JSONTypes
     if isinstance(data, Decimal):
@@ -1958,18 +2438,22 @@ def unmarshal(
     | type
     | abc.Property
     | abc.Types = (),
-) -> abc.MarshallableTypes:
+) -> Any:
     """
-    Converts `data` into an instance of a [sob.model.Model](#Model) sub-class,
-    and recursively does the same for all member data.
+    Converts deserialized data into one of the provided types.
 
     Parameters:
-
-     - data ([type|sob.properties.Property]): One or more data types. Each type
-
-    This is done by attempting to cast that data into a series of `types`, to
-    "un-marshal" data which has been deserialized from bytes or text, but is
-    still represented by generic `Model` sub-class instances.
+        data:
+        types: Property definitions or type(s) into which to attempt to
+            un-marshal the data. If multiple types are provided,
+            the first which does not raise an error or contain extraneous
+            attributes is accepted. If the data has extraneous attributes
+            for all types, the type with the fewest extraneous attributes is
+            accepted.
+        value_types: For dictionary-like objects, values will be un-marshalled
+            as one of the provided property definitions or types.
+        item_types: For sequences (lists/tuples), items will be un-marshalled
+            as one of the provided property definitions or types.
     """
     return _Unmarshal(
         data, types=types, value_types=value_types, item_types=item_types
@@ -2000,11 +2484,13 @@ def serialize(
     indent: int | None = None,
 ) -> str:
     """
-    This function serializes data as JSON.
+    This function serializes data, particularly instances of `sob.Model`
+    sub-classes, into JSON encoded strings.
 
     Parameters:
-
-    - data ([Model](#Model)|str|dict|list|int|float|bool|None)
+        data:
+        indent: The number of spaces to use for indentation. If `None`,
+            the JSON will be compacted (no line breaks or indentation).
     """
     string_data: str
     if isinstance(data, abc.Model):
@@ -2032,7 +2518,8 @@ def deserialize(
     data: str | bytes | abc.Readable | None,
 ) -> Any:
     """
-    This function deserializes JSON encoded data.
+    This function deserializes JSON encoded data from a string, bytes,
+    or a file-like object.
 
     Parameters:
         data: This can be a string or file-like object
@@ -2130,20 +2617,21 @@ def validate(
     raise_errors: bool = True,
 ) -> Sequence[str]:
     """
-    This function verifies that all properties/items/values in model instance
+    This function verifies that all properties/items/values of a model instance
     are of the correct data type(s), and that all required attributes are
     present (if applicable).
 
     Parameters:
-
-    - data ([Model](#Model))
-    - types
-      (type|[Property](#Property)|[Object](#Object)|collections.Callable|None)
-      = None
+        data:
+        types: Property definitions or types against which to attempt to
+            validate the data.
+        raise_errors: If `True`, a validation error will be raised if
+            the validation fails. If `False`, a list of error message strings
+            will be returned.
 
     If `raise_errors` is `True` (this is the default), violations will result
-    in a validation error. If `raise_errors` is `False`, a list of error
-    messages will be returned.
+    in a validation error being raised. If `raise_errors` is `False`, a list
+    of error messages will be returned.
     """
     if isinstance(data, GeneratorType):
         data = tuple(data)
@@ -2409,7 +2897,7 @@ class _MarshalProperty:
         )
         raise TypeError(message)
 
-    def __call__(self, value: abc.MarshallableTypes) -> abc.JSONTypes:
+    def __call__(self, value: abc.MarshallableTypes) -> Any:
         if value is not None:
             if isinstance(self.property, abc.DateProperty):
                 if not isinstance(value, date):
@@ -2821,24 +3309,24 @@ def get_model_from_meta(
     post_init_source: str = "",
 ) -> type[abc.Model]:
     """
-    Constructs an `Object`, `Array`, or `Dictionary` sub-class from an
-    instance of `sob.meta.Meta`.
+    Constructs an `sob.Object`, `sob.Array`, or `sob.Dictionary` sub-class
+    from an instance of `sob.ObjectMeta`, `sob.ArrayMeta`, or
+    `sob.DictionaryMeta`.
 
     Parameters:
-
-    - name (str): The name of the class.
-    - class_meta ([sob.meta.Meta](#Meta))
-    - module (str): Specify the value for the class definition's
-      `__module__` property. The invoking module will be
-      used if this is not specified. Note: If using the result of this
-      function with `sob.utilities.get_source` to generate static
-      code--this should be set to "__main__". The default behavior is only
-      appropriate when using this function as a factory.
-    - docstring (str): A docstring to associate with the class definition.
-    - pre_init_source (str): Source code to insert *before* the `__init__`
-      function in the class definition.
-    - post_init_source (str): Source code to insert *after* the `__init__`
-      function in the class definition.
+        name: The name of the class.
+        class_meta:
+        module: Specify the value for the class definition's
+            `__module__` property. The invoking module will be
+            used if this is not specified. Note: If using the result of this
+            function with `sob.utilities.get_source` to generate static
+            code--this should be set to "__main__". The default behavior is
+            only appropriate when using this function as a factory.
+        docstring: A docstring to associate with the class definition.
+        pre_init_source: Source code to insert *before* the `__init__`
+            function in the class definition.
+        post_init_source: Source code to insert *after* the `__init__`
+            function in the class definition.
     """
     # For pickling to work, the __module__ variable needs to be set...
     module = module or get_calling_module_name(2)
@@ -2917,6 +3405,8 @@ def _get_class_meta_attribute_assignment_source(
 def get_models_source(*model_classes: type[abc.Model]) -> str:
     """
     Get source code for a series of model classes, organized as a module.
+    This is useful for generating a module from classes generated
+    using `get_model_from_meta`.
     """
     import_source_lines: list[str] = []
     class_sources: list[str] = []

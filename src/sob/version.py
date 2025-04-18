@@ -121,6 +121,46 @@ def _version_as_tuple(
 
 
 class Version(abc.Version):
+    """
+    Instances of this class represent specification version compatibility.
+
+    An instance of `sob.Version` can be initialized from a version string
+    formatted similarly to python package dependency specifiers as
+    documented in [PEP-440](https://www.python.org/dev/peps/pep-0440), but
+    instead of representing package version compatibility, it represents
+    compatibility with a specification version.
+
+    Attributes:
+        specification: A specification name/identifier. This can be any string,
+            so long as the same string is used when representing versions
+            in property metadata as when applying the version using
+            `sob.version_model`.
+        compatible_with: A sequence of version numbers for which comparisons
+            should be evaluated as described for `~=` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        equals: A sequence of version numbers for which comparisons
+            should be evaluated as described for `==` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        exactly_equals: A sequence of version numbers for which comparisons
+            should be evaluated as described for `===` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        not_equals: A sequence of version numbers for which comparisons
+            should be evaluated as described for `!=` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        less_than: A sequence of version numbers for which comparisons
+            should be evaluated as described for `<` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        less_than_or_equal_to: A sequence of version numbers for which
+            comparisons should be evaluated as described for `<=` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        greater_than: A sequence of version numbers for which
+            comparisons should be evaluated as described for `>` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        greater_than_or_equal_to:  A sequence of version numbers for which
+            comparisons should be evaluated as described for `>=` in
+            [PEP-440](https://www.python.org/dev/peps/pep-0440).
+    """
+
     __module__: str = "sob"
 
     def __init__(
@@ -138,6 +178,40 @@ class Version(abc.Version):
         greater_than_or_equal_to: Sequence[str | int | float | Decimal]
         | None = None,
     ) -> None:
+        """
+        Parameters:
+            version_string: A version string formatted similarly to python
+                package dependency specifiers as documented in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            specification: A specification name/identifier. This can be any
+                string, so long as the same string is used when representing
+                versions in property metadata as when applying the version
+                using `sob.version_model`.
+            compatible_with: A sequence of version numbers for which
+                comparisons should be evaluated as described for `~=` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            equals: A sequence of version numbers for which comparisons
+                should be evaluated as described for `==` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            exactly_equals: A sequence of version numbers for which comparisons
+                should be evaluated as described for `===` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            not_equals: A sequence of version numbers for which comparisons
+                should be evaluated as described for `!=` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            less_than: A sequence of version numbers for which comparisons
+                should be evaluated as described for `<` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            less_than_or_equal_to: A sequence of version numbers for which
+                comparisons should be evaluated as described for `<=` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            greater_than: A sequence of version numbers for which
+                comparisons should be evaluated as described for `>` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+            greater_than_or_equal_to:  A sequence of version numbers for which
+                comparisons should be evaluated as described for `>=` in
+                [PEP-440](https://www.python.org/dev/peps/pep-0440).
+        """
         self.specification = specification
         self.compatible_with = compatible_with
         self.exactly_equals = exactly_equals
@@ -203,11 +277,9 @@ class Version(abc.Version):
         return True
 
     def __str__(self) -> str:
-        """
-        Return the version represented in accordance with version
-        identification described in
-        [PEP-440](https://www.python.org/dev/peps/pep-0440).
-        """
+        # Return the version represented in accordance with version
+        # identification described in
+        # [PEP-440](https://www.python.org/dev/peps/pep-0440).
         version_specifiers: list[str] = []
         property_name: str
         repr_operator: str

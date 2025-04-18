@@ -42,6 +42,7 @@ except ImportError:
 
                 new_class: type = copy(function_or_class)
                 new_class.__init__ = init_wrapper  # type: ignore
+                new_class.__doc__ = None
                 return new_class
 
             @functools.wraps(function_or_class)

@@ -14,40 +14,35 @@ class Undefined:
     This class is intended to indicate that a parameter has not been passed
     to a keyword argument in situations where `None` is to be used as a
     meaningful value.
+
+    The `Undefined` class is a singleton, so only one instance of this class
+    is permitted: `sob.UNDEFINED`.
     """
 
     __module__ = "sob"
 
     def __init__(self) -> None:
-        """
-        Only one instance of `Undefined` is permitted, so initialization
-        checks to make sure this is the first use.
-        """
+        # Only one instance of `Undefined` is permitted, so initialization
+        # checks to make sure this is the first use.
         if "UNDEFINED" in _module_locals:
             message: str = f"{self!r} may only be instantiated once."
             raise DefinitionExistsError(message)
 
     def __repr__(self) -> str:
-        """
-        Represent instances of this class using the qualified name for the
-        constant `UNDEFINED`.
-        """
+        # Represent instances of this class using the qualified name for the
+        # constant `UNDEFINED`.
         return "sob.UNDEFINED"
 
     def __bool__(self) -> bool:
-        """
-        `UNDEFINED` cast as a boolean is `False` (as with `None`)
-        """
+        # `UNDEFINED` cast as a boolean is `False` (as with `None`)
         return False
 
     def __hash__(self) -> int:
         return 0
 
     def __eq__(self, other: object) -> bool:
-        """
-        Another object is only equal to this if it shares the same id, since
-        there should only be one instance of this class defined
-        """
+        # Another object is only equal to this if it shares the same id, since
+        # there should only be one instance of this class defined
         return other is self
 
     def __reduce__(self) -> tuple[Callable[[], Undefined], tuple]:
@@ -55,6 +50,10 @@ class Undefined:
 
 
 UNDEFINED: Undefined = Undefined()
+"""
+`sob.UNDEFINED` is the singleton instance of `sob.Undefined`, and is used to
+indicate that a parameter has not been passed to a function or method keyword.
+"""
 
 
 def _undefined() -> Undefined:
@@ -83,8 +82,7 @@ class Null:
 
     Note: Like the built-in value `None`, only one instance of this class is
     permitted (it's a singleton), so this class should never be instantiated,
-    it should always be referenced through the constant `NULL` from this
-    module.
+    it should always be referenced through the constant `sob.NULL`.
     """
 
     __module__ = "sob"
@@ -124,6 +122,12 @@ class Null:
 
 
 NULL: Null = Null()
+"""
+`sob.NULL` is the singleton instance of `sob.Null`, and is used to represent
+an explicit `null` value in JSON, whereas in the context of an instance
+of a sub-class of `sob.Object`—`None` indicates the *absence* of a property
+value.
+"""
 
 
 def _null() -> Null:

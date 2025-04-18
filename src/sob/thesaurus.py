@@ -55,10 +55,10 @@ from sob.model import (
 from sob.properties import TYPES_PROPERTIES, Property, has_mutable_types
 from sob.types import MutableTypes, Types
 from sob.utilities import (
-    class_name,
     get_calling_module_name,
+    get_class_name,
+    get_property_name,
     get_source,
-    property_name,
     suffix_long_lines,
 )
 
@@ -374,7 +374,7 @@ def get_class_name_from_pointer(pointer: str) -> str:
     - pointer (str): The synonyms key + JSON pointer of the element for which
       the class is being generated.
     """
-    return class_name(
+    return get_class_name(
         f"{pointer[:-2]}/item"
         if pointer.endswith("/0")
         else pointer.replace("/0/", "/item/")
@@ -487,8 +487,9 @@ def _is_not_null_or_none(item: Any) -> bool:
 @collections.abc.MutableSet.register
 class Synonyms:
     """
-    This class contains deserialized data, implied to represent variations of
-    one type of entity, and is used to infer a model for that entity.
+    This class is a set-like object containing deserialized data,
+    implied to represent variations of one type of entity, and is used to
+    infer a model for that entity.
     """
 
     __module__: str = "sob"
@@ -754,7 +755,7 @@ class Synonyms:
         values: list[abc.MarshallableTypes]
         visited_property_names: set[str] = set()
         for key, values in self._get_property_names_values().items():
-            property_name_ = property_name(key)
+            property_name_ = get_property_name(key)
             while property_name_ in visited_property_names:
                 property_name_ = f"{property_name_}_"
             visited_property_names.add(property_name_)

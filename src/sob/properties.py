@@ -55,14 +55,13 @@ def _repr_keyword_argument_assignment(
     return f"    {argument}={indent(represent(value))},"
 
 
-def has_mutable_types(property_: abc.Property | type) -> bool:
+def has_mutable_types(property_: abc.Property | type[abc.Property]) -> bool:
     """
     This function returns `True` if modification of the `.types` member of a
     property class or instance is permitted.
 
     Parameters:
-
-    - property (sob.properties.Property|type)
+        property:
     """
     property_type: type
     if isinstance(property_, abc.Property):
@@ -78,48 +77,41 @@ class Property(abc.Property):
     """
     This is the base class for defining a property.
 
-    Properties
+    Attributes:
+        types: One or more types or property definitions.
+            More than one types and/or property definitions
+            results in a polymorphic interpretation wherein a value is
+            un-marshalled in accordance with each type or property in the list
+            (sequentially), until the value is un-marshalled without throwing a
+            `TypeError` or `ValueError`. If the list of types and/or properties
+            is exhausted without successfully un-marshalling the value, a
+            `TypeError` or `ValueError` error is raised. When types
+            are sub-classes of `sob.Object`, each type is attempted, and
+            of the resulting instances, the type resulting in the fewest
+            extraneous attributes (attributes not corresponding to any
+            metadata) is used.)
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-        - types ([type|Property]): One or more expected `type` or
-          `Property` instances. A list of more than one types and/or properties
-          results in a polymorphic interpretation wherein a value is
-          un-marshalled in accordance with each type or property in the list
-          (sequentially), until the value is un-marshalled without throwing a
-          `TypeError` or `ValueError`. If the list of types and/or properties
-          is exhausted without successfully un-marshalling the value, a
-          `TypeError` or `ValueError` error is raised.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
 
-        - required (bool): If `True`—marshalling a value for this property
-          will throw an error if the value is `None`. Please note that `None`
-          indicates a value was *not provided*. To indicate an *explicit* null
-          value, use `sob.properties.types.NULL`.
-
-        - versions ([str]|{str:Property}):
-
-          The parameter should be one of the following:
-
-            - A `set`, `tuple`, or `list` of version numbers to which this
-              property applies.
-            - A mapping of version numbers to an instance of
-              [Property](#Property) instances applicable to that version.
-
-          Version numbers prefixed by "<" indicating any version less than the
-          one specified, so "<3.0" indicates that this property is available in
-          versions prior to 3.0. The inverse is true for version numbers
-          prefixed by ">". ">=" and "<=" have similar meanings, but are
-          inclusive.
-
-          Versioning can be applied to a property by calling
-          `sob.meta.set_version` in the `__init__` method of an
-          `sob.Object` sub-class.
-
-        - name (str): The name of the property when loaded from or dumped into
-          a JSON object. Specifying a `name` facilitates mapping of PEP8
-          compliant property names to JSON attribute names which might
-          be incompatible with well-formatted python code due to various
-          reasons such as being camelCased, or being python keywords. To
-          infer an appropriate property name programmatically, use the utility
-          function `sob.utilities.property_name`.
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -274,7 +266,31 @@ class Property(abc.Property):
 
 class StringProperty(Property, abc.StringProperty):
     """
-    See `sob.Property`
+    This class represents metadata describing a string property.
+
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
+
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -306,18 +322,31 @@ String = deprecated(
 
 class DateProperty(Property, abc.DateProperty):
     """
-    ...See `sob.properties.Property`
+    This class represents metadata describing a date property.
 
-    + Parameters:
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-        - date2str (collections.Callable): A function, taking one argument (a
-          python `date` json_object), and returning a date string in the
-          desired format. The default is `datetime.date.isoformat`--returning
-          an ISO-8601 compliant date string.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
 
-        - str2date (collections.Callable): A function, taking one argument (a
-          date string), and returning a python `date` object. By default,
-          this is `iso8601.iso8601.parse_date`.
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -336,6 +365,20 @@ class DateProperty(Property, abc.DateProperty):
         date2str: Callable[[date], str] = _date2str,
         str2date: Callable[[str], date] = _str2date,
     ) -> None:
+        """
+        Parameters:
+            name:
+            required:
+            versions:
+            date2str: A function, taking one argument (a python `date`
+                json_object), and returning a date string in the
+                desired format. The default is `datetime.date.isoformat`
+                —returning an ISO-8601 compliant date string.
+
+            str2date: A function, taking one argument (a date string), and
+                returning a python `date` object. By default, this is
+                `iso8601.iso8601.parse_date`.
+        """
         super().__init__(
             name=name,
             required=required,
@@ -359,17 +402,31 @@ Date = deprecated(
 
 class DateTimeProperty(Property, abc.DateTimeProperty):
     """
-    (See [`sob.properties.Property`](#Property))
+    This class represents metadata describing a date property.
 
-    + Parameters:
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-    - datetime2str (collections.Callable): A function, taking one argument
-      (a python `datetime` json_object), and returning a date-time string
-      in the desired format. The default is `datetime.datetime.isoformat`,
-      returning an ISO-8601 compliant date/time string.
-    - str2datetime (collections.Callable): A function, taking one argument
-      (a datetime string), and returning a python `datetime.datetime` object.
-      By default, this is `iso8601.iso8601.parse_date`.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -388,6 +445,19 @@ class DateTimeProperty(Property, abc.DateTimeProperty):
         datetime2str: Callable[[datetime], str] = _datetime2str,
         str2datetime: Callable[[str], datetime] = _str2datetime,
     ) -> None:
+        """
+        Parameters:
+            name:
+            required:
+            versions:
+            datetime2str: A function, taking one argument (a python `datetime`
+                json_object), and returning a date/time string in the desired
+                format. The default is `datetime.datetime.isoformat`,
+                returning an ISO-8601 compliant date/time string.
+            str2datetime: A function, taking one argument (a datetime string),
+                and returning a python `datetime.datetime` object. By default,
+                this is `iso8601.iso8601.parse_date`.
+        """
         self._datetime2str = datetime2str
         self._str2datetime = str2datetime
         super().__init__(
@@ -411,9 +481,31 @@ DateTime = deprecated(
 
 class BytesProperty(Property, abc.BytesProperty):
     """
-    (See [`sob.properties.Property`](#Property))
+    This class represents metadata describing a property with binary values.
 
-    This class represents a property with binary values
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
+
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -445,16 +537,33 @@ Bytes = deprecated(
 
 class EnumeratedProperty(Property, abc.EnumeratedProperty):
     """
-    Parameters:
+    This class represents metadata describing a property having a finite,
+    pre-determined, set of possible values.
 
-    This class accepts the following keyword parameters in *addition* to all
-    parameters applicable to the base class [Property](#Property).
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-    - values ([typing.Any]):  A list or set of possible values.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
 
-    Properties:
-
-    This class exposes public properties matching its keyword parameters.
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
+        values: All possible values for this property.
     """
 
     __module__: str = "sob"
@@ -504,7 +613,32 @@ Enumerated = deprecated(
 
 class NumberProperty(Property, abc.NumberProperty):
     """
-    See `sob.properties.Property`
+    This class represents metadata describing a property having numeric
+    (decimal, float or integer) values.
+
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
+
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -532,7 +666,32 @@ Number = deprecated(
 
 class IntegerProperty(Property, abc.IntegerProperty):
     """
-    See `sob.properties.Property`
+    This class represents metadata describing a property having integer
+    values.
+
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
+
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -564,7 +723,32 @@ Integer = deprecated(
 
 class BooleanProperty(Property, abc.BooleanProperty):
     """
-    See `sob.properties.Property`
+    This class represents metadata describing a property having boolean
+    values.
+
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
+
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
     """
 
     __module__: str = "sob"
@@ -596,14 +780,35 @@ Boolean = deprecated(
 
 class ArrayProperty(Property, abc.ArrayProperty):
     """
-    See `sob.properties.Property`...
+    This class represents metadata describing a property accepting array
+    (list/tuple) values.
 
-    + Properties:
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-    - item_types (type|Property|[type|Property]): The type(s) of values/objects
-      contained in the array. Similar to
-      `sob.properties.Property().types`, but applied to items in the
-      array, not the array itself.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
+        item_types: The type(s) of values/objects contained in the array.
+            Similar to `sob.Property().types`, but applied to items in the
+            array, not the array itself.
     """
 
     __module__: str = "sob"
@@ -676,14 +881,36 @@ Array = deprecated(
 
 class DictionaryProperty(Property, abc.DictionaryProperty):
     """
-    See `sob.properties.Property`...
+    This class represents metadata describing a property accepting
+    dictionary values (deserialized JSON objects *without* a
+    pre-determined set of properties).
 
-    + Properties:
+    Attributes:
+        name: The name of the property when loaded from or dumped into
+            a JSON object. Specifying a `name` facilitates mapping of PEP8
+            compliant property names to JSON attribute names which might
+            be incompatible with well-formatted python code due to various
+            reasons such as being camelCased, or being python keywords. To
+            infer an appropriate property name programmatically, use the
+            utility function `sob.utilities.get_property_name`.
+        required: If `True`, sob.validate` will raise a validation error
+            if this property is missing (is `None`).
+        versions:
+            One or more version specifiers to which this property applies.
 
-    - value_types (type|Property|[type|Property]): The type(s) of
-      values/objects comprising the mapped values. Similar to
-      `sob.properties.Property.types`, but applies to *values* in the
-      dictionary object, not the dictionary itself.
+            Version numbers prefixed by "<" indicate any version less than the
+            one specified, so "<3.0" indicates that this property is available
+            in versions prior to 3.0. The inverse is true for version numbers
+            prefixed by ">". ">=" and "<=" have similar meanings, but are
+            inclusive.
+
+            Versioning can be applied to a model's properties with
+            `sob.version_model`. For example, one use would be within the
+            `__init__` method of an `sob.Object` sub-class, in order to
+            dynamically alter metadata based on version attributes.
+        value_types: The type(s) of values/objects comprising the mapped
+            values. Similar to `sob.Property().types`, but applied to
+            *values* in the mapping/dictionary, not to the dictionary itself.
     """
 
     __module__: str = "sob"
@@ -727,7 +954,7 @@ class DictionaryProperty(Property, abc.DictionaryProperty):
         value_types: Sequence[type | abc.Property] | abc.Types | None,
     ) -> None:
         """
-        A sequence of types and/or `sob.properties.Property` instances.
+        A sequence of types and/or `sob.Property` instances.
 
         If more than one type or property definition is provided,
         un-marshalling is attempted using each `value_type`, in sequential

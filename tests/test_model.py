@@ -49,7 +49,7 @@ class ObjectA(sob.Object):
         delta: int | None = None,
         iso8601_datetime: datetime | None = None,
         iso8601_date: date | None = None,
-    ):
+    ) -> None:
         self.is_a_class = is_a_class
         self.boolean = boolean
         self.string = string

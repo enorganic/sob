@@ -8,7 +8,6 @@ import sys
 from inspect import (
     FrameInfo,
     getargvalues,
-    getmodulename,
     getsource,
     stack,
 )
@@ -19,6 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable
 from unicodedata import normalize
 
 from sob._types import UNDEFINED, Undefined
+from sob._utilities import deprecated
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -33,44 +33,46 @@ _URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r"^(.*/)([^/]*)")
 MAX_LINE_LENGTH: int = 79
 
 
-def property_name(string: str) -> str:
+def get_property_name(string: str) -> str:
     """
     Converts a "camelCased" attribute/property name, a name which conflicts
     with a python keyword, or an otherwise non-compatible string to a PEP-8
     compliant property name.
 
-    >>> print(property_name("theBirdsAndTheBees"))
-    the_birds_and_the_bees
+    Examples:
 
-    >>> print(property_name("theBirdsAndTheBEEs"))
-    the_birds_and_the_bees
+        >>> print(get_property_name("theBirdsAndTheBees"))
+        the_birds_and_the_bees
 
-    >>> print(property_name("theBirdsAndTheBEEsEs"))
-    the_birds_and_the_be_es_es
+        >>> print(get_property_name("theBirdsAndTheBEEs"))
+        the_birds_and_the_bees
 
-    >>> print(property_name("FYIThisIsAnAcronym"))
-    fyi_this_is_an_acronym
+        >>> print(get_property_name("theBirdsAndTheBEEsEs"))
+        the_birds_and_the_be_es_es
 
-    >>> print(property_name("in"))
-    in_
+        >>> print(get_property_name("FYIThisIsAnAcronym"))
+        fyi_this_is_an_acronym
 
-    >>> print(property_name("id"))
-    id_
+        >>> print(get_property_name("in"))
+        in_
 
-    >>> print(property_name("one2one"))  # No change needed
-    one2one
+        >>> print(get_property_name("id"))
+        id_
 
-    >>> print(property_name("One2One"))
-    one_2_one
+        >>> print(get_property_name("one2one"))  # No change needed
+        one2one
 
-    >>> print(property_name("@One2One"))
-    one_2_one
+        >>> print(get_property_name("One2One"))
+        one_2_one
 
-    >>> print(property_name("One2One-ALL"))
-    one_2_one_all
+        >>> print(get_property_name("@One2One"))
+        one_2_one
 
-    >>> print(property_name("one2one-ALL"))
-    one2one_all
+        >>> print(get_property_name("One2One-ALL"))
+        one_2_one_all
+
+        >>> print(get_property_name("one2one-ALL"))
+        one2one_all
     """
     name: str = string
     # Replace accented and otherwise modified latin characters with their
@@ -107,42 +109,56 @@ def property_name(string: str) -> str:
     return name.lstrip("_")
 
 
-def class_name(string: str) -> str:
+property_name = deprecated(
+    "`sob.utilities.property_name` is deprecated, and will be removed in sob "
+    "3. Please use `sob.utilities.get_property_name` instead."
+)(get_property_name)
+
+
+def get_class_name(string: str) -> str:
     """
     This function accepts a string and returns a variation of that string
     which is a PEP-8 compatible python class name.
 
-    >>> print(class_name("the birds and the bees"))
-    TheBirdsAndTheBees
+    Examples:
 
-    >>> print(class_name("the-birds-and-the-bees"))
-    TheBirdsAndTheBees
+        >>> print(get_class_name("the birds and the bees"))
+        TheBirdsAndTheBees
 
-    >>> print(class_name("**the - birds - and - the - bees**"))
-    TheBirdsAndTheBees
+        >>> print(get_class_name("the-birds-and-the-bees"))
+        TheBirdsAndTheBees
 
-    >>> print(class_name("FYI is an acronym"))
-    FYIIsAnAcronym
+        >>> print(get_class_name("**the - birds - and - the - bees**"))
+        TheBirdsAndTheBees
 
-    >>> print(class_name("in-you-go"))
-    InYouGo
+        >>> print(get_class_name("FYI is an acronym"))
+        FYIIsAnAcronym
 
-    >>> print(class_name("False"))
-    False_
+        >>> print(get_class_name("in-you-go"))
+        InYouGo
 
-    >>> print(class_name("True"))
-    True_
+        >>> print(get_class_name("False"))
+        False_
 
-    >>> print(class_name("ABC Acronym"))
-    ABCAcronym
+        >>> print(get_class_name("True"))
+        True_
 
-    >>> print(class_name("AB CD Efg"))
-    ABCdEfg
+        >>> print(get_class_name("ABC Acronym"))
+        ABCAcronym
+
+        >>> print(get_class_name("AB CD Efg"))
+        ABCdEfg
     """
     name = camel(string, capitalize=True)
     while iskeyword(name) or (name in builtins.__dict__):
         name += "_"
     return name
+
+
+class_name = deprecated(
+    "`sob.utilities.class_name` is deprecated, and will be removed in sob 3. "
+    "Please use `sob.utilities.get_class_name` instead."
+)(get_class_name)
 
 
 def camel(string: str, *, capitalize: bool = False) -> str:
@@ -151,57 +167,55 @@ def camel(string: str, *, capitalize: bool = False) -> str:
     When/if an input string corresponds to a python keyword,
 
     Parameters:
+        string: The string to be camelCased.
+        capitalize: If this is `true`, the first letter will be capitalized.
 
-    - string (str): The string to be camelCased.
+    Examples:
 
-    - capitalize (bool):
+        >>> print(camel("the birds and the bees"))
+        theBirdsAndTheBees
 
-      If this is `true`, the first letter will be capitalized.
+        >>> print(camel("the birds and the bees", capitalize=True))
+        TheBirdsAndTheBees
 
-    >>> print(camel("the birds and the bees"))
-    theBirdsAndTheBees
+        >>> print(camel("the-birds-and-the-bees"))
+        theBirdsAndTheBees
 
-    >>> print(camel("the birds and the bees", capitalize=True))
-    TheBirdsAndTheBees
+        >>> print(camel("**the - birds - and - the - bees**"))
+        theBirdsAndTheBees
 
-    >>> print(camel("the-birds-and-the-bees"))
-    theBirdsAndTheBees
+        >>> print(camel("FYI is an acronym"))
+        FYIIsAnAcronym
 
-    >>> print(camel("**the - birds - and - the - bees**"))
-    theBirdsAndTheBees
+        >>> print(camel("in-you-go"))
+        inYouGo
 
-    >>> print(camel("FYI is an acronym"))
-    FYIIsAnAcronym
+        >>> print(camel("False"))
+        false
 
-    >>> print(camel("in-you-go"))
-    inYouGo
+        >>> print(camel("True"))
+        true
 
-    >>> print(camel("False"))
-    false
+        >>> print(camel("in"))
+        in
 
-    >>> print(camel("True"))
-    true
+        >>> print(camel("AB CD Efg", capitalize=True))
+        ABCdEfg
 
-    >>> print(camel("in"))
-    in
+        >>> print(camel("ABC DEF GHI", capitalize=True))
+        AbcDefGhi
 
-    >>> print(camel("AB CD Efg", capitalize=True))
-    ABCdEfg
+        >>> print(camel("ABC_DEF_GHI", capitalize=True))
+        AbcDefGhi
 
-    >>> print(camel("ABC DEF GHI", capitalize=True))
-    AbcDefGhi
+        >>> print(camel("ABC DEF GHI"))
+        abcDefGhi
 
-    >>> print(camel("ABC_DEF_GHI", capitalize=True))
-    AbcDefGhi
+        >>> print(camel("ABC_DEF_GHI"))
+        abcDefGhi
 
-    >>> print(camel("ABC DEF GHI"))
-    abcDefGhi
-
-    >>> print(camel("ABC_DEF_GHI"))
-    abcDefGhi
-
-    >>> print(camel("AB_CDEfg"))
-    ABCdEfg
+        >>> print(camel("AB_CDEfg"))
+        ABCdEfg
     """
     index: int
     character: str
@@ -265,16 +279,20 @@ def camel_split(string: str) -> tuple[str, ...]:
 
     Examples:
 
-    >>> camel_split("theBirdsAndTheBees")
-    ('the', 'Birds', 'And', 'The', 'Bees')
-    >>> camel_split("theBirdsAndTheBees123")
-    ('the', 'Birds', 'And', 'The', 'Bees', '123')
-    >>> camel_split("theBirdsAndTheBeesABC123")
-    ('the', 'Birds', 'And', 'The', 'Bees', 'ABC', '123')
-    >>> camel_split("the-Birds-&-The-Bs-ABC--123")
-    ('the', '-', 'Birds', '-&-', 'The', '-', 'Bs', '-', 'ABC', '--', '123')
-    >>> camel_split("THEBirdsAndTheBees")
-    ('THE', 'Birds', 'And', 'The', 'Bees')
+        >>> camel_split("theBirdsAndTheBees")
+        ('the', 'Birds', 'And', 'The', 'Bees')
+
+        >>> camel_split("theBirdsAndTheBees123")
+        ('the', 'Birds', 'And', 'The', 'Bees', '123')
+
+        >>> camel_split("theBirdsAndTheBeesABC123")
+        ('the', 'Birds', 'And', 'The', 'Bees', 'ABC', '123')
+
+        >>> camel_split("the-Birds-&-The-Bs-ABC--123")
+        ('the', '-', 'Birds', '-&-', 'The', '-', 'Bs', '-', 'ABC', '--', '123')
+
+        >>> camel_split("THEBirdsAndTheBees")
+        ('THE', 'Birds', 'And', 'The', 'Bees')
     """
     words: list[list[str]] = []
     preceding_character_type: _CharacterType | None = None
@@ -397,16 +415,18 @@ def _split_long_comment_line(
     """
     Split a comment (or docstring) line
 
-    >>> print(
-    ...     _split_long_comment_line(
-    ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl "
-    ...         "efficitur."
-    ...     )
-    ... )
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
-        odio a urna elementum, eu tempor nisl efficitur.
-    """
+    Example:
+
+        >>> print(
+        ...     _split_long_comment_line(
+        ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing "
+        ...         "elit. Nullam faucibu odio a urna elementum, eu tempor "
+        ...         "nisl efficitur."
+        ...     )
+        ... )
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
+            odio a urna elementum, eu tempor nisl efficitur.
+    """  # noqa: E501
     if len(line) > max_line_length:
         matched: Match | None = re.match(
             (rf"^[ ]*(?:{prefix}[ ]*)?" if prefix else r"^[ ]*"), line
@@ -438,17 +458,20 @@ def split_long_docstring_lines(
     docstring: str, max_line_length: int = MAX_LINE_LENGTH
 ) -> str:
     """
-    Split long docstring lines
+    Split long docstring lines.
 
-    >>> print(
-    ...     split_long_docstring_lines(
-    ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
-    ...         "Nullam faucibu odio a urna elementum, eu tempor nisl efficitu"
-    ...     )
-    ... )
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
-        odio a urna elementum, eu tempor nisl efficitu
-    """
+    Example:
+
+        >>> print(
+        ...     split_long_docstring_lines(
+        ...         "    Lorem ipsum dolor sit amet, consectetur adipiscing "
+        ...         "elit. Nullam faucibu odio a urna elementum, eu tempor "
+        ...         "nisl efficitur."
+        ...     )
+        ... )
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu
+            odio a urna elementum, eu tempor nisl efficitur.
+    """  # noqa: E501
     line: str
     indent_: str = "    "
     if "\t" in docstring:
@@ -477,22 +500,39 @@ def split_long_docstring_lines(
 
 
 def suffix_long_lines(
-    text: str, max_line_length: int = MAX_LINE_LENGTH, suffix: str = "  # noqa"
+    text: str,
+    max_line_length: int = MAX_LINE_LENGTH,
+    suffix: str = "  # noqa: E501",
 ) -> str:
     """
     This function adds a suffix to the end of any line of code longer than
     `max_line_length`.
 
     Parameters:
+        text: Text representing python code
+        max_line_length:
+            The length at which a line should have the `suffix` appended. If
+            this is a *negative* integer (or zero), the sum of this integer +
+            `MAX_LINE_LENGTH` is used
+        suffix: The default suffix indicates to linters that
+            a long line should be permitted
 
-    - text (str): Text representing python code
-    - max_line_length (int) = 79:
-      The length at which a line should have the `suffix` appended. If
-      this is a *negative* integer (or zero), the sum of this integer +
-      `MAX_LINE_LENGTH` is used
-    - suffix (str) = "  # noqa": The default suffix indicates to linters that
-      a long line should be permitted
-    """
+    Example:
+
+        >>> print(
+        ...     suffix_long_lines(
+        ...         "A short line...\\n"
+        ...         "Lorem ipsum dolor sit amet, consectetur adipiscing "
+        ...         "elit. Nullam faucibu odio a urna elementum, eu tempor "
+        ...         "nisl efficitur.\\n"
+        ...         "...another short line"
+        ...     )
+        ... )
+        A short line...
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.  # noqa: E501
+        ...another short line
+
+    """  # noqa: E501
     if max_line_length <= 0:
         max_line_length += MAX_LINE_LENGTH
 
@@ -514,7 +554,12 @@ def iter_properties_values(
     """
     This function iterates over an object's public (non-callable)
     properties, yielding a tuple comprised of each attribute/property name and
-    value
+    value.
+
+    Parameters:
+        object_:
+        include_private: If this is `True`, private properties (those
+            starting with an underscore) will be included in the iteration.
     """
     names: Iterable[str] = dir(object_)
     if not include_private:
@@ -538,12 +583,16 @@ QUALIFIED_NAME_ARGUMENT_TYPES: tuple[Any, ...] = (
 
 def get_qualified_name(type_or_module: type | Callable | ModuleType) -> str:
     """
-    >>> print(get_qualified_name(get_qualified_name))
-    sob.utilities.get_qualified_name
+    This function return the fully qualified name for a type or module.
 
-    >>> from sob import model
-    >>> print(get_qualified_name(model.marshal))
-    sob.model.marshal
+    Examples:
+
+        >>> print(get_qualified_name(get_qualified_name))
+        sob.utilities.get_qualified_name
+
+        >>> from sob import model
+        >>> print(get_qualified_name(model.marshal))
+        sob.model.marshal
     """
     if not isinstance(type_or_module, QUALIFIED_NAME_ARGUMENT_TYPES):
         raise TypeError(type_or_module)
@@ -583,26 +632,6 @@ def get_qualified_name(type_or_module: type | Callable | ModuleType) -> str:
         ):
             type_name = type_or_module.__module__ + "." + type_name
     return type_name
-
-
-def _get_module_name(file_name: str) -> str:
-    """
-    Given a frame info's file name, find the module name
-    """
-    module_name = getmodulename(file_name)
-    if module_name is None:
-        # Check to see if this is a doctest
-        doc_test_prefix: str = "<doctest "
-        if file_name.startswith(doc_test_prefix):
-            doc_test_prefix_length: int = len(doc_test_prefix)
-            module_name = file_name[doc_test_prefix_length:]
-            module_name = module_name.rstrip(">")
-            if "[" in module_name:
-                module_name = "[".join(module_name.split("[")[:-1])
-        else:
-            message: str = f'The path "{file_name}" is not a python module'
-            raise ValueError(message)
-    return module_name
 
 
 def _iter_frame_info_names(frame_info: FrameInfo) -> Iterable[str]:
@@ -647,11 +676,11 @@ def get_calling_module_name(depth: int = 1) -> str:
 
     Examples:
 
-    >>> print(get_calling_module_name())
-    sob.utilities
+        >>> print(get_calling_module_name())
+        sob.utilities
 
-    >>> print(get_calling_module_name(2))
-    doctest
+        >>> print(get_calling_module_name(2))
+        doctest
     """
     name: str
     try:
@@ -668,19 +697,21 @@ def get_calling_function_qualified_name(depth: int = 1) -> str | None:
     Return the fully qualified name of the function from within which this is
     being called
 
-    >>> def my_function() -> str:
-    ...     return get_calling_function_qualified_name()
-    >>> print(my_function())
-    sob.utilities.my_function
+    Examples:
 
-    >>> class MyClass:
-    ...     def __call__(self) -> None:
-    ...         return self.my_method()
-    ...
-    ...     def my_method(self) -> str:
-    ...         return get_calling_function_qualified_name()
-    >>> print(MyClass()())
-    sob.utilities.MyClass.my_method
+        >>> def my_function() -> str:
+        ...     return get_calling_function_qualified_name()
+        >>> print(my_function())
+        sob.utilities.my_function
+
+        >>> class MyClass:
+        ...     def __call__(self) -> None:
+        ...         return self.my_method()
+        ...
+        ...     def my_method(self) -> str:
+        ...         return get_calling_function_qualified_name()
+        >>> print(MyClass()())
+        sob.utilities.MyClass.my_method
     """
     if not isinstance(depth, int):
         raise TypeError(depth)
@@ -773,8 +804,7 @@ def represent(value: Any) -> str:
     (including module) where applicable.
 
     Parameters:
-
-    - value
+        value:
     """
     value_representation: str
     if isinstance(value, type):
@@ -807,17 +837,15 @@ def get_method(
     default: Callable | Undefined | None = UNDEFINED,
 ) -> Callable[..., Any] | None:
     """
-    This function attempts to retrieve a method, by name.
+    This function attempts to retrieve an object's method, by name, if the
+    method exists. If the object does not have a method with the given name,
+    this function returns the `defualt` function (if provided), otherwise
+    `None`.
 
     Parameters:
-
-    - object_instance (object)
-    - method_name (str)
-    - default (collections.Callable|None) = None
-
-    This function returns an object's method, if the method exists.
-    If the object does not have a method with the given name, this
-    function returns `None`.
+        object_instance:
+        method_name:
+        default:
     """
     method: Callable
     try:
