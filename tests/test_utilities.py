@@ -1,16 +1,64 @@
+from __future__ import annotations
+
 import doctest
-from typing import Any, Optional
+from typing import Any
 
-from sob.utilities import inspect, io, string, types
-from sob.utilities.assertion import assert_in
-from sob.utilities.inspect import (
-    calling_function_qualified_name,
-    calling_module_name,
-)
+import pytest
+
+import sob
+from sob import _io, _types, utilities
 
 
-def test_strings() -> None:
-    doctest.testmod(string)
+def test_doctest() -> None:
+    """
+    Run docstring tests
+    """
+    doctest.testmod(utilities)
+
+
+def test_utilities() -> None:
+    assert sob.utilities.get_calling_function_qualified_name() == (
+        "tests.test_utilities.test_utilities"
+    )
+
+    class TestCallingFunctionQualifiedNameA:
+        __module__ = "tests.utilities"
+
+        def __init__(self) -> None:
+            assert sob.utilities.get_calling_function_qualified_name() == (
+                "tests.utilities.test_utilities."
+                "TestCallingFunctionQualifiedNameA.__init__"
+            )
+
+    TestCallingFunctionQualifiedNameA()
+
+    class TestCallingFunctionQualifiedNameB:
+        def __init__(self) -> None:
+            assert sob.utilities.get_calling_function_qualified_name() == (
+                "tests.test_utilities.test_utilities.TestCallingFunctionQualif"
+                "iedNameB.__init__"
+            )
+
+    TestCallingFunctionQualifiedNameB()
+
+    class TestCallingFunctionQualifiedNameC:
+        class TestCallingFunctionQualifiedNameD:
+            def __init__(self) -> None:
+                assert sob.utilities.get_calling_function_qualified_name() == (
+                    "tests.test_utilities.test_utilities.TestCallingFunctionQu"
+                    "alifiedNameC.TestCallingFunctionQualifiedNameD.__init__"
+                )
+
+    TestCallingFunctionQualifiedNameC.TestCallingFunctionQualifiedNameD()
+    assert utilities.get_qualified_name(
+        TestCallingFunctionQualifiedNameC(
+            # -
+        ).TestCallingFunctionQualifiedNameD
+    ) == (
+        "tests.test_utilities.test_utilities.TestCallingFunctionQualifiedNameC"
+        ".TestCallingFunctionQualifiedNameD"
+    )
+    assert sob.utilities.get_qualified_name(sob.Object) == "sob.Object"
 
 
 def test_inspect() -> None:
@@ -20,56 +68,49 @@ def test_inspect() -> None:
             TODO
             """
 
-            def __call__(self) -> Optional[str]:
+            def __call__(self) -> str | None:
                 return self.get_method_name()
 
             @staticmethod
-            def get_static_method_name() -> Optional[str]:
-                return calling_function_qualified_name()
+            def get_static_method_name() -> str | None:
+                return sob.utilities.get_calling_function_qualified_name()
 
-            def get_method_name(self) -> Optional[str]:
-                return calling_function_qualified_name()
+            def get_method_name(self) -> str | None:
+                return sob.utilities.get_calling_function_qualified_name()
 
             def get_module_name(self) -> str:
-                return calling_module_name()
+                return sob.utilities.get_calling_module_name()
 
         return MyClass()
 
-    assert_in(
-        "method_name",
-        my_function().get_method_name(),
-        (
-            # This will be the response if running pytest
-            "test_utilities.test_inspect.my_function.MyClass.get_method_name",
-            # This will be the response if running this module as a script
-            "test_inspect.my_function.MyClass.get_method_name",
-        ),
+    assert my_function().get_method_name() == (
+        "tests.test_utilities.test_inspect.my_function.MyClass."
+        "get_method_name"
     )
-    assert my_function()() in (
-        "test_utilities.test_inspect.my_function.MyClass.get_method_name",
-        "test_inspect.my_function.MyClass.get_method_name",
+    assert my_function()() == (
+        "tests.test_utilities.test_inspect.my_function.MyClass."
+        "get_method_name"
     )
     # Static methods are defined at the module level...
-    assert my_function().get_static_method_name() in (
-        "test_utilities.test_utilities.get_static_method_name",
-        "test_utilities.get_static_method_name",
+    assert my_function().get_static_method_name() == (
+        "tests.test_utilities.get_static_method_name"
     )
-    assert my_function().get_module_name() in ("test_utilities", "__main__")
-    # assert isinstance(inspect, ModuleType)
-    doctest.testmod(inspect)
+    assert my_function().get_module_name() == "tests.test_utilities"
+
+
+def test_get_calling_function_qualified_name() -> None:
+    assert sob.utilities.get_calling_function_qualified_name() == (
+        "tests.test_utilities.test_get_calling_function_qualified_name"
+    )
 
 
 def test_io() -> None:
-    doctest.testmod(io)
+    doctest.testmod(_io)
 
 
 def test_types() -> None:
-    doctest.testmod(types)
+    doctest.testmod(_types)
 
 
 if __name__ == "__main__":
-    test_strings()
-    test_io()
-    test_strings()
-    test_types()
-    test_inspect()
+    pytest.main([__file__, "-s", "-vv"])

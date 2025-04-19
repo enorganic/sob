@@ -1,0 +1,139 @@
+{
+    "animal/mammal": [
+        {
+            "name": "kitty",
+            "isFurry": true,
+            "isCute": true,
+            "isDelicious": "I don't know"
+        },
+        {
+            "name": "cow",
+            "isFurry": "kinda",
+            "isCute": true,
+            "isDelicious": true
+        },
+        {
+            "name": "pig",
+            "isFurry": false,
+            "isCute": true,
+            "isDelicious": true
+        },
+        {
+            "name": "sheep",
+            "isFurry": "more like woolly",
+            "isCute": true,
+            "isDelicious": true
+        },
+        {
+            "name": "puppy",
+            "isFurry": true,
+            "isCute": true,
+            "isDelicious": "I don't know"
+        }
+    ],
+    "animal/bivalve": [
+        {
+            "name": "oyster",
+            "isAmbulatory": false,
+            "isDelicious": false,
+            "spreadsNorovirus": true
+        },
+        {
+            "name": "clam",
+            "isAmbulatory": false,
+            "isDelicious": true,
+            "spreadsNorovirus": false
+        },
+        {
+            "name": "mussel",
+            "isAmbulatory": false,
+            "isDelicious": true,
+            "spreadsNorovirus": false
+        },
+        {
+            "name": "scallop",
+            "isAmbulatory": true,
+            "isDelicious": true,
+            "spreadsNorovirus": false
+        }
+    ],
+    "plant/vegetable": [
+        {
+            "name": "carrot",
+            "isCrunchy": true,
+            "isBitter": false,
+            "isSweet": true,
+            "isSpicy": false
+        },
+        {
+            "name": "broccoli",
+            "isCrunchy": true,
+            "isBitter": true,
+            "isSweet": false,
+            "isSpicy": false
+        },
+        {
+            "name": "potato",
+            "isCrunchy": false,
+            "isBitter": false,
+            "isSweet": false,
+            "isSpicy": false
+        },
+        {
+            "name": "cabbage",
+            "isCrunchy": true,
+            "isBitter": true,
+            "isSweet": false,
+            "isSpicy": false
+        },
+        {
+            "name": "lettuce",
+            "isCrunchy": true,
+            "isBitter": false,
+            "isSweet": false,
+            "isSpicy": false
+        }
+    ],
+    "mineral": [
+        {
+            "name": "gold",
+            "isShiny": true,
+            "isValuable": true,
+            "isRadioactive": false,
+            "isEdible": "in small quantities"
+        },
+        {
+            "name": "uranium",
+            "isShiny": false,
+            "isValuable": true,
+            "isRadioactive": true,
+            "isEdible": false
+        },
+        {
+            "name": "lead",
+            "isShiny": false,
+            "isValuable": false,
+            "isRadioactive": false,
+            "isEdible": false
+        },
+        {
+            "name": "silver",
+            "isShiny": true,
+            "isValuable": true,
+            "isRadioactive": false,
+            "isEdible": "in small quantities"
+        },
+        {
+            "name": "salt",
+            "isShiny": false,
+            "isValuable": false,
+            "isRadioactive": false,
+            "isEdible": true
+        }
+    ],
+    "lotteryNumbers/powerBall": [
+        [1, 2, 3, 4, 5, 6],
+        [7, 8, 9, 10, 11, 12],
+        [13, 14, 15, 16, 17, 18]
+    ]
+}
