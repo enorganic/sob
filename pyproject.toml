@@ -46,7 +46,8 @@ python = "3.9"
 dependencies = [
     "pytest",
     "mypy",
-    "dependence~=1.0"
+    "dependence~=1.0",
+    "gittable~=0.0",
 ]
 pre-install-commands = [
     "pip install --upgrade pip setuptools",
