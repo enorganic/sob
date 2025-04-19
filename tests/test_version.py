@@ -200,9 +200,7 @@ sob.meta.get_writable_object_meta(
                     # For versions greater than or equal to 1.2 and less than
                     # 2.0, the property value can be a string, float, or
                     # integer.
-                    sob.properties.Number(
-                        versions=["test-specification~=1.2"]
-                    ),
+                    sob.NumberProperty(versions=["test-specification~=1.2"]),
                 ]
             ),
         ),
@@ -224,7 +222,7 @@ sob.meta.get_writable_object_meta(
 sob.meta.get_writable_object_meta(
     MemberObjectA
 ).properties = sob.meta.Properties(
-    [("property_a", sob.properties.Integer(name="propertyA"))]
+    [("property_a", sob.IntegerProperty(name="propertyA"))]
 )
 
 # endregion
