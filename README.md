@@ -4,8 +4,8 @@
 [![PyPI version](https://badge.fury.io/py/sob.svg?icon=si%3Apython)](https://badge.fury.io/py/sob)
 
 `sob` is an object serialization/deserialization library intended to facilitate
-automated authoring of API models which are readable and introspective, and to
-expedite data validation and integration testing.
+automated authoring of models for JSON web APIs which are readable and
+introspective, and to expedite data validation and integration testing.
 
 - [Documentation](https://sob.enorganic.org)
 - [Contributing](https://sob.enorganic.org/contributing)
