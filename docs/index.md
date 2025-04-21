@@ -1,6 +1,6 @@
 # sob
 
-[![test](https://github.com/enorganic/sob/actions/workflows/test.yml/badge.svg)](https://github.com/enorganic/sob/actions/workflows/test.yml)
+[![test](https://github.com/enorganic/sob/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/enorganic/sob/actions/workflows/test.yml)
 [![PyPI version](https://badge.fury.io/py/sob.svg?icon=si%3Apython)](https://badge.fury.io/py/sob)
 
 `sob` is an object serialization/deserialization library intended to facilitate
