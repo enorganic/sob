@@ -74,8 +74,7 @@ test:
 # Refresh regression test data and run tests
 refresh-test-data:
 	{ hatch --version || pipx install --upgrade hatch || python3 -m pip install --upgrade hatch ; } && \
-	rm tests/data/tesstee_model.py\
-	 tests/data/testy.json && \
+	{ rm -R tests/regression-data || true ; } && \
 	make test
 
 format:

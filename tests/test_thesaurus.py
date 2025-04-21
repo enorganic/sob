@@ -7,9 +7,9 @@ import pytest
 
 from sob.thesaurus import Thesaurus
 
-THESAURUS_JSON: Path = Path(__file__).parent / "data" / "thesaurus.json"
+THESAURUS_JSON: Path = Path(__file__).parent / "static-data" / "thesaurus.json"
 THESAURUS_MODEL_PY: Path = (
-    Path(__file__).parent / "data" / "thesaurus_model.py"
+    Path(__file__).parent / "regression-data" / "thesaurus_model.py"
 )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import doctest
+import os
 from base64 import b64encode
 from copy import deepcopy
 from datetime import date, datetime
@@ -17,9 +18,11 @@ from tests import utilities as tests_utilities
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-TESTY_JSON: Path = Path(__file__).parent / "data" / "testy.json"
-RAINBOW_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
-TESTEE_MODEL_PY: Path = Path(__file__).parent / "data" / "tesstee_model.py"
+TESTY_JSON: Path = Path(__file__).parent / "static-data" / "testy.json"
+RAINBOW_PNG: Path = Path(__file__).parent / "static-data" / "rainbow.png"
+TESSTEE_MODEL_PY: Path = (
+    Path(__file__).parent / "regression-data" / "tesstee_model.py"
+)
 
 # region Test Model
 
@@ -641,7 +644,7 @@ def test_serialization_regression() -> None:
     """
     This test verifies that a model can be serialized producing identical
     output to previous test runs. Whenever changes are made to Whenever changes
-    are made to `testy`, delete the file ./tests/data/testy.json
+    are made to `testy`, delete the file ./tests/static-data/testy.json
     (The file be recreated the next time the test is run).
     """
     serialized_testy: str = sob.serialize(testy, indent=4).strip()
@@ -659,7 +662,7 @@ def test_deserialization_regression() -> None:
     """
     This test verifies that a model can be deserialized producing identical
     results to a model recreated from serialized data. Whenever changes are
-    made to `testy`, delete the file ./tests/data/testy.json
+    made to `testy`, delete the file ./tests/static-data/testy.json
     (The file be recreated the next time the test is run).
     """
     if not TESTY_JSON.exists():
@@ -724,9 +727,11 @@ def test_get_model_from_meta_regression() -> None:
     """
     This test verifies that a model's source code can be recreated
     consistently from identical metadata. Whenever changes are
-    made to `Tesstee`, delete the file ./tests/data/tesstee_model.py
+    made to `Tesstee`, delete the file ./tests/static-data/tesstee_model.py
     (The file be recreated the next time the test is run).
     """
+    if not TESSTEE_MODEL_PY.parent.exists():
+        os.makedirs(TESSTEE_MODEL_PY.parent, exist_ok=True)
     tesstee_source: str = sob.get_models_source(
         sob.get_model_from_meta(
             "ArrayA", cast(sob.ArrayMeta, sob.read_array_meta(ArrayA))
@@ -744,11 +749,11 @@ def test_get_model_from_meta_regression() -> None:
             "Tesstee", cast(sob.ObjectMeta, sob.read_object_meta(Tesstee))
         ),
     ).replace("tests.test_model.", "")
-    if TESTEE_MODEL_PY.exists():
-        with open(TESTEE_MODEL_PY) as testee_model_io:
+    if TESSTEE_MODEL_PY.exists():
+        with open(TESSTEE_MODEL_PY) as testee_model_io:
             assert tesstee_source == testee_model_io.read()
     else:
-        with open(TESTEE_MODEL_PY, mode="w") as testee_model_io:
+        with open(TESSTEE_MODEL_PY, mode="w") as testee_model_io:
             testee_model_io.write(tesstee_source)
 
 
