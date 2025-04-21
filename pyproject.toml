@@ -81,7 +81,7 @@ python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 [tool.ruff]
 line-length = 79
 extend-exclude = [
-    "tests/data/*",
+    "tests/regression-data/*",
 ]
 
 [tool.ruff.lint]
@@ -121,9 +121,6 @@ python_version = "3.9"
 files = [
     "src",
     "tests",
-]
-exclude = [
-    "tests/projects",
 ]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true

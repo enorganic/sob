@@ -7,7 +7,7 @@ import pytest
 
 from sob import _io
 
-RAINBOX_PNG: Path = Path(__file__).parent / "data" / "rainbow.png"
+RAINBOX_PNG: Path = Path(__file__).parent / "static-data" / "rainbow.png"
 
 
 def test_doctest() -> None:
