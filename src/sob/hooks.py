@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable
 
 from sob import abc
 from sob._utilities import deprecated
 from sob.utilities import (
     get_calling_function_qualified_name,
     get_qualified_name,
+    represent,
 )
 
 if TYPE_CHECKING:
@@ -619,6 +620,29 @@ dictionary_read = deprecated(
 )(read_dictionary_hooks)
 
 
+def _is_dictionary(_dictionary: Any) -> bool:
+    return isinstance(_dictionary, abc.Dictionary) or (
+        isinstance(_dictionary, type)
+        and issubclass(_dictionary, abc.Dictionary)
+    )
+
+
+def _is_array(_array: Any) -> bool:
+    return isinstance(_array, abc.Array) or (
+        isinstance(_array, type) and issubclass(_array, abc.Array)
+    )
+
+
+def _is_object(_object: Any) -> bool:
+    return isinstance(_object, abc.Object) or (
+        isinstance(_object, type) and issubclass(_object, abc.Object)
+    )
+
+
+def _is_model(_model: Any) -> bool:
+    return _is_object(_model) or _is_array(_model) or _is_dictionary(_model)
+
+
 def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     """
     Retrieve an instance of `sob.Hooks` which is associated directly with the
@@ -636,49 +660,46 @@ def get_writable_model_hooks(model: type[abc.Model] | abc.Model) -> abc.Hooks:
     have any hooks associated—a new instance of `sob.Hooks` will be
     created, attributed to `model`, and returned.
     """
-    instance_hooks: abc.Hooks | None = model._instance_hooks  # noqa: SLF001
-    writable_hooks: abc.Hooks | None = None
-    if isinstance(model, type):
-        if not issubclass(model, abc.Model):
-            raise TypeError(model)
-        if instance_hooks is None:
-            new_hooks: Hooks | None = (
+    if not _is_model(model):
+        raise TypeError(model)
+    if isinstance(model, abc.Model):
+        if model._instance_hooks is None:  # noqa: SLF001
+            model._instance_hooks = deepcopy(  # noqa: SLF001
+                read_model_hooks(type(model))
+            )
+        if model._instance_hooks is None:  # noqa: SLF001
+            model._instance_hooks = (  # noqa: SLF001
+                ObjectHooks()
+                if isinstance(model, abc.Object)
+                else ArrayHooks()
+                if isinstance(model, abc.Array)
+                else DictionaryHooks()
+            )
+        return model._instance_hooks  # noqa: SLF001
+    if isinstance(model, type) and issubclass(model, abc.Model):
+        if model._class_hooks is None:  # noqa: SLF001
+            model._class_hooks = deepcopy(  # noqa: SLF001
+                read_model_hooks(model)
+            )
+        if model._class_hooks is None:  # noqa: SLF001
+            model._class_hooks = (  # noqa: SLF001
                 ObjectHooks()
                 if issubclass(model, abc.Object)
-                else (
-                    ArrayHooks()
-                    if issubclass(model, abc.Array)
-                    else (
-                        DictionaryHooks()
-                        if issubclass(model, abc.Dictionary)
-                        else Hooks()
-                    )
-                )
+                else ArrayHooks()
+                if issubclass(model, abc.Array)
+                else DictionaryHooks()
             )
-            writable_hooks = new_hooks
-        else:
-            base: type[abc.Model] | None
-            for base in filter(
-                lambda base: isinstance(base, type)
-                and issubclass(base, abc.Model),
-                model.__bases__,
-            ):
-                base_hooks: abc.Hooks | None
-                try:
-                    base_hooks = base._class_hooks  # noqa: SLF001
-                except AttributeError:
-                    base_hooks = None
-                if instance_hooks and (instance_hooks is base_hooks):
-                    writable_hooks = deepcopy(instance_hooks)
-                    break
-    elif isinstance(model, abc.Model):
-        if instance_hooks is None:
-            writable_hooks = deepcopy(get_writable_model_hooks(type(model)))
-    if writable_hooks:
-        model._instance_hooks = writable_hooks  # noqa: SLF001
-    else:
-        writable_hooks = instance_hooks
-    return cast(abc.Hooks, writable_hooks)
+        return model._class_hooks  # noqa: SLF001
+    repr_model: str = represent(model)
+    message: str = (
+        "{} requires a parameter which is an instance or sub-class of "
+        "`{}`, not{}".format(
+            get_calling_function_qualified_name(),
+            get_qualified_name(abc.Model),
+            (":\n" + repr_model if "\n" in repr_model else f" `{repr_model}`"),
+        )
+    )
+    raise TypeError(message)
 
 
 writable = deprecated(
