@@ -5,16 +5,16 @@ edit_uri: blob/main/docs/
 nav:
 - Introduction: 'index.md'
 - API Reference:
-    - abc: 'api/abc.md'
-    - errors: 'api/errors.md'
-    - hooks: 'api/hooks.md'
-    - meta: 'api/meta.md'
-    - model: 'api/model.md'
-    - properties: 'api/properties.md'
-    - thesaurus: 'api/thesaurus.md'
-    - types: 'api/types.md'
-    - utilities: 'api/utilities.md'
-    - version: 'api/version.md'
+    - sob.model: 'api/model.md'
+    - sob.meta: 'api/meta.md'
+    - sob.properties: 'api/properties.md'
+    - sob.types: 'api/types.md'
+    - sob.abc: 'api/abc.md'
+    - sob.errors: 'api/errors.md'
+    - sob.hooks: 'api/hooks.md'
+    - sob.thesaurus: 'api/thesaurus.md'
+    - sob.utilities: 'api/utilities.md'
+    - sob.version: 'api/version.md'
 - Contributing: 'contributing.md'
 theme:
   name: material
