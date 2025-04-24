@@ -1528,7 +1528,12 @@ class Object(Model, abc.Object, abc.Model):
             | abc.Model
             | None
         ) = self._init_format(_data)
-        if not isinstance(deserialized_data, (abc.Object, dict, NoneType)):
+        if not (
+            isinstance(
+                deserialized_data, (abc.Object, abc.Dictionary, dict, Mapping)
+            )
+            or (deserialized_data is None)
+        ):
             raise TypeError(deserialized_data)
         self._data_init(deserialized_data)
         self._init_pointer()
@@ -3020,8 +3025,10 @@ def _type_hint_from_property_types(
     if property_types is not None:
         if len(property_types) > 1:
             property_type_hints: tuple[str, ...] = tuple(
-                _type_hint_from_property(item_type, module)
-                for item_type in property_types
+                dict.fromkeys(
+                    _type_hint_from_property(item_type, module)
+                    for item_type in property_types
+                ).keys()
             )
             property_type_hint: str
             type_hint = "\n".join(
