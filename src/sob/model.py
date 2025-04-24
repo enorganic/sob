@@ -35,7 +35,6 @@ from typing import (
     SupportsBytes,
     cast,
 )
-from urllib.parse import urljoin
 
 from typing_extensions import Self
 
@@ -43,7 +42,7 @@ from sob import abc, errors, hooks, meta, utilities
 from sob._datetime import date2str, datetime2str
 from sob._io import read
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
-from sob._utilities import deprecated
+from sob._utilities import deprecated, get_readable_url
 from sob.errors import (
     DeserializeError,
     append_exception_text,
@@ -99,11 +98,7 @@ class Model(abc.Model):
         | None,
     ) -> None:
         if isinstance(data, abc.Readable):
-            url: str | None = None
-            if hasattr(data, "url"):
-                url = data.url
-            elif hasattr(data, "name"):
-                url = urljoin("file:", data.name)
+            url: str | None = get_readable_url(data)
             if url is not None:
                 meta.set_model_url(self, url)
 
