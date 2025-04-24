@@ -4,6 +4,7 @@ import functools
 
 # from copy import copy
 from typing import Any, Callable
+from urllib.parse import urljoin
 from warnings import warn
 
 
@@ -32,3 +33,26 @@ def deprecated(
         return wrapper
 
     return decorating_function
+
+
+def get_readable_url(readable: Any) -> str | None:
+    """
+    Get the URL from an HTTP response or file-like object.
+    """
+    if hasattr(readable, "geturl") and callable(readable.geturl):
+        return readable.geturl()
+    if hasattr(readable, "url"):
+        if isinstance(readable.url, str):
+            return readable.url
+        raise TypeError(readable.url)
+    if hasattr(readable, "name"):
+        if not isinstance(readable.name, str):
+            raise TypeError(readable.name)
+        name: str = readable.name
+        if not name.startswith("/"):
+            name = f"/{name}"
+        return urljoin(
+            "file:",
+            name.replace("\\", "/"),
+        )
+    return None
