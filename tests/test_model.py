@@ -18,11 +18,11 @@ from tests import utilities as tests_utilities
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-TESTY_JSON: Path = Path(__file__).parent / "static-data" / "testy.json"
-RAINBOW_PNG: Path = Path(__file__).parent / "static-data" / "rainbow.png"
-TESSTEE_MODEL_PY: Path = (
-    Path(__file__).parent / "regression-data" / "tesstee_model.py"
-)
+REGRESSION_DATA: Path = Path(__file__).parent / "regression-data"
+STATIC_DATA: Path = Path(__file__).parent / "static-data"
+TESTY_JSON: Path = REGRESSION_DATA / "testy.json"
+RAINBOW_PNG: Path = STATIC_DATA / "rainbow.png"
+TESSTEE_MODEL_PY: Path = REGRESSION_DATA / "tesstee_model.py"
 
 # region Test Model
 

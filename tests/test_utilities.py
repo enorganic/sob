@@ -7,6 +7,7 @@ import pytest
 
 import sob
 from sob import _io, _types, utilities
+from sob._utilities import get_readable_url
 
 
 def test_doctest() -> None:
@@ -110,6 +111,30 @@ def test_io() -> None:
 
 def test_types() -> None:
     doctest.testmod(_types)
+
+
+class HTTPResponseProxy1:
+    def geturl(self) -> str:
+        return "https://example.com"
+
+
+class HTTPResponseProxy2:
+    url = "https://example.com"
+
+
+class WindowsFileProxy:
+    name = r"C:\a\b\c"
+
+
+class UnixFileProxy:
+    name = "/a/b/c"
+
+
+def test_get_readable_url() -> None:
+    assert get_readable_url(HTTPResponseProxy1()) == "https://example.com"
+    assert get_readable_url(HTTPResponseProxy2()) == "https://example.com"
+    assert get_readable_url(WindowsFileProxy()) == "file:///C:/a/b/c"
+    assert get_readable_url(UnixFileProxy()) == "file:///a/b/c"
 
 
 if __name__ == "__main__":
