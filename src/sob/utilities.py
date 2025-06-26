@@ -506,6 +506,42 @@ def split_long_docstring_lines(
     return re.sub(r"[ ]+(\n|$)", r"\1", docstring)
 
 
+def _iter_suffix_long_lines(
+    text: str,
+    max_line_length: int = MAX_LINE_LENGTH,
+    suffix: str = "  # noqa: E501",
+) -> Iterable[str]:
+    if max_line_length <= 0:
+        max_line_length += MAX_LINE_LENGTH
+    quote_has_long_line: bool = False
+    open_quote: str | None = None
+    for line in text.split("\n"):
+        # Find triple quotes and determine if they open/close a multiline
+        # string literal
+        matched: Match
+        for matched in re.finditer("\"\"\"|'''", line):
+            found_quote: str = matched.group()
+            if open_quote is None:
+                # Store the open quote string
+                open_quote = found_quote
+                quote_has_long_line = False
+            elif open_quote == found_quote:
+                # Close the quote and add a suffix if needed
+                open_quote = None
+                if quote_has_long_line and not line.endswith(suffix):
+                    line = f"{line}{suffix}"  # noqa: PLW2901
+                quote_has_long_line = False
+        if len(line) > max_line_length:
+            # Only directly suffix if the line is not within a multiline
+            # string literal, and if the suffix has not already been applied
+            if open_quote is None:
+                if not line.endswith(suffix):
+                    line = f"{line}{suffix}"  # noqa: PLW2901
+            else:
+                quote_has_long_line = True
+        yield line
+
+
 def suffix_long_lines(
     text: str,
     max_line_length: int = MAX_LINE_LENGTH,
@@ -536,19 +572,15 @@ def suffix_long_lines(
         ...     )
         ... )
         A short line...
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.  # noqa: E501
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.
         ...another short line
 
     """  # noqa: E501
-    if max_line_length <= 0:
-        max_line_length += MAX_LINE_LENGTH
-
-    def suffix_line_if_long(line: str) -> str:
-        if len(line) > max_line_length and not line.endswith(suffix):
-            line = f"{line}{suffix}"
-        return line
-
-    return "\n".join(map(suffix_line_if_long, text.split("\n")))
+    return "\n".join(
+        _iter_suffix_long_lines(
+            text, max_line_length=max_line_length, suffix=suffix
+        )
+    )
 
 
 def _is_public(name: str) -> bool:
