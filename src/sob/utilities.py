@@ -24,10 +24,11 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 _DIGITS: str = "0123456789"
+_DIGITS_TUPLE: tuple[str, ...] = tuple(_DIGITS)
 _LOWERCASE_ALPHABET: str = "abcdefghijklmnopqrstuvwxyz"
 _UPPERCASE_ALPHABET: str = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 _ALPHANUMERIC_CHARACTERS = (
-    f"{_DIGITS}" f"{_UPPERCASE_ALPHABET}" f"{_LOWERCASE_ALPHABET}"
+    f"{_DIGITS}{_UPPERCASE_ALPHABET}{_LOWERCASE_ALPHABET}"
 )
 _URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r"^(.*/)([^/]*)")
 MAX_LINE_LENGTH: int = 79
@@ -151,7 +152,9 @@ def get_class_name(string: str) -> str:
     """
     name = camel(string, capitalize=True)
     while iskeyword(name) or (name in builtins.__dict__):
-        name += "_"
+        name = f"{name}_"
+    if name.startswith(_DIGITS_TUPLE):
+        name = f"_{name}"
     return name
 
 
