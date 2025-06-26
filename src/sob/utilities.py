@@ -172,7 +172,6 @@ class_name = deprecated(
 def camel(string: str, *, capitalize: bool = False) -> str:
     """
     This function returns a camelCased representation of the input string.
-    When/if an input string corresponds to a python keyword,
 
     Parameters:
         string: The string to be camelCased.
