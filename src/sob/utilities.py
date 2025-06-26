@@ -34,7 +34,7 @@ _URL_DIRECTORY_AND_FILE_NAME_RE: Pattern = re.compile(r"^(.*/)([^/]*)")
 MAX_LINE_LENGTH: int = 79
 
 
-def get_property_name(string: str) -> str:
+def get_property_name(name: str) -> str:
     """
     Converts a "camelCased" attribute/property name, a name which conflicts
     with a python keyword, or an otherwise non-compatible string to a PEP-8
@@ -74,8 +74,13 @@ def get_property_name(string: str) -> str:
 
         >>> print(get_property_name("one2one-ALL"))
         one2one_all
+
+        >>> print(get_property_name("type"))
+        type_
+
+        >>> print(get_property_name("@type"))
+        type_
     """
-    name: str = string
     # Replace accented and otherwise modified latin characters with their
     # basic latin equivalent
     name = normalize("NFKD", name)
@@ -98,16 +103,16 @@ def get_property_name(string: str) -> str:
     # with a single underscore
     name = re.sub(r"[^\w_]+", "_", name).lower()
     # Replace any two or more adjacent underscores with a single underscore
-    name = re.sub(r"__+", "_", name)
+    name = re.sub(r"__+", "_", name).lstrip("_")
     # Append an underscore to the keyword until it does not conflict with any
     # python keywords, built-ins, or potential module imports
     while (
         iskeyword(name)
         or (name in builtins.__dict__)
-        or name in {"self", "decimal", "datetime", "typing"}
+        or (name in {"self", "decimal", "datetime", "typing", "type"})
     ):
-        name += "_"
-    return name.lstrip("_")
+        name = f"{name}_"
+    return name
 
 
 property_name = deprecated(
@@ -116,7 +121,7 @@ property_name = deprecated(
 )(get_property_name)
 
 
-def get_class_name(string: str) -> str:
+def get_class_name(name: str) -> str:
     """
     This function accepts a string and returns a variation of that string
     which is a PEP-8 compatible python class name.
@@ -150,7 +155,7 @@ def get_class_name(string: str) -> str:
         >>> print(get_class_name("AB CD Efg"))
         ABCdEfg
     """
-    name = camel(string, capitalize=True)
+    name = camel(name, capitalize=True)
     while iskeyword(name) or (name in builtins.__dict__):
         name = f"{name}_"
     if name.startswith(_DIGITS_TUPLE):
