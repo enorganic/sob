@@ -104,7 +104,7 @@ def get_property_name(string: str) -> str:
     while (
         iskeyword(name)
         or (name in builtins.__dict__)
-        or name in {"self", "decimal", "datetime", "typing"}
+        or name in {"self", "decimal", "datetime", "typing", "type"}
     ):
         name += "_"
     return name.lstrip("_")
