@@ -74,6 +74,9 @@ def get_property_name(string: str) -> str:
 
         >>> print(get_property_name("one2one-ALL"))
         one2one_all
+
+        >>> print(get_property_name("type"))
+        type_
     """
     name: str = string
     # Replace accented and otherwise modified latin characters with their
@@ -106,7 +109,7 @@ def get_property_name(string: str) -> str:
         or (name in builtins.__dict__)
         or name in {"self", "decimal", "datetime", "typing", "type"}
     ):
-        name += "_"
+        name = f"{name}_"
     return name.lstrip("_")
 
 
