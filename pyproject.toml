@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sob"
-version = "2.0.10"
+version = "2.1.0"
 description = "A type-enforced framework for serializing and deserializing JSON"
 readme = "README.md"
 license = "MIT"
@@ -18,8 +18,8 @@ keywords = [
     "serial",
 ]
 dependencies = [
-	"iso8601~=2.1",
-    "typing-extensions"
+    "iso8601~=2.1",
+    "typing-extensions",
 ]
 
 [project.urls]
@@ -30,23 +30,24 @@ Repository = "https://github.com/enorganic/sob"
 packages = [
     "src/sob",
 ]
-sources = ["src"]
+sources = [
+    "src",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = [
     "src/sob",
 ]
-sources = ["src"]
-
-# [tool.hatch.build.targets.wheel.hooks.mypyc]
-# dependencies = ["hatch-mypyc"]
+sources = [
+    "src",
+]
 
 [tool.hatch.envs.default]
 python = "3.9"
 dependencies = [
     "pytest",
     "mypy",
-    "dependence~=1.0",
+    "dependence~=1.1",
     "gittable~=0.0",
 ]
 pre-install-commands = [
@@ -57,7 +58,9 @@ post-install-commands = [
 ]
 
 [tool.hatch.envs.hatch-static-analysis]
-extra-dependencies = ["dependence~=1.0"]
+extra-dependencies = [
+    "dependence~=1.0",
+]
 
 [tool.hatch.envs.docs]
 template = "docs"
@@ -66,17 +69,27 @@ dependencies = [
     "mkdocs-material",
     "mkdocstrings[python]",
     "black",
-    "dependence~=1.0",
+    "dependence~=1.1",
 ]
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
-    "dependence~=1.0",
+    "dependence~=1.1",
 ]
-extra-args = ["-s", "-vv", "--doctest-modules"]
+extra-args = [
+    "-s",
+    "-vv",
+    "--doctest-modules",
+]
 
 [[tool.hatch.envs.hatch-test.matrix]]
-python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+python = [
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+]
 
 [tool.ruff]
 line-length = 79
@@ -86,7 +99,8 @@ extend-exclude = [
 
 [tool.ruff.lint]
 ignore = [
-    "F842", "INP001"
+    "F842",
+    "INP001",
 ]
 extend-select = [
     "E",
@@ -129,5 +143,6 @@ disallow_incomplete_defs = true
 fail_under = 70
 
 [tool.coverage.run]
-source = ["src"]
-
+source = [
+    "src",
+]

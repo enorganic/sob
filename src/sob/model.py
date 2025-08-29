@@ -91,11 +91,13 @@ class Model(abc.Model):
 
     def _init_url(
         self,
-        data: Iterable[abc.MarshallableTypes]
-        | Mapping[str, abc.MarshallableTypes]
-        | abc.Model
-        | abc.Readable
-        | None,
+        data: (
+            Iterable[abc.MarshallableTypes]
+            | Mapping[str, abc.MarshallableTypes]
+            | abc.Model
+            | abc.Readable
+            | None
+        ),
     ) -> None:
         if isinstance(data, abc.Readable):
             url: str | None = get_readable_url(data)
@@ -104,13 +106,15 @@ class Model(abc.Model):
 
     def _init_format(
         self,
-        data: str
-        | bytes
-        | abc.Readable
-        | Mapping[str, abc.MarshallableTypes]
-        | Iterable[abc.MarshallableTypes]
-        | abc.Model
-        | None = None,
+        data: (
+            str
+            | bytes
+            | abc.Readable
+            | Mapping[str, abc.MarshallableTypes]
+            | Iterable[abc.MarshallableTypes]
+            | abc.Model
+            | None
+        ) = None,
     ) -> (
         Iterable[abc.MarshallableTypes]
         | Mapping[str, abc.MarshallableTypes]
@@ -353,17 +357,21 @@ class Array(Model, abc.Array, abc.Model):
 
     def __init__(
         self,
-        items: abc.Array
-        | Iterable[abc.MarshallableTypes]
-        | str
-        | bytes
-        | abc.Readable
-        | None = None,
-        item_types: Iterable[type | abc.Property]
-        | abc.Types
-        | type
-        | abc.Property
-        | None = None,
+        items: (
+            abc.Array
+            | Iterable[abc.MarshallableTypes]
+            | str
+            | bytes
+            | abc.Readable
+            | None
+        ) = None,
+        item_types: (
+            Iterable[type | abc.Property]
+            | abc.Types
+            | type
+            | abc.Property
+            | None
+        ) = None,
     ) -> None:
         """
         Parameters:
@@ -387,11 +395,13 @@ class Array(Model, abc.Array, abc.Model):
     def _init_item_types(
         self,
         items: Iterable[abc.MarshallableTypes] | abc.Model | None,
-        item_types: Iterable[type | abc.Property]
-        | abc.Types
-        | type
-        | abc.Property
-        | None,
+        item_types: (
+            Iterable[type | abc.Property]
+            | abc.Types
+            | type
+            | abc.Property
+            | None
+        ),
     ) -> None:
         if item_types is None:
             # If no item types are explicitly attributed, but the initial items
@@ -860,18 +870,22 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def __init__(
         self,
-        items: abc.Dictionary
-        | Mapping[str, abc.MarshallableTypes]
-        | Iterable[tuple[str, abc.MarshallableTypes]]
-        | abc.Readable
-        | str
-        | bytes
-        | None = None,
-        value_types: Iterable[type | abc.Property]
-        | type
-        | abc.Property
-        | abc.Types
-        | None = None,
+        items: (
+            abc.Dictionary
+            | Mapping[str, abc.MarshallableTypes]
+            | Iterable[tuple[str, abc.MarshallableTypes]]
+            | abc.Readable
+            | str
+            | bytes
+            | None
+        ) = None,
+        value_types: (
+            Iterable[type | abc.Property]
+            | type
+            | abc.Property
+            | abc.Types
+            | None
+        ) = None,
     ) -> None:
         Model.__init__(self)
         self._instance_hooks: abc.DictionaryHooks | None = None
@@ -890,13 +904,15 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def _init_format(
         self,
-        data: str
-        | bytes
-        | abc.Readable
-        | Mapping[str, abc.MarshallableTypes]
-        | Iterable[abc.MarshallableTypes]
-        | abc.Model
-        | None = None,
+        data: (
+            str
+            | bytes
+            | abc.Readable
+            | Mapping[str, abc.MarshallableTypes]
+            | Iterable[abc.MarshallableTypes]
+            | abc.Model
+            | None
+        ) = None,
     ) -> (
         Iterable[abc.MarshallableTypes]
         | Mapping[str, abc.MarshallableTypes]
@@ -912,9 +928,7 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         if not isinstance(
             deserialized_items, (abc.Dictionary, Mapping, NoneType)
         ) and isinstance(deserialized_items, Iterable):
-            deserialized_items = dict(
-                deserialized_items  # type: ignore
-            )
+            deserialized_items = dict(deserialized_items)  # type: ignore
         if (deserialized_items is not None) and not isinstance(
             deserialized_items,
             (abc.Dictionary, Mapping, NoneType),
@@ -924,10 +938,12 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     def _init_items(
         self,
-        data: Mapping[str, abc.MarshallableTypes]
-        | Iterable[tuple[str, abc.MarshallableTypes]]
-        | abc.Dictionary
-        | None,
+        data: (
+            Mapping[str, abc.MarshallableTypes]
+            | Iterable[tuple[str, abc.MarshallableTypes]]
+            | abc.Dictionary
+            | None
+        ),
     ) -> None:
         if data is not None:
             items: Iterable[tuple[str, abc.MarshallableTypes]]
@@ -947,11 +963,13 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
     def _init_value_types(
         self,
         items: Mapping[str, abc.MarshallableTypes] | abc.Dictionary | None,
-        value_types: Iterable[type | abc.Property]
-        | type
-        | abc.Property
-        | abc.Types
-        | None,
+        value_types: (
+            Iterable[type | abc.Property]
+            | type
+            | abc.Property
+            | abc.Types
+            | None
+        ),
     ) -> None:
         if value_types is None:
             # If no value types are explicitly attributed, but the initial
@@ -1496,14 +1514,16 @@ class Object(Model, abc.Object, abc.Model):
 
     def __init__(
         self,
-        _data: abc.Object
-        | abc.Dictionary
-        | Mapping[str, abc.MarshallableTypes]
-        | Iterable[tuple[str, abc.MarshallableTypes]]
-        | abc.Readable
-        | str
-        | bytes
-        | None = None,
+        _data: (
+            abc.Object
+            | abc.Dictionary
+            | Mapping[str, abc.MarshallableTypes]
+            | Iterable[tuple[str, abc.MarshallableTypes]]
+            | abc.Readable
+            | str
+            | bytes
+            | None
+        ) = None,
     ) -> None:
         """
         Parameters:
@@ -1535,10 +1555,12 @@ class Object(Model, abc.Object, abc.Model):
 
     def _data_init(
         self,
-        data: Mapping[str, abc.MarshallableTypes]
-        | abc.Object
-        | abc.Dictionary
-        | None,
+        data: (
+            Mapping[str, abc.MarshallableTypes]
+            | abc.Object
+            | abc.Dictionary
+            | None
+        ),
     ) -> None:
         if data is not None:
             if isinstance(data, abc.Object):
@@ -1972,9 +1994,11 @@ class Object(Model, abc.Object, abc.Model):
 
 
 def _marshal_collection(
-    data: Mapping[str, abc.MarshallableTypes]
-    | Collection[abc.MarshallableTypes]
-    | abc.Dictionary,
+    data: (
+        Mapping[str, abc.MarshallableTypes]
+        | Collection[abc.MarshallableTypes]
+        | abc.Dictionary
+    ),
     value_types: Iterable[type | abc.Property] | None = None,
     item_types: Iterable[type | abc.Property] | abc.Types | None = None,
 ) -> Mapping[str, abc.MarshallableTypes] | list[abc.MarshallableTypes]:
@@ -2124,18 +2148,15 @@ class _Unmarshal:
     def __init__(
         self,
         data: abc.MarshallableTypes,
-        types: Iterable[type | abc.Property]
-        | abc.Types
-        | type
-        | abc.Property = (),
-        value_types: Iterable[type | abc.Property]
-        | abc.Types
-        | type
-        | abc.Property = (),
-        item_types: Iterable[type | abc.Property]
-        | abc.Types
-        | type
-        | abc.Property = (),
+        types: (
+            Iterable[type | abc.Property] | abc.Types | type | abc.Property
+        ) = (),
+        value_types: (
+            Iterable[type | abc.Property] | abc.Types | type | abc.Property
+        ) = (),
+        item_types: (
+            Iterable[type | abc.Property] | abc.Types | type | abc.Property
+        ) = (),
     ) -> None:
         # If only one type was passed for any of the following parameters--we
         # convert it to a tuple
@@ -2426,18 +2447,15 @@ class _Unmarshal:
 
 def unmarshal(
     data: abc.MarshallableTypes,
-    types: Iterable[type | abc.Property]
-    | type
-    | abc.Property
-    | abc.Types = (),
-    value_types: Iterable[type | abc.Property]
-    | type
-    | abc.Property
-    | abc.Types = (),
-    item_types: Iterable[type | abc.Property]
-    | type
-    | abc.Property
-    | abc.Types = (),
+    types: (
+        Iterable[type | abc.Property] | type | abc.Property | abc.Types
+    ) = (),
+    value_types: (
+        Iterable[type | abc.Property] | type | abc.Property | abc.Types
+    ) = (),
+    item_types: (
+        Iterable[type | abc.Property] | type | abc.Property | abc.Types
+    ) = (),
 ) -> Any:
     """
     Converts deserialized data into one of the provided types.
@@ -2516,6 +2534,7 @@ def serialize(
 
 def deserialize(
     data: str | bytes | abc.Readable | None,
+    coerce_unparseable: type[str | bytes] | None = None,
 ) -> Any:
     """
     This function deserializes JSON encoded data from a string, bytes,
@@ -2524,6 +2543,10 @@ def deserialize(
     Parameters:
         data: This can be a string or file-like object
             containing JSON serialized data.
+        coerce_unparseable: If `str` or `bytes` are provided, and
+            the data provided cannot be parsed as JSON, it will be returned
+            as the specified type. If `None` (the default), an error
+            will be raised if the data cannot be parsed as JSON.
 
     This function returns `None` (for JSON null values), or an instance of
     `str`, `dict`, `list`, `int`, `float` or `bool`.
@@ -2536,16 +2559,31 @@ def deserialize(
                 strict=False,
             )
         except ValueError as error:
+            if coerce_unparseable:
+                return data
             raise DeserializeError(
                 data=data,
                 message=get_exception_text(),
             ) from error
     elif isinstance(data, bytes):
-        deserialized_data = deserialize(str(data, encoding="utf-8"))
+        str_data: str = str(data, encoding="utf-8")
+        try:
+            deserialized_data = deserialize(str_data)
+        except DeserializeError as error:
+            if coerce_unparseable:
+                if issubclass(coerce_unparseable, bytes):
+                    return data
+                return str_data
+            raise DeserializeError(
+                data=data,
+                message=get_exception_text(),
+            ) from error
     else:
         if not isinstance(data, abc.Readable):
             raise TypeError(data)
-        deserialized_data = deserialize(read(data))
+        deserialized_data = deserialize(
+            read(data), coerce_unparseable=coerce_unparseable
+        )
     return deserialized_data
 
 

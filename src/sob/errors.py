@@ -48,20 +48,20 @@ class DeserializeError(ValueError):
         message: Additional information about the error.
     """
 
-    def __init__(self, data: str, message: str = "") -> None:
+    def __init__(self, data: str | bytes, message: str = "") -> None:
         """
         Parameters:
             data: The data that could not be parsed.
             message: An optional message to include with the error.
         """
-        self.data: str = data
+        self.data: str | bytes = data
         self.message: str = message
         super().__init__(*((data,) + ((message,) if message else ())))
 
     def __repr__(self) -> str:
         return "\n".join(
             ((self.message,) if self.message else ())
-            + (f"Could not parse:\n{self.data}",)
+            + (f"Could not parse:\n{self.data}",)  # type: ignore
         )
 
     def __str__(self) -> str:
