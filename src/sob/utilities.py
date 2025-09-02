@@ -462,7 +462,9 @@ def _split_long_comment_line(
 
 
 def split_long_docstring_lines(
-    docstring: str, max_line_length: int = MAX_LINE_LENGTH
+    docstring: str,
+    max_line_length: int = MAX_LINE_LENGTH,
+    indent: int = 4,
 ) -> str:
     """
     Split long docstring lines.
@@ -492,7 +494,7 @@ def split_long_docstring_lines(
         else:
             indentation_length = 0
             break
-    indent_ = " " * (indentation_length or 4)
+    indent_ = " " * (indentation_length or indent)
     if indentation_length < sys.maxsize:
         docstring = "\n".join(
             _split_long_comment_line(
@@ -696,9 +698,8 @@ def _iter_frame_info_names(frame_info: FrameInfo) -> Iterable[str]:
         ):
             yield get_qualified_name(argument_value_type)
             name_count += 1
-    if (
-        name_count < 2  # noqa: PLR2004
-        and ("__name__" in frame_info.frame.f_globals)
+    if name_count < 2 and (  # noqa: PLR2004
+        "__name__" in frame_info.frame.f_globals
     ):
         yield frame_info.frame.f_globals["__name__"]
 
@@ -723,9 +724,9 @@ def get_calling_module_name(depth: int = 1) -> str:
     """
     name: str
     try:
-        name = sys._getframe(  # noqa: SLF001
-            depth
-        ).f_globals.get("__name__", "__main__")
+        name = sys._getframe(depth).f_globals.get(  # noqa: SLF001
+            "__name__", "__main__"
+        )
     except (AttributeError, ValueError):
         name = "__main__"
     return name
