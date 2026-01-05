@@ -3,9 +3,12 @@ from __future__ import annotations
 import functools
 
 # from copy import copy
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urljoin
 from warnings import warn
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def deprecated(

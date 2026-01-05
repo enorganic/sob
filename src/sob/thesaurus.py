@@ -14,6 +14,7 @@ import os
 import re
 from base64 import b64decode
 from collections.abc import (
+    Callable,
     Hashable,
     ItemsView,
     Iterable,
@@ -30,7 +31,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import (
     Any,
-    Callable,
     cast,
 )
 from urllib.parse import quote_plus
@@ -494,7 +494,7 @@ class Synonyms:
 
     __module__: str = "sob"
 
-    __slots__ = ("_type", "_nullable", "_set")
+    __slots__ = ("_nullable", "_set", "_type")
 
     def __init__(
         self, items: Iterable[abc.Readable | abc.MarshallableTypes] = ()
@@ -504,6 +504,9 @@ class Synonyms:
         self._set: set[abc.MarshallableTypes] = set()
         if items:
             self.__ior__(items)
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self._set))
 
     def add(  # noqa: C901
         self, item: abc.Readable | abc.MarshallableTypes
@@ -761,7 +764,7 @@ class Synonyms:
             visited_property_names.add(property_name_)
             item_type: type | None = None
             property_synonyms: Synonyms = type(self)(values)
-            for item_type in property_synonyms._iter_types(  # noqa: SLF001
+            for item_type in property_synonyms._iter_types(
                 pointer=f"{pointer}/{escape_reference_token(property_name_)}",
                 module=module,
                 memo=memo,
@@ -771,16 +774,16 @@ class Synonyms:
                     yield item_type
                 if property_name_ in metadata.properties:
                     if item_type not in cast(
-                        abc.MutableTypes,
+                        "abc.MutableTypes",
                         cast(
-                            Property,
+                            "Property",
                             metadata.properties[property_name_],
                         ).types,
                     ):
                         cast(
-                            abc.MutableTypes,
+                            "abc.MutableTypes",
                             cast(
-                                Property,
+                                "Property",
                                 metadata.properties[property_name_],
                             ).types,
                         ).append(item_type)
@@ -789,11 +792,7 @@ class Synonyms:
                         name=key,
                         types=MutableTypes(
                             (item_type,)
-                            + (
-                                (Null,)
-                                if property_synonyms._nullable  # noqa: SLF001
-                                else ()
-                            )
+                            + ((Null,) if property_synonyms._nullable else ())
                         ),
                     )
             if property_name_ not in metadata.properties:
@@ -1062,6 +1061,9 @@ class Thesaurus:
             *((_items,) if _items else ()), **kwargs
         ).items():
             self[key] = value
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self._dict.items()))
 
     def __setitem__(
         self,

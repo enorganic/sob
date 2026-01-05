@@ -6,14 +6,13 @@ from __future__ import annotations
 
 import collections
 import collections.abc
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from copy import deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
 )
 
 from sob import abc

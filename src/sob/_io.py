@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from io import UnsupportedOperation
-from typing import IO, TYPE_CHECKING, Callable
+from typing import IO, TYPE_CHECKING
 
 # isort: off
 from sob.utilities import get_method
@@ -9,6 +9,7 @@ import contextlib
 
 if TYPE_CHECKING:
     from sob.abc import Readable
+    from collections.abc import Callable
 
 # isort: on
 

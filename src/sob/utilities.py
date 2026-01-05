@@ -14,14 +14,14 @@ from inspect import (
 from keyword import iskeyword
 from re import Match, Pattern
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 from unicodedata import normalize
 
 from sob._types import UNDEFINED, Undefined
 from sob._utilities import deprecated
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Callable, Iterable
 
 _DIGITS: str = "0123456789"
 _DIGITS_TUPLE: tuple[str, ...] = tuple(_DIGITS)

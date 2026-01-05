@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 from inspect import Parameter, signature
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from sob._types import UNDEFINED
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def get_parameters_defaults(function: Callable[..., Any]) -> dict[str, Any]:

@@ -6,11 +6,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sob"
-version = "2.1.1"
+version = "2.1.2"
 description = "A type-enforced framework for serializing and deserializing JSON"
 readme = "README.md"
 license = "MIT"
-requires-python = "~=3.9"
+requires-python = "~=3.10"
 authors = [
     { email = "david@belais.me" },
 ]
@@ -43,7 +43,7 @@ sources = [
 ]
 
 [tool.hatch.envs.default]
-python = "3.9"
+python = "3.10"
 dependencies = [
     "pytest",
     "mypy",
@@ -84,7 +84,6 @@ extra-args = [
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = [
-    "3.9",
     "3.10",
     "3.11",
     "3.12",
@@ -131,7 +130,7 @@ target-version = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
 files = [
     "src",
     "tests",

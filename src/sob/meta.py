@@ -79,7 +79,7 @@ class Meta(abc.Meta):  # pragma: no cover
                 value = getattr(self, attribute_name)
                 if not callable(value):
                     setattr(new_instance, attribute_name, value)
-        return cast(abc.Meta, new_instance)
+        return cast("abc.Meta", new_instance)
 
     def __deepcopy__(self, memo: dict | None = None) -> abc.Meta:
         new_instance: Meta = self.__class__()
@@ -87,7 +87,7 @@ class Meta(abc.Meta):  # pragma: no cover
         value: Any
         for property_name, value in iter_properties_values(self):
             setattr(new_instance, property_name, deepcopy(value, memo=memo))
-        return cast(abc.Meta, new_instance)
+        return cast("abc.Meta", new_instance)
 
     def __bool__(self) -> bool:
         return True
@@ -326,7 +326,7 @@ class Properties(abc.Properties):
                 for key, value in self.items()
             )
         )
-        return cast(abc.Properties, new_instance)
+        return cast("abc.Properties", new_instance)
 
     @staticmethod
     def _repr_item(key: str, value: Any) -> str:
@@ -456,6 +456,9 @@ class Properties(abc.Properties):
 
     def __len__(self) -> int:
         return self._dict.__len__()
+
+    def __hash__(self) -> int:
+        return hash(frozenset(self._dict.items()))
 
 
 def read_model_meta(model: type | abc.Model) -> abc.Meta | None:
@@ -1195,7 +1198,9 @@ def _copy_object_to(
     source: abc.Object,
     target: abc.Object,
 ) -> None:
-    source_meta: abc.ObjectMeta = cast(abc.ObjectMeta, read_model_meta(source))
+    source_meta: abc.ObjectMeta = cast(
+        "abc.ObjectMeta", read_model_meta(source)
+    )
     if (source_meta is not None) and (source_meta.properties is not None):
         for property_name in source_meta.properties:
             source_property_value = getattr(source, property_name)
