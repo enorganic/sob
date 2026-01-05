@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from sob import abc
 from sob._utilities import deprecated
@@ -12,6 +12,8 @@ from sob.utilities import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from sob.abc import JSONTypes, MarshallableTypes
 
 

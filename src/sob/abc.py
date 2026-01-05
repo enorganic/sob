@@ -12,6 +12,7 @@ from __future__ import annotations
 import decimal
 from abc import ABCMeta, abstractmethod
 from collections.abc import (
+    Callable,
     Collection,
     ItemsView,
     Iterable,
@@ -26,8 +27,6 @@ from decimal import Decimal
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Union,
 )
 
 from typing_extensions import Self
@@ -39,38 +38,38 @@ if TYPE_CHECKING:
     from types import TracebackType
 
 __all__: tuple[str, ...] = (
-    "Types",
-    "MutableTypes",
-    "Hooks",
-    "ObjectHooks",
-    "ArrayHooks",
-    "DictionaryHooks",
-    "Readable",
-    "Meta",
-    "ObjectMeta",
-    "DictionaryMeta",
-    "ArrayMeta",
-    "Properties",
-    "Model",
-    "Dictionary",
-    "Object",
+    "JSON_TYPES",
+    "MARSHALLABLE_TYPES",
     "Array",
-    "Property",
-    "StringProperty",
+    "ArrayHooks",
+    "ArrayMeta",
+    "ArrayProperty",
+    "BooleanProperty",
+    "BytesProperty",
     "DateProperty",
     "DateTimeProperty",
-    "BytesProperty",
-    "EnumeratedProperty",
-    "NumberProperty",
-    "IntegerProperty",
-    "BooleanProperty",
-    "ArrayProperty",
+    "Dictionary",
+    "DictionaryHooks",
+    "DictionaryMeta",
     "DictionaryProperty",
-    "Version",
-    "MARSHALLABLE_TYPES",
-    "JSON_TYPES",
+    "EnumeratedProperty",
+    "Hooks",
+    "IntegerProperty",
     "JSONTypes",
     "MarshallableTypes",
+    "Meta",
+    "Model",
+    "MutableTypes",
+    "NumberProperty",
+    "Object",
+    "ObjectHooks",
+    "ObjectMeta",
+    "Properties",
+    "Property",
+    "Readable",
+    "StringProperty",
+    "Types",
+    "Version",
 )
 
 
@@ -501,6 +500,10 @@ class Properties(Meta, metaclass=ABCMeta):
         pass
 
     @abstractmethod
+    def __hash__(self) -> int:
+        pass
+
+    @abstractmethod
     def keys(self) -> KeysView[str]:
         pass
 
@@ -670,6 +673,10 @@ class Dictionary(Model, metaclass=ABCMeta):
         | Types
         | None = None,
     ) -> None:
+        pass
+
+    @abstractmethod
+    def __hash__(self) -> int:
         pass
 
     @abstractmethod
@@ -1245,28 +1252,20 @@ JSON_TYPES: tuple[type, ...] = (
     Sequence,
     NoneType,
 )
-JSONTypes = Union[
-    str,
-    int,
-    float,
-    bool,
-    Mapping[str, Any],
-    Sequence,
-    None,
-]
-MarshallableTypes = Union[
-    bool,
-    str,
-    bytes,
-    Model,
-    Mapping[str, Any],
-    Collection,
-    Iterator,
-    int,
-    float,
-    Decimal,
-    date,
-    datetime,
-    Null,
-    None,
-]
+JSONTypes = str | int | float | bool | Mapping[str, Any] | Sequence | None
+MarshallableTypes = (
+    bool
+    | str
+    | bytes
+    | Model
+    | Mapping[str, Any]
+    | Collection
+    | Iterator
+    | int
+    | float
+    | Decimal
+    | date
+    | datetime
+    | Null
+    | None
+)

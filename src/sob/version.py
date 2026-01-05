@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import operator
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from decimal import Decimal
 from itertools import chain
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from sob import abc
 from sob.utilities import represent
@@ -225,6 +225,9 @@ class Version(abc.Version):
             if not isinstance(version_string, str):
                 raise TypeError(version_string)
             self._update_version_parameters_from_string(version_string)
+
+    def __hash__(self) -> int:
+        return object.__hash__(self)
 
     def _update_version_parameters_from_string(self, version_: str) -> None:
         specification: str = ""

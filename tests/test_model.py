@@ -29,20 +29,21 @@ TESSTEE_MODEL_PY: Path = REGRESSION_DATA / "tesstee_model.py"
 
 class ObjectA(sob.Object):
     __slots__: tuple[str, ...] = (
-        "is_a_class",
-        "boolean",
-        "string",
         "alpha",
         "beta",
-        "gamma",
+        "boolean",
         "delta",
-        "iso8601_datetime",
+        "gamma",
+        "is_a_class",
         "iso8601_date",
+        "iso8601_datetime",
+        "string",
     )
 
     def __init__(
         self,
         _data: str | None = None,
+        *,
         is_a_class: bool | None = None,
         boolean: bool | None = None,
         string: str | None = None,
@@ -93,21 +94,22 @@ sob.get_writable_array_meta(ArrayA).item_types = sob.Types([ObjectA])
 
 class ObjectB(sob.Object):
     __slots__: tuple[str, ...] = (
-        "is_b_class",
-        "boolean",
-        "string",
-        "integer",
         "alpha",
         "beta",
-        "gamma",
+        "boolean",
         "delta",
-        "iso8601_datetime",
+        "gamma",
+        "integer",
+        "is_b_class",
         "iso8601_date",
+        "iso8601_datetime",
+        "string",
     )
 
     def __init__(
         self,
         _: str | None = None,
+        *,
         is_b_class: bool | None = None,
         boolean: bool | None = None,
         string: str | None = None,
@@ -165,20 +167,21 @@ class ObjectC(sob.Object):
     """
 
     __slots__: tuple[str, ...] = (
-        "is_c_class",
-        "string",
-        "integer",
         "alpha",
         "beta",
-        "gamma",
         "delta",
-        "iso8601_datetime",
+        "gamma",
+        "integer",
+        "is_c_class",
         "iso8601_date",
+        "iso8601_datetime",
+        "string",
     )
 
     def __init__(
         self,
         _: str | None = None,
+        *,
         is_c_class: bool | None = None,
         string: str | None = None,
         integer: int | None = None,
@@ -216,36 +219,36 @@ sob.get_writable_object_meta(ObjectC).properties = [  # type: ignore
 
 class Tesstee(sob.Object):
     __slots__: tuple[str, ...] = (
+        "a",
+        "a_b_c",
+        "array_a",
+        "b",
         "boolean",
-        "string",
-        "number",
+        "boolean_array",
+        "c",
+        "c_b_a",
         "decimal_",
         "integer",
-        "rainbow",
-        "a",
-        "b",
-        "c",
-        "testy",
-        "boolean_array",
-        "string_array",
-        "number_array",
         "integer_array",
+        "null_value",
+        "number",
+        "number_array",
+        "rainbow",
         "rainbow_array",
-        "testy_array",
-        "string_number_boolean",
-        "a_b_c",
-        "c_b_a",
-        "string2testy",
-        "string2string2testy",
+        "string",
         "string2a_b_c",
         "string2c_b_a",
         "string2string2a_b_c",
         "string2string2c_b_a",
-        "version_switch",
+        "string2string2testy",
+        "string2testy",
+        "string_array",
+        "string_number_boolean",
+        "testy",
+        "testy_array",
         "version_1",
         "version_2",
-        "array_a",
-        "null_value",
+        "version_switch",
     )
 
     def __init__(
@@ -253,6 +256,7 @@ class Tesstee(sob.Object):
         _data: (
             str | bytes | dict | sob.abc.Readable | sob.abc.Object | IO | None
         ) = None,
+        *,
         boolean: bool | None = None,
         string: str | None = None,
         number: float | Decimal | None = None,
@@ -626,7 +630,7 @@ def test_bytes_serialization() -> None:
     ) as file:
         rainbow_bytes = file.read()
         assert testy.rainbow == rainbow_bytes
-        assert cast(dict, sob.marshal(testy))["rainbow"] == str(
+        assert cast("dict", sob.marshal(testy))["rainbow"] == str(
             b64encode(rainbow_bytes), "ascii"
         )
 
@@ -712,7 +716,7 @@ def test_extraneous_attributes_validation() -> None:
     does not raise an error on initialization, but *does* raise a validation
     error when passed to `sob.validate`.
     """
-    marshalled_testy: dict = cast(dict, sob.marshal(testy))
+    marshalled_testy: dict = cast("dict", sob.marshal(testy))
     marshalled_testy["extraneous_attribute"] = "extraneous value"
     invalid_testy: Tesstee = Tesstee(marshalled_testy)
     error_caught: bool = False
@@ -734,19 +738,19 @@ def test_get_model_from_meta_regression() -> None:
         os.makedirs(TESSTEE_MODEL_PY.parent, exist_ok=True)
     tesstee_source: str = sob.get_models_source(
         sob.get_model_from_meta(
-            "ArrayA", cast(sob.ArrayMeta, sob.read_array_meta(ArrayA))
+            "ArrayA", cast("sob.ArrayMeta", sob.read_array_meta(ArrayA))
         ),
         sob.get_model_from_meta(
-            "ObjectA", cast(sob.ObjectMeta, sob.read_object_meta(ObjectA))
+            "ObjectA", cast("sob.ObjectMeta", sob.read_object_meta(ObjectA))
         ),
         sob.get_model_from_meta(
-            "ObjectB", cast(sob.ObjectMeta, sob.read_object_meta(ObjectB))
+            "ObjectB", cast("sob.ObjectMeta", sob.read_object_meta(ObjectB))
         ),
         sob.get_model_from_meta(
-            "ObjectC", cast(sob.ObjectMeta, sob.read_object_meta(ObjectC))
+            "ObjectC", cast("sob.ObjectMeta", sob.read_object_meta(ObjectC))
         ),
         sob.get_model_from_meta(
-            "Tesstee", cast(sob.ObjectMeta, sob.read_object_meta(Tesstee))
+            "Tesstee", cast("sob.ObjectMeta", sob.read_object_meta(Tesstee))
         ),
     ).replace("tests.test_model.", "")
     if TESSTEE_MODEL_PY.exists():

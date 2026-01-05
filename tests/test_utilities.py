@@ -85,12 +85,10 @@ def test_inspect() -> None:
         return MyClass()
 
     assert my_function().get_method_name() == (
-        "tests.test_utilities.test_inspect.my_function.MyClass."
-        "get_method_name"
+        "tests.test_utilities.test_inspect.my_function.MyClass.get_method_name"
     )
     assert my_function()() == (
-        "tests.test_utilities.test_inspect.my_function.MyClass."
-        "get_method_name"
+        "tests.test_utilities.test_inspect.my_function.MyClass.get_method_name"
     )
     # Static methods are defined at the module level...
     assert my_function().get_static_method_name() == (

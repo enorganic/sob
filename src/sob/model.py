@@ -11,6 +11,7 @@ import re
 from abc import abstractmethod
 from base64 import b64decode, b64encode
 from collections.abc import (
+    Callable,
     Collection,
     ItemsView,
     Iterable,
@@ -31,7 +32,6 @@ from types import GeneratorType
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     SupportsBytes,
     cast,
 )
@@ -73,10 +73,10 @@ class Model(abc.Model):
     __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
-        "_instance_meta",
         "_instance_hooks",
-        "_url",
+        "_instance_meta",
         "_pointer",
+        "_url",
     )
 
     _source: str | None = None
@@ -345,11 +345,11 @@ class Array(Model, abc.Array, abc.Model):
     __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
-        "_list",
-        "_instance_meta",
         "_instance_hooks",
-        "_url",
+        "_instance_meta",
+        "_list",
         "_pointer",
+        "_url",
     )
 
     _class_meta: abc.ArrayMeta | None = None
@@ -480,14 +480,14 @@ class Array(Model, abc.Array, abc.Model):
         instance_hooks: abc.ArrayHooks | None = hooks.read_array_hooks(self)
         if instance_hooks and instance_hooks.before_append:
             value = instance_hooks.before_append(
-                self, cast(abc.MarshallableTypes, value)
+                self, cast("abc.MarshallableTypes", value)
             )
         instance_meta: abc.ArrayMeta | None = meta.read_array_meta(self)
         item_types: abc.Types | None = None
         if instance_meta:
             item_types = instance_meta.item_types
         value = unmarshal(
-            cast(abc.MarshallableTypes, value), types=item_types or ()
+            cast("abc.MarshallableTypes", value), types=item_types or ()
         )
         self._list.append(value)
         if instance_hooks and instance_hooks.after_append:
@@ -859,10 +859,10 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
 
     __slots__: tuple[str, ...] = (
         "_dict",
-        "_instance_meta",
         "_instance_hooks",
-        "_url",
+        "_instance_meta",
         "_pointer",
+        "_url",
     )
 
     _class_hooks: abc.DictionaryHooks | None = None
@@ -1504,10 +1504,10 @@ class Object(Model, abc.Object, abc.Model):
     __module__: str = "sob"
 
     __slots__: tuple[str, ...] = (
-        "_instance_meta",
         "_instance_hooks",
-        "_url",
+        "_instance_meta",
         "_pointer",
+        "_url",
     )
     _class_meta: abc.ObjectMeta | None = None
     _class_hooks: abc.ObjectHooks | None = None
@@ -1750,7 +1750,7 @@ class Object(Model, abc.Object, abc.Model):
             if self._extra is None:
                 raise KeyError(key)
             return self._extra[key]
-        return cast(abc.MarshallableTypes, getattr(self, property_name))
+        return cast("abc.MarshallableTypes", getattr(self, property_name))
 
     def __copy__(self) -> abc.Object:
         return self.__class__(self)
@@ -2396,7 +2396,7 @@ class _Unmarshal:
         type_ = self.get_array_type(type_)
         if "item_types" in signature(type_).parameters:
             unmarshalled_data = type_(
-                cast(abc.Array, self.data),
+                cast("abc.Array", self.data),
                 item_types=self.item_types or None,  # type: ignore
             )
         else:
@@ -3102,9 +3102,7 @@ def _type_hint_from_property(
             if value_type_hint[0] == "(":
                 value_type_hint = value_type_hint[1:-1].strip()
             type_hint = (
-                "typing.Mapping[\n"
-                "    str,\n"
-                f"    {indent_(value_type_hint)}\n]"
+                f"typing.Mapping[\n    str,\n    {indent_(value_type_hint)}\n]"
             )
         else:
             type_hint = "dict"

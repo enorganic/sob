@@ -141,8 +141,8 @@ class VersionedObject(sob.Object):
 
     __slots__: tuple[str, ...] = (
         "version",
-        "versioned_simple_type",
         "versioned_container",
+        "versioned_simple_type",
     )
 
     def __init__(

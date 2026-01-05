@@ -12,15 +12,15 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 __all__: tuple[str, ...] = (
-    "ValidationError",
-    "VersionError",
+    "DefinitionExistsError",
     "DeserializeError",
     "UnmarshalError",
     "UnmarshalTypeError",
     "UnmarshalValueError",
-    "get_exception_text",
+    "ValidationError",
+    "VersionError",
     "append_exception_text",
-    "DefinitionExistsError",
+    "get_exception_text",
 )
 
 
