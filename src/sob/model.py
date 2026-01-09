@@ -45,6 +45,7 @@ from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
 from sob._utilities import deprecated, get_readable_url
 from sob.errors import (
     DeserializeError,
+    UnmarshalValueError,
     append_exception_text,
     get_exception_text,
 )
@@ -2721,7 +2722,7 @@ class _UnmarshalProperty:
                     ),
                 )
             )
-            raise ValueError(message)
+            raise UnmarshalValueError(message, data=value)
 
     def unmarshal_enumerated(
         self, value: abc.MarshallableTypes

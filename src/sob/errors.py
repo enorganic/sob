@@ -75,7 +75,10 @@ class UnmarshalError(Exception):
 
     Attributes:
         message:
-        parameter:
+        data:
+        types:
+        item_types:
+        value_types:
     """
 
     def __init__(
