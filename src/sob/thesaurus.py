@@ -59,6 +59,7 @@ from sob.utilities import (
     get_class_name,
     get_property_name,
     get_source,
+    represent,
     suffix_long_lines,
 )
 
@@ -996,7 +997,8 @@ def get_class_meta_attribute_assignment_source(
         (
             f"{writable_function_name}(  # type: ignore\n"
             f"    {suffix_long_lines(class_name_, -4)}\n"
-            f").{attribute_name} = {getattr(metadata, attribute_name)!r}"
+            f").{attribute_name} = "
+            f"{represent(getattr(metadata, attribute_name))}"
         ),
         -4,
     )

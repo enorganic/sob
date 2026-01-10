@@ -548,7 +548,7 @@ def read_model_hooks(model: type | abc.Model) -> abc.Hooks | None:
             )
         except StopIteration:
             return None
-    repr_model: str = repr(model)
+    repr_model: str = represent(model)
     message = (
         "{} requires a parameter which is an instance or sub-class of "
         "`{}`, not{}".format(

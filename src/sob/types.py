@@ -7,7 +7,7 @@ from typing_extensions import Self
 
 from sob import abc
 from sob._types import NULL, UNDEFINED, NoneType, Null, Undefined
-from sob.utilities import get_qualified_name
+from sob.utilities import get_qualified_name, represent
 
 __all__: tuple[str, ...] = (
     "NULL",
@@ -66,7 +66,7 @@ class Types(abc.Types):
                     for line in (
                         get_qualified_name(value)
                         if isinstance(value, type)
-                        else repr(value)
+                        else represent(value)
                     ).split("\n")
                 )
                 representation.append(f"{value_representation},")
