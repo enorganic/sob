@@ -3097,7 +3097,13 @@ def _type_hint_from_property(
         )
         if item_type_hint:
             if item_type_hint[0] == "(":
-                item_type_hint = indent_(item_type_hint[1:-1].strip())
+                item_type_hint = indent_(
+                    item_type_hint[1:-1].strip(),
+                )
+            else:
+                item_type_hint = indent_(
+                    item_type_hint,
+                )
             type_hint = f"typing.Sequence[\n    {item_type_hint}\n]"
         else:
             type_hint = "typing.Sequence"
