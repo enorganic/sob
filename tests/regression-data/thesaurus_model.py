@@ -308,13 +308,13 @@ sob.get_writable_object_meta(
     AnimalMammal
 ).properties = sob.Properties([
     (
-        'is_cute',
+        "is_cute",
         sob.BooleanProperty(
             name="isCute"
         )
     ),
     (
-        'is_delicious',
+        "is_delicious",
         sob.Property(
             name="isDelicious",
             types=sob.Types([
@@ -324,7 +324,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'is_furry',
+        "is_furry",
         sob.Property(
             name="isFurry",
             types=sob.Types([
@@ -334,7 +334,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'name',
+        "name",
         sob.StringProperty(
             name="name"
         )
@@ -344,25 +344,25 @@ sob.get_writable_object_meta(
     AnimalBivalve
 ).properties = sob.Properties([
     (
-        'is_ambulatory',
+        "is_ambulatory",
         sob.BooleanProperty(
             name="isAmbulatory"
         )
     ),
     (
-        'is_delicious',
+        "is_delicious",
         sob.BooleanProperty(
             name="isDelicious"
         )
     ),
     (
-        'name',
+        "name",
         sob.StringProperty(
             name="name"
         )
     ),
     (
-        'spreads_norovirus',
+        "spreads_norovirus",
         sob.BooleanProperty(
             name="spreadsNorovirus"
         )
@@ -372,31 +372,31 @@ sob.get_writable_object_meta(
     PlantVegetable
 ).properties = sob.Properties([
     (
-        'is_bitter',
+        "is_bitter",
         sob.BooleanProperty(
             name="isBitter"
         )
     ),
     (
-        'is_crunchy',
+        "is_crunchy",
         sob.BooleanProperty(
             name="isCrunchy"
         )
     ),
     (
-        'is_spicy',
+        "is_spicy",
         sob.BooleanProperty(
             name="isSpicy"
         )
     ),
     (
-        'is_sweet',
+        "is_sweet",
         sob.BooleanProperty(
             name="isSweet"
         )
     ),
     (
-        'name',
+        "name",
         sob.StringProperty(
             name="name"
         )
@@ -406,7 +406,7 @@ sob.get_writable_object_meta(
     Mineral
 ).properties = sob.Properties([
     (
-        'is_edible',
+        "is_edible",
         sob.Property(
             name="isEdible",
             types=sob.Types([
@@ -416,25 +416,25 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'is_radioactive',
+        "is_radioactive",
         sob.BooleanProperty(
             name="isRadioactive"
         )
     ),
     (
-        'is_shiny',
+        "is_shiny",
         sob.BooleanProperty(
             name="isShiny"
         )
     ),
     (
-        'is_valuable',
+        "is_valuable",
         sob.BooleanProperty(
             name="isValuable"
         )
     ),
     (
-        'name',
+        "name",
         sob.StringProperty(
             name="name"
         )

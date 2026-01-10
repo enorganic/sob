@@ -100,7 +100,7 @@ class Meta(abc.Meta):  # pragma: no cover
             if isinstance(value, type):
                 value_representation = get_qualified_name(value)
             else:
-                value_representation = repr(value)
+                value_representation = represent(value)
             lines.append(
                 f"    {property_name}={indent(value_representation)},"
             )
@@ -333,7 +333,7 @@ class Properties(abc.Properties):
         value_representation: str = (
             get_qualified_name(value)
             if isinstance(value, type)
-            else repr(value)
+            else represent(value)
         )
         value_representation_lines: list[str] = value_representation.split(
             "\n"
@@ -342,7 +342,7 @@ class Properties(abc.Properties):
             representation = "\n".join(
                 (
                     "    (",
-                    f"        {key!r},",
+                    f"        {represent(key)},",
                     f"        {value_representation_lines[0]}",
                     *(
                         f"        {line}"
@@ -352,7 +352,7 @@ class Properties(abc.Properties):
                 )
             )
         else:
-            representation = f"    ({key!r}, {value_representation}),"
+            representation = f"    ({represent(key)}, {value_representation}),"
         return representation
 
     def __repr__(self) -> str:

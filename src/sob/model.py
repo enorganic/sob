@@ -604,7 +604,9 @@ class Array(Model, abc.Array, abc.Model):
         recreate the item
         """
         item_representation = (
-            get_qualified_name(item) if isinstance(item, type) else repr(item)
+            get_qualified_name(item)
+            if isinstance(item, type)
+            else represent(item)
         )
         item_lines = item_representation.split("\n")
         if len(item_lines) > 1:
@@ -639,7 +641,8 @@ class Array(Model, abc.Array, abc.Model):
             and instance_meta.item_types
         ):
             representation_lines.append(
-                "    item_types=" + indent_(repr(instance_meta.item_types))
+                "    item_types="
+                + indent_(represent(instance_meta.item_types))
             )
         representation_lines.append(")")
         representation: str
@@ -1020,10 +1023,10 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
                     chain((message.format(error.args[0]),), error.args[1:])
                 )
             else:
-                error.args = (message.format(repr(value)),)
+                error.args = (message.format(represent(value)),)
             raise
         if unmarshalled_value is None:
-            message = f"{key} = {unmarshalled_value!r}"
+            message = f"{key} = {represent(unmarshalled_value)}"
             raise RuntimeError(message)
         self._dict.__setitem__(key, unmarshalled_value)
         if instance_hooks and instance_hooks.after_setitem:
@@ -1170,7 +1173,7 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
         value_representation = (
             get_qualified_name(value)
             if isinstance(value, type)
-            else repr(value)
+            else represent(value)
         )
         value_representation_lines = value_representation.split("\n")
         if len(value_representation_lines) > 1:
@@ -1184,13 +1187,15 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             representation = "\n".join(
                 [
                     "        (",
-                    f"            {key!r},",
+                    f"            {represent(key)},",
                     f"            {value_representation}",
                     "        ),",
                 ]
             )
         else:
-            representation = f"        ({key!r}, {value_representation}),"
+            representation = (
+                f"        ({represent(key)}, {value_representation}),"
+            )
         return representation
 
     def __repr__(self) -> str:
@@ -1234,7 +1239,8 @@ class Dictionary(Model, abc.Dictionary, abc.Model):
             and instance_meta.value_types
         ):
             representation_lines.append(
-                "    value_types=" + indent_(repr(instance_meta.value_types)),
+                "    value_types="
+                + indent_(represent(instance_meta.value_types)),
             )
         representation_lines.append(")")
         if len(representation_lines) > 2:  # noqa: PLR2004
@@ -1658,7 +1664,7 @@ class Object(Model, abc.Object, abc.Model):
                         chain((message + error.args[0],), error.args[1:])
                     )
                 else:
-                    error.args = (message + repr(value),)
+                    error.args = (message + represent(value),)
                 raise
         return value
 
@@ -1833,7 +1839,7 @@ class Object(Model, abc.Object, abc.Model):
         if isinstance(value, type):
             value_representation = get_qualified_name(value)
         else:
-            value_representation = repr(value)
+            value_representation = represent(value)
         lines = value_representation.split("\n")
         if len(lines) > 1:
             indented_lines = [lines[0]]
@@ -2715,9 +2721,9 @@ class _UnmarshalProperty:
             message: str = (
                 "The value provided is not a valid option:\n{}\n\n"
                 "Valid options include:\n{}".format(
-                    repr(value),
+                    represent(value),
                     ", ".join(
-                        repr(enumerated_value)
+                        represent(enumerated_value)
                         for enumerated_value in self.property.values
                     ),
                 )
@@ -2902,7 +2908,7 @@ class _MarshalProperty:
                 message: str = (
                     "The date2str function should return a `str`, not a "
                     f"`{type(date_string).__name__}`: "
-                    f"{date_string!r}"
+                    f"{represent(date_string)}"
                 )
                 raise TypeError(message)
         return date_string
@@ -2917,7 +2923,7 @@ class _MarshalProperty:
                 msg = (
                     "The datetime2str function should return a `str`, not a "
                     f"`{type(datetime_string).__name__}`: "
-                    f"{datetime_string!r}"
+                    f"{represent(datetime_string)}"
                 )
                 raise TypeError(msg)
         return datetime_string
@@ -3435,7 +3441,8 @@ def _get_class_meta_attribute_assignment_source(
         (
             f"{writable_function_name}(\n"
             f"    {suffix_long_lines(class_name_, -4)}\n"
-            f").{attribute_name} = {getattr(metadata, attribute_name)!r}"
+            f").{attribute_name} = "
+            f"{represent(getattr(metadata, attribute_name))}"
         ),
         -4,
     )

@@ -7,7 +7,7 @@ from warnings import warn
 from sob import abc, meta
 from sob._types import NoneType
 from sob.model import serialize, validate
-from sob.utilities import get_qualified_name
+from sob.utilities import get_qualified_name, represent
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -68,8 +68,8 @@ def _get_value_discrepancies_error_message(
 ) -> str:
     a_serialized = serialize(property_value_a)
     b_serialized = serialize(property_value_b)
-    a_representation = repr(property_value_a)
-    b_representation = repr(property_value_b)
+    a_representation = represent(property_value_a)
+    b_representation = represent(property_value_b)
     a_representation = "".join(
         line.strip() for line in a_representation.split("\n")
     )
@@ -102,10 +102,10 @@ def _get_object_discrepancies_error_message(
     a_serialized: str = serialize(object_a)
     b_serialized: str = serialize(object_b)
     a_representation: str = "".join(
-        line.strip() for line in repr(object_a).split("\n")
+        line.strip() for line in represent(object_a).split("\n")
     )
     b_representation = "".join(
-        line.strip() for line in repr(object_b).split("\n")
+        line.strip() for line in represent(object_b).split("\n")
     )
     class_name: str = get_qualified_name(type(object_a))
     message = [
