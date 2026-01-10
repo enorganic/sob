@@ -465,8 +465,8 @@ class Tesstee(sob.Object):
         number_array: (
             typing.Sequence[
                 float
-            | int
-            | decimal.Decimal
+                | int
+                | decimal.Decimal
             ]
             | None
         ) = None,
@@ -660,8 +660,8 @@ class Tesstee(sob.Object):
         self.number_array: (
             typing.Sequence[
                 float
-            | int
-            | decimal.Decimal
+                | int
+                | decimal.Decimal
             ]
             | None
         ) = number_array
