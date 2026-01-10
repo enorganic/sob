@@ -818,11 +818,11 @@ sob.get_writable_array_meta(
 sob.get_writable_object_meta(
     ObjectA
 ).properties = sob.Properties([
-    ('is_a_class', sob.BooleanProperty()),
-    ('boolean', sob.BooleanProperty()),
-    ('string', sob.StringProperty()),
+    ("is_a_class", sob.BooleanProperty()),
+    ("boolean", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
     (
-        'alpha',
+        "alpha",
         sob.EnumeratedProperty(
             values={
                 1,
@@ -832,7 +832,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'beta',
+        "beta",
         sob.EnumeratedProperty(
             values={
                 1,
@@ -842,7 +842,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'gamma',
+        "gamma",
         sob.EnumeratedProperty(
             values={
                 1,
@@ -852,7 +852,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'delta',
+        "delta",
         sob.EnumeratedProperty(
             values={
                 1,
@@ -862,13 +862,13 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'iso8601_datetime',
+        "iso8601_datetime",
         sob.DateTimeProperty(
             name="iso8601DateTime"
         )
     ),
     (
-        'iso8601_date',
+        "iso8601_date",
         sob.DateProperty(
             name="iso8601Date"
         )
@@ -877,12 +877,12 @@ sob.get_writable_object_meta(
 sob.get_writable_object_meta(
     ObjectB
 ).properties = sob.Properties([
-    ('is_b_class', sob.BooleanProperty()),
-    ('boolean', sob.BooleanProperty()),
-    ('string', sob.StringProperty()),
-    ('integer', sob.IntegerProperty()),
+    ("is_b_class", sob.BooleanProperty()),
+    ("boolean", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("integer", sob.IntegerProperty()),
     (
-        'alpha',
+        "alpha",
         sob.EnumeratedProperty(
             values={
                 "A",
@@ -892,7 +892,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'beta',
+        "beta",
         sob.EnumeratedProperty(
             values={
                 "A",
@@ -902,7 +902,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'gamma',
+        "gamma",
         sob.EnumeratedProperty(
             values={
                 "A",
@@ -912,7 +912,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'delta',
+        "delta",
         sob.EnumeratedProperty(
             values={
                 "A",
@@ -922,13 +922,13 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'iso8601_datetime',
+        "iso8601_datetime",
         sob.DateTimeProperty(
             name="iso8601DateTime"
         )
     ),
     (
-        'iso8601_date',
+        "iso8601_date",
         sob.DateProperty(
             name="iso8601Date"
         )
@@ -937,11 +937,11 @@ sob.get_writable_object_meta(
 sob.get_writable_object_meta(
     ObjectC
 ).properties = sob.Properties([
-    ('is_c_class', sob.BooleanProperty()),
-    ('string', sob.StringProperty()),
-    ('integer', sob.IntegerProperty()),
+    ("is_c_class", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("integer", sob.IntegerProperty()),
     (
-        'alpha',
+        "alpha",
         sob.EnumeratedProperty(
             values={
                 False,
@@ -950,7 +950,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'beta',
+        "beta",
         sob.EnumeratedProperty(
             values={
                 False,
@@ -959,7 +959,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'gamma',
+        "gamma",
         sob.EnumeratedProperty(
             values={
                 False,
@@ -968,7 +968,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'delta',
+        "delta",
         sob.EnumeratedProperty(
             values={
                 False,
@@ -977,13 +977,13 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'iso8601_datetime',
+        "iso8601_datetime",
         sob.DateTimeProperty(
             name="iso8601DateTime"
         )
     ),
     (
-        'iso8601_date',
+        "iso8601_date",
         sob.DateProperty(
             name="iso8601Date"
         )
@@ -992,14 +992,14 @@ sob.get_writable_object_meta(
 sob.get_writable_object_meta(
     Tesstee
 ).properties = sob.Properties([
-    ('boolean', sob.BooleanProperty()),
-    ('string', sob.StringProperty()),
-    ('number', sob.NumberProperty()),
-    ('decimal_', sob.NumberProperty()),
-    ('integer', sob.IntegerProperty()),
-    ('rainbow', sob.BytesProperty()),
+    ("boolean", sob.BooleanProperty()),
+    ("string", sob.StringProperty()),
+    ("number", sob.NumberProperty()),
+    ("decimal_", sob.NumberProperty()),
+    ("integer", sob.IntegerProperty()),
+    ("rainbow", sob.BytesProperty()),
     (
-        'testy',
+        "testy",
         sob.Property(
             types=sob.MutableTypes([
                 Tesstee
@@ -1007,7 +1007,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'boolean_array',
+        "boolean_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 bool
@@ -1016,7 +1016,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string_array',
+        "string_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 str
@@ -1025,7 +1025,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'number_array',
+        "number_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 sob.NumberProperty()
@@ -1034,7 +1034,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'integer_array',
+        "integer_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 sob.IntegerProperty()
@@ -1043,7 +1043,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'rainbow_array',
+        "rainbow_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 sob.BytesProperty()
@@ -1052,7 +1052,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'testy_array',
+        "testy_array",
         sob.ArrayProperty(
             item_types=sob.MutableTypes([
                 Tesstee
@@ -1061,7 +1061,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string_number_boolean',
+        "string_number_boolean",
         sob.Property(
             name="stringNumberBoolean",
             types=sob.MutableTypes([
@@ -1072,7 +1072,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'a',
+        "a",
         sob.Property(
             types=sob.MutableTypes([
                 ObjectA
@@ -1080,7 +1080,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'b',
+        "b",
         sob.Property(
             types=sob.MutableTypes([
                 ObjectB
@@ -1088,7 +1088,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'c',
+        "c",
         sob.Property(
             types=sob.MutableTypes([
                 ObjectC
@@ -1096,7 +1096,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'a_b_c',
+        "a_b_c",
         sob.Property(
             name="ABC",
             types=sob.MutableTypes([
@@ -1107,7 +1107,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'c_b_a',
+        "c_b_a",
         sob.Property(
             name="CBA",
             types=sob.MutableTypes([
@@ -1118,7 +1118,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2testy',
+        "string2testy",
         sob.DictionaryProperty(
             value_types=sob.MutableTypes([
                 Tesstee
@@ -1126,7 +1126,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2string2testy',
+        "string2string2testy",
         sob.DictionaryProperty(
             value_types=sob.MutableTypes([
                 sob.DictionaryProperty(
@@ -1138,7 +1138,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2a_b_c',
+        "string2a_b_c",
         sob.DictionaryProperty(
             name="string2ABC",
             value_types=sob.MutableTypes([
@@ -1149,7 +1149,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2c_b_a',
+        "string2c_b_a",
         sob.DictionaryProperty(
             name="string2CBA",
             value_types=sob.MutableTypes([
@@ -1160,7 +1160,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2string2a_b_c',
+        "string2string2a_b_c",
         sob.DictionaryProperty(
             name="string2string2ABC",
             value_types=sob.MutableTypes([
@@ -1175,7 +1175,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'string2string2c_b_a',
+        "string2string2c_b_a",
         sob.DictionaryProperty(
             name="string2String2CBA",
             value_types=sob.MutableTypes([
@@ -1190,7 +1190,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'version_switch',
+        "version_switch",
         sob.Property(
             name="versionSwitch",
             types=sob.MutableTypes([
@@ -1216,7 +1216,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'version_1',
+        "version_1",
         sob.IntegerProperty(
             name="version1",
             versions=(
@@ -1225,7 +1225,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'version_2',
+        "version_2",
         sob.IntegerProperty(
             name="version2",
             versions=(
@@ -1234,14 +1234,14 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'required_integer',
+        "required_integer",
         sob.IntegerProperty(
             name="requiredInteger",
             required=True
         )
     ),
     (
-        'required_integer_or_string',
+        "required_integer_or_string",
         sob.Property(
             name="requiredIntegerOrString",
             required=True,
@@ -1252,7 +1252,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'array_a',
+        "array_a",
         sob.Property(
             name="arrayA",
             types=sob.Types([
@@ -1261,7 +1261,7 @@ sob.get_writable_object_meta(
         )
     ),
     (
-        'null_value',
+        "null_value",
         sob.Property(
             name="nullValue",
             types=sob.MutableTypes([
