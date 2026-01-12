@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sob"
-version = "2.1.5"
+version = "2.2.0"
 description = "A type-enforced framework for serializing and deserializing JSON"
 readme = "README.md"
 license = "MIT"

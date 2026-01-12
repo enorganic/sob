@@ -81,6 +81,15 @@ class UnmarshalError(Exception):
         value_types:
     """
 
+    __slots__ = (
+        "data",
+        "data",
+        "item_types",
+        "message",
+        "types",
+        "value_types",
+    )
+
     def __init__(
         self,
         message: str | None = None,
@@ -89,6 +98,7 @@ class UnmarshalError(Exception):
         item_types: Iterable[abc.Property | type] | abc.Types | None = None,
         value_types: Iterable[abc.Property | type] | abc.Types | None = None,
     ) -> None:
+        self.data: abc.MarshallableTypes | None = data
         error_message_lines: list[str] = []
         # Identify which parameter is being used for type validation
         types_label: str = (
