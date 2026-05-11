@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sob"
-version = "2.2.0"
+version = "2.2.1"
 description = "A type-enforced framework for serializing and deserializing JSON"
 readme = "README.md"
 license = "MIT"
@@ -48,7 +48,7 @@ dependencies = [
     "pytest",
     "mypy",
     "dependence~=1.1",
-    "gittable~=0.0",
+    "gittable~=0.2",
 ]
 pre-install-commands = [
     "pip install --upgrade pip setuptools",
