@@ -416,6 +416,17 @@ def get_url_relative_to(absolute_url: str, base_url: str) -> str:
     return relative_url
 
 
+def _align_indent(line: str, tab_width: int = 4) -> str:
+    """
+    Strip whitespace from a line until the leading whitespace is divisible
+    by `tab_width`.
+    """
+    indent: str = re.match("^[ ]*", line).group()  # type: ignore[union-attr]
+    if not indent:
+        return line
+    return line[len(indent) % tab_width :]
+
+
 def _split_long_comment_line(
     line: str, max_line_length: int = MAX_LINE_LENGTH, prefix: str = "#"
 ) -> str:
@@ -451,14 +462,12 @@ def _split_long_comment_line(
             ) <= max_line_length:
                 wrapped_line += word
             else:
-                # Strip leading whitespace insufficiently long to be an indent
-                wrapped_line = re.sub(r"^[ ]{1,3}", "", wrapped_line)
-                lines.append(f"{indent_}{wrapped_line}".rstrip())
+                lines.append(
+                    f"{indent_}{_align_indent(wrapped_line)}".rstrip()
+                )
                 wrapped_line = "" if not word.strip() else word
         if wrapped_line:
-            # Strip leading whitespace insufficiently long to be an indent
-            wrapped_line = re.sub(r"^[ ]{1,3}", "", wrapped_line)
-            lines.append(f"{indent_}{wrapped_line}".rstrip())
+            lines.append(f"{indent_}{_align_indent(wrapped_line)}".rstrip())
         wrapped_line = "\n".join(lines)
     else:
         wrapped_line = line
