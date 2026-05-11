@@ -451,9 +451,13 @@ def _split_long_comment_line(
             ) <= max_line_length:
                 wrapped_line += word
             else:
-                lines.append(indent_ + wrapped_line.rstrip())
+                # Strip leading whitespace insufficiently long to be an indent
+                wrapped_line = re.sub(r"^[ ]{1,3}", "", wrapped_line)
+                lines.append(f"{indent_}{wrapped_line}".rstrip())
                 wrapped_line = "" if not word.strip() else word
         if wrapped_line:
+            # Strip leading whitespace insufficiently long to be an indent
+            wrapped_line = re.sub(r"^[ ]{1,3}", "", wrapped_line)
             lines.append(f"{indent_}{wrapped_line}".rstrip())
         wrapped_line = "\n".join(lines)
     else:
@@ -485,11 +489,13 @@ def split_long_docstring_lines(
     indent_: str = "    "
     if "\t" in docstring:
         docstring = docstring.replace("\t", indent_)
-    lines: list[str] = (
-        docstring.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    lines: tuple[str, ...] = tuple(
+        re.split(r"(?:\r\n|\r|\n)", docstring)
     )
     indentation_length: int = sys.maxsize
-    for line in filter(None, lines):
+    for line in lines:
+        if not line.strip():
+            continue
         matched = re.match(r"^[ ]+", line)
         if matched:
             indentation_length = min(indentation_length, len(matched.group()))
@@ -500,14 +506,14 @@ def split_long_docstring_lines(
     if indentation_length < sys.maxsize:
         docstring = "\n".join(
             _split_long_comment_line(
-                indent_ + line[indentation_length:],
+                f"{indent_}{line[indentation_length:]}",
                 max_line_length,
                 prefix="",
             )
             for line in lines
         )
     # Strip trailing whitespace and empty lines
-    return re.sub(r"[ ]+(\n|$)", r"\1", docstring)
+    return re.sub(r"[ ]+(\r\n|\r|\n|$)", r"\1", docstring)
 
 
 def _iter_suffix_long_lines(
