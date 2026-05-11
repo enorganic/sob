@@ -416,6 +416,17 @@ def get_url_relative_to(absolute_url: str, base_url: str) -> str:
     return relative_url
 
 
+def _align_indent(line: str, tab_width: int = 4) -> str:
+    """
+    Strip whitespace from a line until the leading whitespace is divisible
+    by `tab_width`.
+    """
+    indent: str = re.match("^[ ]*", line).group()  # type: ignore[union-attr]
+    if not indent:
+        return line
+    return line[len(indent) % tab_width :]
+
+
 def _split_long_comment_line(
     line: str, max_line_length: int = MAX_LINE_LENGTH, prefix: str = "#"
 ) -> str:
@@ -451,10 +462,12 @@ def _split_long_comment_line(
             ) <= max_line_length:
                 wrapped_line += word
             else:
-                lines.append(indent_ + wrapped_line.rstrip())
+                lines.append(
+                    f"{indent_}{_align_indent(wrapped_line)}".rstrip()
+                )
                 wrapped_line = "" if not word.strip() else word
         if wrapped_line:
-            lines.append(f"{indent_}{wrapped_line}".rstrip())
+            lines.append(f"{indent_}{_align_indent(wrapped_line)}".rstrip())
         wrapped_line = "\n".join(lines)
     else:
         wrapped_line = line
@@ -485,11 +498,11 @@ def split_long_docstring_lines(
     indent_: str = "    "
     if "\t" in docstring:
         docstring = docstring.replace("\t", indent_)
-    lines: list[str] = (
-        docstring.replace("\r\n", "\n").replace("\r", "\n").split("\n")
-    )
+    lines: tuple[str, ...] = tuple(re.split(r"(?:\r\n|\r|\n)", docstring))
     indentation_length: int = sys.maxsize
-    for line in filter(None, lines):
+    for line in lines:
+        if not line.strip():
+            continue
         matched = re.match(r"^[ ]+", line)
         if matched:
             indentation_length = min(indentation_length, len(matched.group()))
@@ -500,14 +513,14 @@ def split_long_docstring_lines(
     if indentation_length < sys.maxsize:
         docstring = "\n".join(
             _split_long_comment_line(
-                indent_ + line[indentation_length:],
+                f"{indent_}{line[indentation_length:]}",
                 max_line_length,
                 prefix="",
             )
             for line in lines
         )
     # Strip trailing whitespace and empty lines
-    return re.sub(r"[ ]+(\n|$)", r"\1", docstring)
+    return re.sub(r"[ ]+(\r\n|\r|\n|$)", r"\1", docstring)
 
 
 def _iter_suffix_long_lines(
