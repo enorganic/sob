@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 import sob
-from sob import _io, _types, utilities
+from sob import _io, _types, _utilities, utilities
 from sob._utilities import get_readable_url
 
 
@@ -131,11 +131,42 @@ class UnixFileProxy:
     name = "/a/b/c"
 
 
+class URLNonStringProxy:
+    url = 123
+
+
+class NoAttributesProxy:
+    pass
+
+
 def test_get_readable_url() -> None:
     assert get_readable_url(HTTPResponseProxy1()) == "https://example.com"
     assert get_readable_url(HTTPResponseProxy2()) == "https://example.com"
     assert get_readable_url(WindowsFileProxy()) == "file:///C:/a/b/c"
     assert get_readable_url(UnixFileProxy()) == "file:///a/b/c"
+
+
+def test_get_readable_url_type_error() -> None:
+    error_caught: bool = False
+    try:
+        get_readable_url(URLNonStringProxy())
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_readable_url_none() -> None:
+    assert get_readable_url(NoAttributesProxy()) is None
+
+
+def test_deprecated() -> None:
+    @_utilities.deprecated("this is deprecated")
+    def old_function(value: int) -> int:
+        return value * 2
+
+    with pytest.warns(DeprecationWarning, match="this is deprecated"):
+        result: int = old_function(21)
+    assert result == 42
 
 
 if __name__ == "__main__":
