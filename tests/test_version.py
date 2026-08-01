@@ -255,5 +255,71 @@ def test_version_1() -> None:
     VersionedObject(version=1.2)
 
 
+def test_version_equality_precision() -> None:
+    assert sob.Version(equals="1.2") == "1.2.0"
+    assert sob.Version(equals="1.2") == "1.2"
+
+
+def test_version_compatible_with_precision() -> None:
+    # `other` has *less* precision than `compatible_with`
+    assert sob.Version(compatible_with="1.2.3") == "1"
+    # `compatible_with` has only one version component
+    assert sob.Version(compatible_with="1") != "1.5"
+    # Ordinary same-minor-version compatibility
+    assert sob.Version(compatible_with="1.2") == "1.2.5"
+
+
+def test_version_string_value_error() -> None:
+    error_caught: bool = False
+    try:
+        bool(sob.Version(equals="1.0") == "not-a-version")
+    except ValueError:
+        error_caught = True
+    assert error_caught
+
+
+def test_version_numeric_and_sequence_inputs() -> None:
+    assert sob.Version(compatible_with=1.2) == "1.2"  # type: ignore
+    assert sob.Version(compatible_with=(1, 2)) == "1.2"
+
+
+def test_version_as_tuple_type_error() -> None:
+    error_caught: bool = False
+    try:
+        sob.version._version_as_tuple(object())  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_version_string_type_error() -> None:
+    error_caught: bool = False
+    try:
+        sob.Version(123)  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_version_conflicting_specifications() -> None:
+    error_caught: bool = False
+    try:
+        sob.Version("a==1,b==2")
+    except ValueError:
+        error_caught = True
+    assert error_caught
+
+
+def test_version_str_no_specification() -> None:
+    version: sob.Version = sob.Version(equals="1.0")
+    version.specification = None  # type: ignore
+    error_caught: bool = False
+    try:
+        str(version)
+    except RuntimeError:
+        error_caught = True
+    assert error_caught
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-s", "-vv"])
