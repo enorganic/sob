@@ -60,5 +60,29 @@ def test_raise_str2date_type_error() -> None:
     assert error_caught
 
 
+def test_raise_str2datetime_type_error() -> None:
+    """
+    Test raising of exceptions for invalid types.
+    """
+    error_caught: bool = False
+    try:
+        sob._datetime.str2datetime(123)  # type: ignore  # noqa: SLF001
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_raise_str2date_non_str_type_error() -> None:
+    """
+    Test raising of exceptions for invalid types.
+    """
+    error_caught: bool = False
+    try:
+        sob._datetime.str2date(123)  # type: ignore  # noqa: SLF001
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-s", "-vv"])
