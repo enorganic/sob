@@ -159,6 +159,27 @@ def test_get_readable_url_none() -> None:
     assert get_readable_url(NoAttributesProxy()) is None
 
 
+def test_deserialize_error() -> None:
+    error = sob.errors.DeserializeError(data="bad-data", message="oops")
+    assert error.data == "bad-data"
+    assert error.message == "oops"
+    assert repr(error) == "oops\nCould not parse:\nbad-data"
+    assert str(error) == repr(error)
+
+
+def test_append_exception_text_strerror() -> None:
+    error = OSError(1, "boom")
+    sob.errors.append_exception_text(error, " (more info)")
+    assert error.strerror is not None
+    assert error.strerror.endswith(" (more info)")
+
+
+def test_append_exception_text_no_string_arg() -> None:
+    error = Exception()
+    sob.errors.append_exception_text(error, "appended")
+    assert error.args == ("appended",)
+
+
 def test_deprecated() -> None:
     @_utilities.deprecated("this is deprecated")
     def old_function(value: int) -> int:
