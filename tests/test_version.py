@@ -232,7 +232,8 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(sob.version)
+    results: doctest.TestResults = doctest.testmod(sob.version)
+    assert results.failed == 0, results
 
 
 def test_version_1() -> None:

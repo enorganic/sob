@@ -14,7 +14,8 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(utilities)
+    results: doctest.TestResults = doctest.testmod(utilities)
+    assert results.failed == 0, results
 
 
 def test_utilities() -> None:
@@ -104,11 +105,13 @@ def test_get_calling_function_qualified_name() -> None:
 
 
 def test_io() -> None:
-    doctest.testmod(_io)
+    results: doctest.TestResults = doctest.testmod(_io)
+    assert results.failed == 0, results
 
 
 def test_types() -> None:
-    doctest.testmod(_types)
+    results: doctest.TestResults = doctest.testmod(_types)
+    assert results.failed == 0, results
 
 
 class HTTPResponseProxy1:

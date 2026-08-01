@@ -14,7 +14,8 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(_io)
+    results: doctest.TestResults = doctest.testmod(_io)
+    assert results.failed == 0, results
 
 
 def test_read() -> None:

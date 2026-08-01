@@ -12,7 +12,10 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(sob._datetime)  # noqa: SLF001
+    results: doctest.TestResults = doctest.testmod(
+        sob._datetime  # noqa: SLF001
+    )
+    assert results.failed == 0, results
 
 
 def test_raise_date2str_type_error() -> None:

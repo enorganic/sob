@@ -589,7 +589,7 @@ def suffix_long_lines(
         ...     )
         ... )
         A short line...
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.  # noqa: E501
         ...another short line
 
     """  # noqa: E501

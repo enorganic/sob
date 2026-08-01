@@ -600,7 +600,8 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(sob.model)
+    results: doctest.TestResults = doctest.testmod(sob.model)
+    assert results.failed == 0, results
 
 
 def test_copy() -> None:
