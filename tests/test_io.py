@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import doctest
+from io import UnsupportedOperation
 from pathlib import Path
 
 import pytest
@@ -21,6 +22,33 @@ def test_doctest() -> None:
 def test_read() -> None:
     with open(RAINBOX_PNG, "rb") as rainbow_io:
         _io.read(rainbow_io)
+
+
+class UnsupportedReadProxy:
+    def read(self) -> str:
+        raise UnsupportedOperation
+
+
+class NotReadableProxy:
+    pass
+
+
+def test_read_unsupported_operation() -> None:
+    error_caught: bool = False
+    try:
+        _io.read(UnsupportedReadProxy())  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_read_type_error() -> None:
+    error_caught: bool = False
+    try:
+        _io.read(NotReadableProxy())  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
 
 
 if __name__ == "__main__":
