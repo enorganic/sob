@@ -190,5 +190,174 @@ def test_deprecated() -> None:
     assert result == 42
 
 
+def test_get_class_name_leading_digit() -> None:
+    assert utilities.get_class_name("123 abc").startswith("_")
+
+
+def test_indent_negative_stop() -> None:
+    # A negative `stop` excludes lines counting back from the end, similar
+    # to slice notation.
+    assert utilities.indent("a\nb\nc\nd", stop=-1) == ("a\n    b\n    c\nd")
+
+
+def test_url_directory_and_file_name_value_error() -> None:
+    error_caught: bool = False
+    try:
+        utilities._url_directory_and_file_name("no-slash-here")
+    except ValueError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_url_relative_to_no_shared_prefix() -> None:
+    assert (
+        utilities.get_url_relative_to("https://a.com/x/y", "https://a.com/x/z")
+        == "y"
+    )
+    assert (
+        utilities.get_url_relative_to("https://a.com/x/y", "https://b.com/p/q")
+        == "../../a.com/x/y"
+    )
+
+
+def test_align_indent_no_leading_whitespace() -> None:
+    assert utilities._align_indent("no-leading-space") == "no-leading-space"
+
+
+def test_align_indent_with_leading_whitespace() -> None:
+    # 6 leading spaces, tab_width=4 -> strip 6 % 4 == 2 spaces
+    assert utilities._align_indent("      indented", tab_width=4) == (
+        "    indented"
+    )
+
+
+def test_split_long_comment_line_short() -> None:
+    assert (
+        utilities._split_long_comment_line("# a short line")
+        == "# a short line"
+    )
+
+
+def test_split_long_docstring_lines_tab_and_blank_line() -> None:
+    docstring: str = (
+        "\tLine one.\n\n\tLine two, which continues on the next line."
+    )
+    result: str = utilities.split_long_docstring_lines(docstring)
+    assert "\t" not in result
+    assert "\n\n" in result
+
+
+def test_split_long_docstring_lines_no_leading_indent() -> None:
+    docstring: str = (
+        "Summary line with no leading indent and quite a few words in "
+        "it so that it wraps onto more than one output line here.\n"
+        "    Detail line."
+    )
+    result: str = utilities.split_long_docstring_lines(docstring)
+    assert result.startswith("    Summary line")
+
+
+def test_suffix_long_lines_multiline_string_literal() -> None:
+    text: str = '"""\n' + ("word " * 20) + '\n"""'
+    result: str = utilities.suffix_long_lines(text)
+    lines: list[str] = result.split("\n")
+    assert lines[-1] == '"""  # noqa: E501'
+
+
+def test_get_qualified_name_type_error() -> None:
+    error_caught: bool = False
+    try:
+        utilities.get_qualified_name(123)  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_qualified_name_module() -> None:
+    assert utilities.get_qualified_name(utilities) == "sob.utilities"
+
+
+class GenericAliasProxy:
+    __origin__ = list
+
+    def __call__(self) -> None:
+        pass
+
+
+def test_get_qualified_name_generic_alias_repr_fallback() -> None:
+    name: str = utilities.get_qualified_name(GenericAliasProxy())  # type: ignore
+    assert "GenericAliasProxy object at" in name
+
+
+class NoNameCallableProxy:
+    def __call__(self) -> None:
+        pass
+
+
+def test_get_qualified_name_unresolvable() -> None:
+    error_caught: bool = False
+    try:
+        utilities.get_qualified_name(NoNameCallableProxy())  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_calling_module_name_out_of_range() -> None:
+    assert utilities.get_calling_module_name(depth=99999) == "__main__"
+
+
+def test_get_calling_function_qualified_name_type_error() -> None:
+    error_caught: bool = False
+    try:
+        utilities.get_calling_function_qualified_name(depth="not-an-int")  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_calling_function_qualified_name_out_of_range() -> None:
+    assert utilities.get_calling_function_qualified_name(depth=99999) is None
+
+
+def test_get_source_fallback() -> None:
+    source: str = utilities.get_source(utilities.get_qualified_name)
+    assert "def get_qualified_name" in source
+
+
+def test_repr_empty_collections() -> None:
+    assert utilities.represent([]) == "[]"
+    assert utilities.represent([1, "a"]) != "[]"
+    assert utilities.represent(set()) == "set()"
+    assert utilities.represent({}) == "{}"
+
+
+class NonCallableAttributeProxy:
+    value = 123
+
+
+def test_get_method_missing_no_default() -> None:
+    error_caught: bool = False
+    try:
+        utilities.get_method(object(), "nonexistent_method")
+    except AttributeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_get_method_not_callable() -> None:
+    error_caught: bool = False
+    try:
+        utilities.get_method(NonCallableAttributeProxy(), "value")
+    except AttributeError:
+        error_caught = True
+    assert error_caught
+    # When a `default` is provided, the non-callable attribute value itself
+    # is returned rather than raising.
+    assert (
+        utilities.get_method(NonCallableAttributeProxy(), "value", None) == 123
+    )
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-s", "-vv"])

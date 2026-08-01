@@ -368,7 +368,7 @@ def indent(
         lines: list[str] = string.split("\n")
         if stop:
             if stop < 0:
-                stop = len(lines) - stop
+                stop = len(lines) + stop
         else:
             stop = len(lines)
         index: int
