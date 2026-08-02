@@ -1,0 +1,1831 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://enorganic.github.io/sob/superpowers/plans/2026-08-01-test-coverage-gaps/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Close Remaining Test-Coverage Gaps in sob Implementation Plan - sob</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/style.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#close-remaining-test-coverage-gaps-in-sob-implementation-plan" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="sob" class="md-header__button md-logo" aria-label="sob" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            sob
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Close Remaining Test-Coverage Gaps in sob Implementation Plan
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/enorganic/sob/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="sob" class="md-nav__button md-logo" aria-label="sob" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    sob
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/enorganic/sob/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/meta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.meta
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/properties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.properties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/abc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.abc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/thesaurus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.thesaurus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#global-constraints" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Global Constraints
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-1-fix-the-doctest-harness-and-the-two-bugs-it-was-hiding" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 1: Fix the doctest harness and the two bugs it was hiding
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-2-_datetimepy-coverage-93-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 2: _datetime.py coverage (93% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-3-_iopy-coverage-79-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 3: _io.py coverage (79% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-4-_typespy-coverage-93-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 4: _types.py coverage (93% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-5-_utilitiespy-coverage-89-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 5: _utilities.py coverage (89% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-6-errorspy-coverage-88-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 6: errors.py coverage (88% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-7-typespy-coverage-81-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 7: types.py coverage (81% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-8-propertiespy-coverage-96-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 8: properties.py coverage (96% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-9-versionpy-coverage-80-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 9: version.py coverage (80% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-10-utilitiespy-coverage-85-97" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 10: utilities.py coverage (85% → ~97%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-11-hookspy-coverage-45-90-highest-value" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 11: hooks.py coverage (45% → ~90%+) — highest value
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-12-metapy-coverage-79-93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 12: meta.py coverage (79% → ~93%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-13-modelpy-coverage-87-95" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 13: model.py coverage (87% → ~95%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-14-thesauruspy-coverage-64-88" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 14: thesaurus.py coverage (64% → ~88%)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#task-15-final-verification-against-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Task 15: Final verification against acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="close-remaining-test-coverage-gaps-in-sob-implementation-plan">Close Remaining Test-Coverage Gaps in <code>sob</code> Implementation Plan</h1>
+<blockquote>
+<p><strong>For agentic workers:</strong> REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (<code>- [ ]</code>) syntax for tracking.</p>
+</blockquote>
+<p><strong>Goal:</strong> Raise <code>src/sob</code>'s test coverage from 84% overall (45%/64% on the
+two worst modules) to ≥95% overall / ≥90% per module, adding only real
+integration tests (no mocks), per
+<code>docs/superpowers/specs/2026-08-01-test-coverage-gaps-design.md</code>.</p>
+<p><strong>Architecture:</strong> No production behavior changes except two small bug
+fixes (a stale docstring example, a Python-3.10-only datetime bug) needed
+to make the doctest harness trustworthy. Every other task adds test
+functions to the existing <code>tests/test_*.py</code> files, constructing real
+<code>sob.Object</code>/<code>sob.Array</code>/<code>sob.Dictionary</code>/<code>sob.Property</code>/<code>sob.Meta</code>/
+<code>sob.Hooks</code> instances and asserting on their real behavior — mirroring the
+100%-mock-free style already used throughout <code>tests/</code>.</p>
+<p><strong>Tech Stack:</strong> Python 3.10 (dev)/3.10–3.13 (CI matrix), <code>hatch</code>, <code>pytest</code>,
+<code>coverage.py</code> (via <code>hatch test --cover</code>), <code>mypy</code> (strict on <code>tests/</code> too).</p>
+<h2 id="global-constraints">Global Constraints</h2>
+<ul>
+<li><strong>No mocks.</strong> Never import <code>unittest.mock</code> or <code>pytest-mock</code>; every
+  assertion exercises a real, constructed <code>sob</code> object calling real code.
+  (Source: spec §1/§6 — confirmed by <code>grep -rl "mock\|Mock\|monkeypatch"
+  tests/ src/</code> returning nothing today.)</li>
+<li><strong>Line length 79</strong> (ruff/black-style). Wrap docstrings to 79 chars too.</li>
+<li><strong>Full typing required in tests.</strong> <code>pyproject.toml</code>'s <code>[tool.mypy]</code>
+  applies <code>disallow_untyped_defs</code>/<code>disallow_incomplete_defs</code> to <code>tests/</code>
+  as well as <code>src/</code> — every new <code>test_*</code> function needs a <code>-&gt; None</code>
+  return annotation and fully-typed locals, matching existing style.</li>
+<li><strong>Follow existing per-file conventions</strong>: <code>from __future__ import
+  annotations</code> at the top, plain <code>test_*</code> functions (no test classes),
+  and an <code>if __name__ == "__main__": pytest.main([__file__, "-s",
+  "-vv"])</code> trailer at the bottom of every test file touched.</li>
+<li>Run <code>make format</code> (ruff format + lint --fix + mypy) before every commit.</li>
+<li>Run <code>hatch test -- tests/test_&lt;file&gt;.py</code> for the specific file after
+  each task, and <code>hatch test --cover</code> (or <code>hatch run hatch-test.py3.10:
+  coverage report -m</code>) periodically to confirm the target lines listed in
+  the spec are actually now covered.</li>
+<li>Do <strong>not</strong> touch <code>pyproject.toml</code>'s <code>version</code> field — merging a version
+  bump to <code>main</code> triggers a real PyPI release (see <code>AGENTS.md</code>).</li>
+<li>If a task touches <code>get_models_source</code>/<code>get_model_from_meta</code> regression
+  output or the <code>thesaurus</code> regression fixture, regenerate with <code>make
+  refresh-test-data</code> rather than hand-editing golden files under
+  <code>tests/regression-data/</code>.</li>
+<li>Skip the non-goals listed in spec §4 (abstract-method <code>pass</code> stubs,
+  <code>TYPE_CHECKING</code>-only asserts, a few unreachable defensive guards in
+  <code>get_models_source</code>) — do not write tests chasing them.</li>
+</ul>
+<hr />
+<h2 id="task-1-fix-the-doctest-harness-and-the-two-bugs-it-was-hiding">Task 1: Fix the doctest harness and the two bugs it was hiding</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_datetime.py</code>, <code>tests/test_io.py</code>, <code>tests/test_model.py</code>,
+  <code>tests/test_thesaurus.py</code> (no doctest there — skip),
+  <code>tests/test_types.py</code> (no <code>test_doctest</code> — skip), <code>tests/test_utilities.py</code>,
+  <code>tests/test_version.py</code> — every file with a <code>test_doctest()</code> function.
+- Modify: <code>src/sob/utilities.py</code> (docstring fix for <code>suffix_long_lines</code>),
+  <code>src/sob/_datetime.py</code> (behavior fix for <code>str2datetime</code>).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>doctest.testmod</code>.
+- Produces: a <code>test_doctest()</code> pattern (<code>assert doctest.testmod(module,
+  verbose=False).failed == 0</code>) that every subsequent task's module can
+  rely on to actually fail if a docstring example is wrong.</p>
+<ul>
+<li>[ ] <strong>Step 1: Confirm the two currently-failing doctests</strong></li>
+</ul>
+<p>Run:
+  <div class="highlight"><pre><span></span><code>hatch run hatch-test.py3.10:python -m pytest -vv --doctest-modules \
+  --ignore=.scratch.py src/sob/_datetime.py src/sob/utilities.py
+</code></pre></div>
+  Confirm <code>sob.utilities.suffix_long_lines</code> and
+  <code>sob._datetime.str2datetime</code> are the only two <code>FAILED</code> items.</p>
+<ul>
+<li>[ ] <strong>Step 2: Change every <code>test_doctest()</code> to assert on the result</strong></li>
+</ul>
+<p>In each of <code>tests/test_datetime.py</code>, <code>tests/test_io.py</code>,
+  <code>tests/test_model.py</code>, <code>tests/test_utilities.py</code>, <code>tests/test_version.py</code>,
+  change:
+  <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_doctest</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">(</span><span class="n">utilities</span><span class="p">)</span>
+</code></pre></div>
+  to:
+  <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_doctest</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">results</span><span class="p">:</span> <span class="n">doctest</span><span class="o">.</span><span class="n">TestResults</span> <span class="o">=</span> <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">(</span><span class="n">utilities</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">results</span><span class="o">.</span><span class="n">failed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="n">results</span>
+</code></pre></div>
+  (substituting the correct module name per file). This step alone should
+  now make <code>test_utilities.py::test_doctest</code> and
+  <code>test_datetime.py::test_doctest</code> fail via <code>hatch test</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Run tests and confirm the two expected failures</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_utilities.py tests/test_datetime.py -vv</code> should
+  show exactly 2 failures now (previously silently swallowed).</p>
+<ul>
+<li>[ ] <strong>Step 4: Fix the <code>suffix_long_lines</code> docstring</strong></li>
+</ul>
+<p>Read <code>src/sob/utilities.py</code> around line 580 (the <code>suffix_long_lines</code>
+  docstring example). The function correctly appends <code># noqa: E501</code> to the
+  wrapped long line; the docstring's expected output is stale (missing
+  that suffix). Update the expected output in the docstring to match the
+  function's real, correct behavior (do not change the function itself
+  unless the <em>behavior</em>, not just the example, turns out to be wrong on
+  inspection).</p>
+<ul>
+<li>[ ] <strong>Step 5: Fix the <code>str2datetime</code> Python-3.10 <code>Z</code>-suffix bug</strong></li>
+</ul>
+<p>Read <code>src/sob/_datetime.py:46-74</code> (<code>str2datetime</code>). On Python 3.10,
+  <code>datetime.fromisoformat</code> doesn't understand a trailing <code>Z</code>, so the
+  function falls through to <code>iso8601.parse_date</code>, which returns a
+  UTC-aware datetime — but the subsequent "iso8601 incorrectly sets the
+  UTC offset to 0 instead of None" correction then strips tzinfo entirely,
+  even though the original string explicitly ended in <code>Z</code> (meaning UTC,
+  not "no timezone given"). Fix the condition so it only strips tzinfo
+  when the string did <strong>not</strong> explicitly indicate a timezone (i.e., don't
+  strip when the fallback was entered specifically because of a trailing
+  <code>Z</code>) — the corrected behavior must return
+  <code>datetime.datetime(2023, 10, 1, 12, 0, tzinfo=datetime.timezone.utc)</code>
+  for <code>str2datetime("2023-10-01T12:00:00Z")</code> on every supported Python
+  version (3.10–3.13), matching the module's own docstring.</p>
+<ul>
+<li>[ ] <strong>Step 6: Run the full suite on Python 3.10 and confirm all doctests pass</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code>hatch run hatch-test.py3.10:python -m pytest -vv --doctest-modules \
+  --ignore=.scratch.py
+</code></pre></div>
+  Expect <code>0 failed</code>. Then <code>hatch test -- -vv</code> (the asserted <code>test_doctest</code>
+  functions) should also be green.</p>
+<ul>
+<li>[ ] <strong>Step 7: Run <code>make format</code> and commit</strong></li>
+</ul>
+<p>Commit message should explain both the harness fix and the two
+  behavioral fixes it uncovered, e.g. "Assert doctest results in
+  test_doctest(); fix suffix_long_lines example and str2datetime Z-suffix
+  handling on Python 3.10".</p>
+<hr />
+<h2 id="task-2-_datetimepy-coverage-93-100">Task 2: <code>_datetime.py</code> coverage (93% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_datetime.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob._datetime.str2datetime</code>, <code>sob._datetime.str2date</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<p>Add, parallel to the existing <code>test_raise_str2date_type_error</code>:
+  <div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_raise_str2datetime_type_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">str2datetime</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># type: ignore  # noqa: SLF001</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_raise_str2date_type_error_non_str</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">_datetime</span><span class="o">.</span><span class="n">str2date</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># type: ignore  # noqa: SLF001</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+</code></pre></div>
+  (rename to avoid clashing with the existing <code>test_raise_str2date_type_error</code>,
+  which currently tests a <em>different</em> input — check the existing test
+  first and don't duplicate its name or intent).</p>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_datetime.py -vv</code></p>
+<ul>
+<li>[ ] <strong>Step 3: Confirm coverage</strong></li>
+</ul>
+<p><code>hatch run hatch-test.py3.10:coverage report -m src/sob/_datetime.py</code>
+  should show 100%.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-3-_iopy-coverage-79-100">Task 3: <code>_io.py</code> coverage (79% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_utilities.py</code> (it already has <code>test_io()</code> calling
+  <code>doctest.testmod(_io)</code> — add a sibling test function alongside it).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob._io.read</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">UnsupportedReadProxy</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">UnsupportedOperation</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NotReadableProxy</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_type_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">NotReadableProxy</span><span class="p">())</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_read_unsupported_operation</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_io</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">UnsupportedReadProxy</span><span class="p">())</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+</code></pre></div>
+  Add <code>from io import UnsupportedOperation</code> to the imports.</p>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_utilities.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>_io.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-4-_typespy-coverage-93-100">Task 4: <code>_types.py</code> coverage (93% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_types.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.UNDEFINED</code>, <code>sob.NULL</code>, <code>sob.Null._marshal</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<p>Extend <code>test_undefined()</code>:
+  <div class="highlight"><pre><span></span><code><span class="k">assert</span> <span class="nb">hash</span><span class="p">(</span><span class="n">sob</span><span class="o">.</span><span class="n">UNDEFINED</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+</code></pre></div>
+  Extend <code>test_null()</code>:
+  <div class="highlight"><pre><span></span><code><span class="k">assert</span> <span class="nb">hash</span><span class="p">(</span><span class="n">sob</span><span class="o">.</span><span class="n">NULL</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+<span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">sob</span><span class="o">.</span><span class="n">NULL</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;null&quot;</span>
+<span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">Null</span><span class="o">.</span><span class="n">_marshal</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span>  <span class="c1"># noqa: SLF001</span>
+</code></pre></div></p>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_types.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>_types.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-5-_utilitiespy-coverage-89-100">Task 5: <code>_utilities.py</code> coverage (89% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_utilities.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob._utilities.deprecated</code>, <code>sob._utilities.get_readable_url</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<p><div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_deprecated</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="nd">@_utilities</span><span class="o">.</span><span class="n">deprecated</span><span class="p">(</span><span class="s2">&quot;this is deprecated&quot;</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">old_function</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">value</span> <span class="o">*</span> <span class="mi">2</span>
+
+    <span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">warns</span><span class="p">(</span><span class="ne">DeprecationWarning</span><span class="p">,</span> <span class="n">match</span><span class="o">=</span><span class="s2">&quot;this is deprecated&quot;</span><span class="p">):</span>
+        <span class="n">result</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">old_function</span><span class="p">(</span><span class="mi">21</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">result</span> <span class="o">==</span> <span class="mi">42</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">URLNonStringProxy</span><span class="p">:</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="mi">123</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">NoAttributesProxy</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_get_readable_url_type_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">get_readable_url</span><span class="p">(</span><span class="n">URLNonStringProxy</span><span class="p">())</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_get_readable_url_none</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">get_readable_url</span><span class="p">(</span><span class="n">NoAttributesProxy</span><span class="p">())</span> <span class="ow">is</span> <span class="kc">None</span>
+</code></pre></div>
+  Import <code>_utilities</code> (module) alongside the existing
+  <code>from sob._utilities import get_readable_url</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_utilities.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>_utilities.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-6-errorspy-coverage-88-100">Task 6: <code>errors.py</code> coverage (88% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_utilities.py</code> (or create <code>tests/test_errors.py</code> if
+  it reads more clearly as its own file — prefer adding to
+  <code>test_utilities.py</code> unless it grows unwieldy, per the plan's "don't
+  fragment files" constraint).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.errors.DeserializeError</code>, <code>sob.errors.append_exception_text</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_deserialize_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">DeserializeError</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;bad-data&quot;</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="s2">&quot;oops&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">data</span> <span class="o">==</span> <span class="s2">&quot;bad-data&quot;</span>
+    <span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">message</span> <span class="o">==</span> <span class="s2">&quot;oops&quot;</span>
+    <span class="k">assert</span> <span class="nb">repr</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;oops</span><span class="se">\n</span><span class="s2">Could not parse:</span><span class="se">\n</span><span class="s2">bad-data&quot;</span>
+    <span class="k">assert</span> <span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">)</span> <span class="o">==</span> <span class="nb">repr</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_append_exception_text_strerror</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="ne">OSError</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;boom&quot;</span><span class="p">)</span>
+    <span class="n">sob</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append_exception_text</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot; (more info)&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">strerror</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">strerror</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot; (more info)&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_append_exception_text_no_string_arg</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">()</span>
+    <span class="n">sob</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">append_exception_text</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="s2">&quot;appended&quot;</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">error</span><span class="o">.</span><span class="n">args</span> <span class="o">==</span> <span class="p">(</span><span class="s2">&quot;appended&quot;</span><span class="p">,)</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_utilities.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>errors.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-7-typespy-coverage-81-100">Task 7: <code>types.py</code> coverage (81% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_types.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.Types</code>, <code>sob.MutableTypes</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_types_bare_type</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">types_</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">Types</span><span class="p">(</span><span class="nb">str</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">types_</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_types_copy</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">types_</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">Types</span><span class="p">([</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span>
+    <span class="n">copied</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">types_</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">copied</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">types_</span>
+    <span class="k">assert</span> <span class="nb">list</span><span class="p">(</span><span class="n">copied</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span><span class="p">(</span><span class="n">types_</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_mutable_types_protocol</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">types_</span><span class="p">:</span> <span class="n">sob</span><span class="o">.</span><span class="n">MutableTypes</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">MutableTypes</span><span class="p">([</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span>
+    <span class="n">types_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span>
+    <span class="k">assert</span> <span class="n">types_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="nb">float</span>
+    <span class="n">types_</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="nb">bool</span><span class="p">])</span>
+    <span class="k">assert</span> <span class="nb">bool</span> <span class="ow">in</span> <span class="n">types_</span>
+    <span class="k">del</span> <span class="n">types_</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">float</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types_</span>
+    <span class="n">types_</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">bytes</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">bytes</span> <span class="ow">in</span> <span class="n">types_</span>
+    <span class="n">new_types</span> <span class="o">=</span> <span class="n">types_</span> <span class="o">+</span> <span class="p">[</span><span class="nb">complex</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="nb">complex</span> <span class="ow">in</span> <span class="n">new_types</span>
+    <span class="k">assert</span> <span class="nb">complex</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">types_</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_types.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>types.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-8-propertiespy-coverage-96-100">Task 8: <code>properties.py</code> coverage (96% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_model.py</code> (or a new <code>tests/test_properties.py</code> if
+  the additions don't fit naturally near existing content).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.properties.has_mutable_types</code>, <code>sob.Property</code>,
+  <code>sob.StringProperty</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_has_mutable_types</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">has_mutable_types</span><span class="p">(</span><span class="n">sob</span><span class="o">.</span><span class="n">Property</span><span class="p">())</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">sob</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">has_mutable_types</span><span class="p">(</span><span class="n">sob</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">)</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">properties</span><span class="o">.</span><span class="n">has_mutable_types</span><span class="p">(</span><span class="nb">object</span><span class="p">())</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_property_types_immutable</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">string_property</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">string_property</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_property_types_invalid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">property_</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">Property</span><span class="p">()</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">property_</span><span class="o">.</span><span class="n">types</span> <span class="o">=</span> <span class="s2">&quot;not-a-type&quot;</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_property_versions_invalid</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">property_</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">Property</span><span class="p">()</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">property_</span><span class="o">.</span><span class="n">versions</span> <span class="o">=</span> <span class="mi">123</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_model.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>properties.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-9-versionpy-coverage-80-100">Task 9: <code>version.py</code> coverage (80% → 100%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_version.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.Version</code>, <code>sob.version._version_as_tuple</code> (module-internal,
+  acceptable to import directly per spec §5.9).</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_version_equality_precision</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">equals</span><span class="o">=</span><span class="s2">&quot;1.2&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1.2.0&quot;</span>
+    <span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">equals</span><span class="o">=</span><span class="s2">&quot;1.2&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1.2&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_string_value_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="s2">&quot;not-a-version&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_numeric_and_sequence_inputs</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">compatible_with</span><span class="o">=</span><span class="mf">1.2</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;1.2&quot;</span>
+    <span class="k">assert</span> <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">compatible_with</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">==</span> <span class="s2">&quot;1.2&quot;</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_as_tuple_type_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">version</span><span class="o">.</span><span class="n">_version_as_tuple</span><span class="p">(</span><span class="nb">object</span><span class="p">())</span>  <span class="c1"># type: ignore  # noqa: SLF001</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_string_type_error</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="mi">123</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+    <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_conflicting_specifications</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="s2">&quot;a==1,b==2&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_version_str_no_specification</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">version</span> <span class="o">=</span> <span class="n">sob</span><span class="o">.</span><span class="n">Version</span><span class="p">(</span><span class="n">equals</span><span class="o">=</span><span class="s2">&quot;1.0&quot;</span><span class="p">)</span>
+    <span class="n">version</span><span class="o">.</span><span class="n">specification</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore</span>
+    <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">version</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+        <span class="n">error_caught</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">assert</span> <span class="n">error_caught</span>
+</code></pre></div>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_version.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>version.py</code> should show 100%.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-10-utilitiespy-coverage-85-97">Task 10: <code>utilities.py</code> coverage (85% → ~97%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_utilities.py</code></p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.utilities.get_relative_url</code>, <code>_align_indent</code>,
+  <code>_split_long_comment_line</code>, <code>split_long_docstring_lines</code>,
+  <code>get_qualified_name</code>, <code>get_calling_module_name</code>,
+  <code>get_calling_function_qualified_name</code>, <code>_repr_list</code>, <code>_repr_set</code>,
+  <code>_repr_dict</code>, <code>represent</code>, <code>get_method</code> (several are private/underscore
+  — import directly from <code>sob.utilities</code> as the unit under test, matching
+  how <code>tests/test_utilities.py</code> already imports <code>_io</code>/<code>_types</code> directly).</p>
+<ul>
+<li>[ ] <strong>Step 1: Write the tests</strong></li>
+</ul>
+<p>One test function per bullet in spec §5.10 — follow the exact
+  scenarios listed there (malformed URL → <code>ValueError</code>; two URLs with no
+  shared prefix for <code>get_relative_url</code>; <code>_align_indent</code> on a no-indent
+  line; a short line through <code>_split_long_comment_line</code>; an
+  already-uniform-indent docstring and one containing a <code>"""</code>/<code>'''</code>
+  literal through <code>split_long_docstring_lines</code>; unsupported-type,
+  generic-alias, and unresolvable-name cases for <code>get_qualified_name</code>;
+  out-of-range and non-<code>int</code> <code>depth</code> for the calling-frame helpers; empty
+  <code>list</code>/<code>set</code>/<code>dict</code> through <code>_repr_list</code>/<code>_repr_set</code>/<code>_repr_dict</code>;
+  <code>represent</code> on a bare <code>type</code>; <code>get_method</code> with no <code>default</code> on a
+  missing attribute, and with/without <code>default</code> on a non-callable
+  attribute). Write these as small, focused <code>test_*</code> functions rather
+  than one giant test.</p>
+<ul>
+<li>[ ] <strong>Step 2: Run and confirm pass</strong> — <code>hatch test -- tests/test_utilities.py -vv</code></li>
+<li>[ ] <strong>Step 3: Confirm coverage</strong> — <code>utilities.py</code> should be ≥ 97%; check
+  <code>coverage report -m</code> for any remaining lines and decide per spec §4
+  whether they're a real gap or a non-goal.</li>
+<li>[ ] <strong>Step 4: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-11-hookspy-coverage-45-90-highest-value">Task 11: <code>hooks.py</code> coverage (45% → ~90%+) — highest value</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_model.py</code>, or create <code>tests/test_hooks.py</code> if it
+  reads more clearly standalone (recommended, given this is the biggest
+  net-new test surface in the plan — a dedicated file keeps
+  <code>test_model.py</code> from growing unwieldy; if created, give it the same
+  <code>from __future__ import annotations</code> / <code>if __name__ == "__main__"</code>
+  structure as its siblings).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.ObjectHooks</code>, <code>sob.ArrayHooks</code>, <code>sob.DictionaryHooks</code>,
+  <code>sob.write_model_hooks</code>, <code>sob.read_model_hooks</code>,
+  <code>sob.get_writable_model_hooks</code>, <code>sob.get_writable_object_hooks</code>,
+  <code>sob.get_writable_array_hooks</code>, <code>sob.get_writable_dictionary_hooks</code>,
+  <code>sob.get_model_hooks_type</code>; real <code>ObjectA</code>/<code>ArrayA</code> classes from
+  <code>tests/test_model.py</code> (import them if writing a separate file) or a
+  small dedicated <code>Dictionary</code> subclass.</p>
+<ul>
+<li>[ ] <strong>Step 1: Object hooks test</strong></li>
+</ul>
+<p>Build a real <code>Object</code> subclass, register <code>ObjectHooks(before_setattr=fn,
+  after_setattr=fn)</code> via <code>sob.write_model_hooks</code>, set an attribute, and
+  assert both real (plain-function, list-appending) callables fired with
+  the arguments you expect.</p>
+<ul>
+<li>[ ] <strong>Step 2: Array hooks test</strong></li>
+</ul>
+<p>Same pattern with <code>ArrayHooks(before_append=fn, after_append=fn)</code> on an
+  <code>Array</code> subclass and <code>.append(...)</code>.</p>
+<ul>
+<li>[ ] <strong>Step 3: Dictionary hooks test</strong></li>
+</ul>
+<p>Same pattern with <code>DictionaryHooks(before_setitem=fn, after_setitem=fn)</code>
+  on a <code>Dictionary</code> subclass and <code>d["k"] = v</code>.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>read_model_hooks</code> type-guard test</strong></li>
+</ul>
+<p><code>sob.read_model_hooks("not-a-model")</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 5: <code>get_writable_*_hooks</code> tests</strong></li>
+</ul>
+<p>On a fresh class with no hooks assigned: <code>sob.get_writable_model_hooks
+  (cls)</code> returns a new <code>ObjectHooks</code>/<code>ArrayHooks</code>/<code>DictionaryHooks</code>
+  (assert type); a second call / <code>sob.read_model_hooks(cls)</code> returns the
+  <em>same</em> object (idempotency); repeat on an instance; call
+  <code>sob.get_writable_object_hooks</code>/<code>get_writable_array_hooks</code>/
+  <code>get_writable_dictionary_hooks</code> directly on each container type; and
+  <code>sob.get_writable_model_hooks(42)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 6: <code>get_model_hooks_type</code> tests</strong></li>
+</ul>
+<p>Assert <code>ObjectHooks</code>/<code>ArrayHooks</code>/<code>DictionaryHooks</code> returned correctly
+  for each container's class and instance; <code>sob.get_model_hooks_type(str)</code>
+  → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 7: <code>write_model_hooks</code> error-branch tests</strong></li>
+</ul>
+<p><code>sob.write_model_hooks(object_cls, sob.ArrayHooks())</code> (wrong hooks type
+  for that model) → <code>ValueError</code>; <code>sob.write_model_hooks("not-a-model",
+  hooks)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 8: Run and confirm pass</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_hooks.py -vv</code> (or <code>tests/test_model.py -vv</code>).</p>
+<ul>
+<li>[ ] <strong>Step 9: Confirm coverage</strong></li>
+</ul>
+<p><code>hooks.py</code> should reach ~90%+; check <code>coverage report -m src/sob/hooks.py</code>
+  against the remaining line numbers in spec §5.11 and decide if any
+  residual gap is worth a follow-up test.</p>
+<ul>
+<li>[ ] <strong>Step 10: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-12-metapy-coverage-79-93">Task 12: <code>meta.py</code> coverage (79% → ~93%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_model.py</code>, <code>tests/test_version.py</code>.</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.get_writable_object_meta</code>, <code>sob.Properties</code>,
+  <code>sob.read_model_meta</code>, <code>sob.write_model_meta</code>, <code>sob.meta.pointer</code>,
+  <code>sob.meta.url</code>, <code>sob.meta.version_model</code>, <code>sob.meta._copy_model_meta_to</code>,
+  <code>sob.meta._read_object_properties</code>, <code>sob.meta._read_object_property_names</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Bare-type property assignment tests</strong></li>
+</ul>
+<p><code>DictionaryProperty(value_types=sob.StringProperty())</code> and
+  <code>ArrayProperty(item_types=str)</code> (single, not wrapped in a list) —
+  assert construction succeeds and the resulting <code>Types</code> contains the one
+  item.</p>
+<ul>
+<li>[ ] <strong>Step 2: <code>Properties</code> mapping-protocol tests</strong></li>
+</ul>
+<p>Using <code>sob.get_writable_object_meta(ObjectA).properties</code> (a real,
+  already-populated <code>Properties</code>): <code>.pop(...)</code>, <code>.popitem()</code>,
+  <code>.setdefault(...)</code> (valid and invalid-type cases), <code>.get("missing")</code>,
+  <code>.clear()</code>, <code>copy.copy(...)</code>, <code>repr(...)</code>, equality between two
+  independently-built <code>Properties</code> with identical items,
+  <code>properties["bad"] = "not-a-property"</code> → <code>TypeError</code>, <code>.update({...})</code>.
+  Take care to do this on a <strong>copy</strong> of <code>ObjectA</code>'s properties (or a
+  freshly-declared test-only <code>Object</code> subclass) so mutating/clearing them
+  doesn't break other tests that depend on <code>ObjectA</code>'s metadata.</p>
+<ul>
+<li>[ ] <strong>Step 3: <code>read_model_meta</code>/<code>get_writable_model_meta</code> guard tests</strong></li>
+</ul>
+<p>A brand-new <code>Object</code> subclass with no metadata ever assigned →
+  <code>sob.read_model_meta(NewClass)</code> is <code>None</code>; <code>sob.get_writable_object_meta
+  ("not-a-model")</code> and <code>sob.get_writable_object_meta(int)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>write_model_meta</code> guard tests</strong></li>
+</ul>
+<p><code>sob.write_model_meta(ObjectA, sob.ArrayMeta())</code> → <code>ValueError</code>;
+  <code>sob.write_model_meta("not-a-model", None)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 5: <code>_read_object_properties</code>/<code>_read_object_property_names</code> tests</strong></li>
+</ul>
+<p>On a class with no metadata → both return <code>None</code>.</p>
+<ul>
+<li>[ ] <strong>Step 6: <code>pointer</code>/<code>url</code> deprecated-alias tests</strong></li>
+</ul>
+<p><code>sob.meta.pointer(instance, "/foo/bar")</code> then a getter-only call;
+  <code>sob.meta.pointer(123)</code> → <code>TypeError</code>; <code>sob.meta.url(instance,
+  "https://example.com")</code>.</p>
+<ul>
+<li>[ ] <strong>Step 7: Versioned <code>Array</code>/<code>Dictionary</code> tests</strong></li>
+</ul>
+<p>In <code>tests/test_version.py</code>, extend the existing versioning pattern: give
+  an <code>ArrayProperty(item_types=...)</code> or <code>DictionaryProperty(value_types=
+  ...)</code> a nested <code>Property</code> with <code>versions=[...]</code>, call
+  <code>sob.meta.version_model(container_instance, "test-specification", "1.0")</code>
+  directly, and assert the container's types were filtered as expected.
+  Also construct a case where a to-be-removed versioned property still
+  has a value set, and assert <code>sob.errors.VersionError</code> is raised; and
+  <code>sob.meta.version_model(42, "spec", "1.0")</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 8: <code>_copy_model_meta_to</code> guard test</strong></li>
+</ul>
+<p>Import <code>sob.meta._copy_model_meta_to</code> directly and call it with a
+  non-<code>abc.Model</code> <code>source</code> → confirm it raises.</p>
+<ul>
+<li>[ ] <strong>Step 9: Run and confirm pass</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_model.py tests/test_version.py -vv</code></p>
+<ul>
+<li>[ ] <strong>Step 10: Confirm coverage</strong></li>
+</ul>
+<p><code>meta.py</code> should reach ~93%; check <code>coverage report -m src/sob/meta.py</code>
+  against spec §5.12 for any residual gap worth chasing.</p>
+<ul>
+<li>[ ] <strong>Step 11: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-13-modelpy-coverage-87-95">Task 13: <code>model.py</code> coverage (87% → ~95%)</h2>
+<p><strong>Files:</strong>
+- Modify: <code>tests/test_model.py</code>.</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.Array</code>, <code>sob.Dictionary</code>, <code>sob.marshal</code>, <code>sob.unmarshal</code>,
+  <code>sob.serialize</code>, <code>sob.deserialize</code>, <code>sob.validate</code>,
+  <code>sob.replace_model_nulls</code>, <code>sob.get_model_from_meta</code>,
+  <code>sob.get_models_source</code>, plus real <code>ObjectA</code>/<code>ArrayA</code> (and a new
+  <code>DictionaryA</code> test class, mirroring <code>MemberDictionaryA</code> from
+  <code>tests/test_version.py</code>) from this file.</p>
+<ul>
+<li>[ ] <strong>Step 1: <code>Model</code>/format-guard test</strong></li>
+</ul>
+<p><code>sob.Array(123)</code> and <code>sob.Dictionary(123)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: <code>Array</code> protocol test</strong></li>
+</ul>
+<p>Build <code>arr = ArrayA([ObjectA(string="a")])</code> and exercise <code>.append(...)</code>,
+  <code>arr[0] = ...</code>, <code>del arr[0]</code>, <code>.sort()</code>, <code>.extend([...])</code>,
+  <code>reversed(arr)</code>, <code>.pop()</code>, <code>.remove(...)</code>, <code>copy.copy(arr)</code>,
+  <code>repr(arr)</code>, <code>str(arr)</code>, <code>arr == ArrayA()</code> (type and length mismatch).
+  In a follow-up within the same test or a sibling one, assign real
+  <code>ArrayHooks</code> (<code>before_setitem</code>/<code>after_setitem</code>/<code>before_marshal</code>/
+  <code>after_marshal</code>/<code>before_validate</code>) via <code>sob.write_model_hooks</code> and call
+  <code>sob.validate(arr)</code> against an invalid item to hit the
+  <code>ValidationError</code> raise.</p>
+<ul>
+<li>[ ] <strong>Step 3: <code>Dictionary</code> protocol test</strong></li>
+</ul>
+<p>Declare <code>class DictionaryA(sob.Dictionary)</code> (new test fixture class,
+  <code>item</code>/<code>value_types=sob.Types([ObjectA])</code>, following the <code>ArrayA</code>
+  pattern already in this file). Build <code>d = DictionaryA({"a":
+  ObjectA(...)})</code> and exercise <code>.update({...}, [("c", ...)], kw=...)</code>,
+  <code>.setdefault(...)</code>, <code>.pop(...)</code>, <code>.popitem()</code>, <code>"a" in d</code>,
+  <code>list(reversed(d))</code>, <code>copy.copy(d)</code>/<code>copy.deepcopy(d)</code>, <code>d ==
+  DictionaryA()</code>, construction from a tuple-iterable instead of a <code>dict</code>,
+  and real <code>DictionaryHooks</code> on <code>__setitem__</code>/<code>_marshal</code>.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>Object</code> extras/copy-init test</strong></li>
+</ul>
+<p>Construct an <code>ObjectA</code> from another object with an incompatible
+  property type to hit <code>_copy_init</code>'s exception-augmentation path;
+  <code>obj["extra_key"] = "value"</code>, read it back, <code>del obj["extra_key"]</code> to
+  hit the <code>_extra</code> branches; assign a real <code>ObjectHooks(before_setattr=fn)</code>
+  and set an attribute.</p>
+<ul>
+<li>[ ] <strong>Step 5: <code>marshal()</code> direct-call tests</strong></li>
+</ul>
+<p><code>sob.marshal({"a": 1})</code>, <code>sob.marshal([1, 2])</code>, <code>sob.marshal(Decimal
+  ("1.5"))</code>, <code>sob.marshal(datetime.now())</code>, <code>sob.marshal(b"data")</code>,
+  <code>sob.marshal(object())</code> → <code>ValueError</code>, <code>sob.marshal(1, types=(str,))</code>
+  → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 6: <code>unmarshal()</code> tests</strong></li>
+</ul>
+<p><code>sob.unmarshal({"string": "a"}, types=ObjectA)</code> (single type, not
+  iterable); <code>sob.unmarshal((x for x in [1, 2]))</code> (generator); <code>sob.
+  unmarshal(None)</code>; a real <code>before_unmarshal</code> hook registered on <code>ObjectA</code>.</p>
+<ul>
+<li>[ ] <strong>Step 7: <code>serialize</code>/<code>deserialize</code> tests</strong></li>
+</ul>
+<p>Real <code>before_serialize</code>/<code>after_serialize</code> hooks on <code>ObjectA</code>; <code>sob.
+  deserialize(b'{"a": 1}')</code>; <code>sob.deserialize(123)</code> → <code>TypeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 8: <code>validate()</code> bare-type test</strong></li>
+</ul>
+<p><code>sob.validate(ObjectA(), types=(ObjectA,))</code>.</p>
+<ul>
+<li>[ ] <strong>Step 9: <code>replace_model_nulls</code> on an <code>Array</code> test</strong></li>
+</ul>
+<p><code>arr = ArrayA([sob.NULL]); sob.replace_model_nulls(arr); assert arr[0]
+  is None</code>.</p>
+<ul>
+<li>[ ] <strong>Step 10: <code>get_model_from_meta</code>/<code>get_models_source</code> extension</strong></li>
+</ul>
+<p>Extend <code>test_get_model_from_meta_regression</code> with a <code>DictionaryMeta</code>-
+  based class and <code>docstring=</code>/<code>pre_init_source=</code> arguments, and include
+  it in the combined <code>get_models_source(...)</code> call. Run <code>make
+  refresh-test-data</code> if this changes the golden regression output, and
+  review the diff before committing the regenerated fixture.</p>
+<ul>
+<li>[ ] <strong>Step 11: Run and confirm pass</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_model.py -vv</code></p>
+<ul>
+<li>[ ] <strong>Step 12: Confirm coverage</strong></li>
+</ul>
+<p><code>model.py</code> should reach ~95%; check <code>coverage report -m src/sob/model.py</code>
+  against spec §5.13 for residual gaps.</p>
+<ul>
+<li>[ ] <strong>Step 13: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-14-thesauruspy-coverage-64-88">Task 14: <code>thesaurus.py</code> coverage (64% → ~88%)</h2>
+<p><strong>Files:</strong>
+- Create: a second fixture — either extend
+  <code>tests/static-data/thesaurus.json</code> or add
+  <code>tests/static-data/thesaurus_polymorphic.json</code>.
+- Modify: <code>tests/test_thesaurus.py</code>.</p>
+<p><strong>Interfaces:</strong>
+- Consumes: <code>sob.thesaurus.Synonyms</code>, <code>sob.thesaurus.Thesaurus</code>,
+  <code>sob.thesaurus.get_class_meta_attribute_assignment_source</code>.</p>
+<ul>
+<li>[ ] <strong>Step 1: Build the richer fixture</strong></li>
+</ul>
+<p>Add <code>tests/static-data/thesaurus_polymorphic.json</code> containing: a base64
+  string value, a plain ISO date string, a datetime string, a key whose
+  value is sometimes a JSON object and sometimes a JSON array across
+  records (to trigger the merge-conflict error path), a key whose
+  synonym values include an empty object <code>{}</code> alongside populated ones,
+  and a key that is always <code>null</code>.</p>
+<ul>
+<li>[ ] <strong>Step 2: <code>Synonyms</code> construction/inference tests</strong></li>
+</ul>
+<p><code>Synonyms().add(object())</code> → <code>TypeError</code>; <code>Synonyms([1.5, 2])</code> keeps
+  the inferred type as <code>float</code>; a <code>Synonyms</code> built from the base64/date/
+  datetime fixture values infers <code>bytes</code>/<code>date</code>/<code>datetime</code> respectively;
+  a <code>Synonyms</code> where every value is <code>None</code> yields an untyped property.</p>
+<ul>
+<li>[ ] <strong>Step 3: <code>Synonyms</code> file-like input test</strong></li>
+</ul>
+<p>Add a real <code>io.StringIO</code>/<code>io.BytesIO</code> containing JSON as a value and
+  confirm <code>Synonyms</code>/<code>Thesaurus</code> decode it correctly.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>Synonyms</code> mutation/set-algebra tests</strong></li>
+</ul>
+<p>Build two real <code>Synonyms</code> from different fixture groups; exercise
+  <code>.discard(item)</code>, <code>.remove(item)</code>, <code>.pop()</code>, <code>&amp;</code>, <code>^</code>, <code>-</code>, <code>&lt;=</code>, <code>&lt;</code>,
+  <code>&gt;</code>, <code>&gt;=</code>, <code>==</code>, <code>in</code>, <code>.isdisjoint(...)</code>, <code>copy.copy(...)</code>,
+  <code>copy.deepcopy(...)</code>.</p>
+<ul>
+<li>[ ] <strong>Step 5: <code>Synonyms.get_models</code> guard tests</strong></li>
+</ul>
+<p><code>synonyms.get_models(pointer, name=123)</code> → <code>TypeError</code>;
+  <code>Synonyms([None]).get_models(pointer)</code> → <code>RuntimeError</code>.</p>
+<ul>
+<li>[ ] <strong>Step 6: Metadata-merge error-path test</strong></li>
+</ul>
+<p>Using the mixed object/array fixture key from Step 1, assert
+  <code>.get_models()</code>/<code>.get_module_source()</code> on the corresponding <code>Thesaurus</code>
+  raises <code>TypeError</code> (incompatible container kinds at the same pointer).</p>
+<ul>
+<li>[ ] <strong>Step 7: Metadata-merge success-path test</strong></li>
+</ul>
+<p>Since the success-merge branch isn't reachable through nested fixture
+  data, call the module-internal <code>_update_object_meta</code>/
+  <code>_update_object_class_from_meta</code> (and <code>_array</code>/<code>_dictionary</code>
+  counterparts) directly with two real, hand-built <code>sob.meta</code> instances
+  and two real classes from <code>sob.model.get_model_from_meta</code>; assert the
+  merged metadata/class reflects the union of properties/types.</p>
+<ul>
+<li>[ ] <strong>Step 8: <code>get_class_meta_attribute_assignment_source</code> test</strong></li>
+</ul>
+<p>Call directly with a real <code>ArrayMeta</code>/<code>ObjectMeta</code> that sets a
+  non-default attribute (e.g. <code>item_types</code>) and assert the generated
+  source string.</p>
+<ul>
+<li>[ ] <strong>Step 9: <code>Thesaurus</code> mapping/set-protocol tests</strong></li>
+</ul>
+<p>Build a real <code>Thesaurus</code> from fixture data; exercise <code>.popitem()</code>,
+  <code>.update(new=[...])</code>, <code>.setdefault("k", [...])</code>, <code>thesaurus["new"]</code>
+  (auto-vivifying) vs. <code>thesaurus["existing"]</code>, <code>"k" in thesaurus</code>,
+  <code>.keys()</code>, <code>.values()</code>, <code>t1 == t2</code>, <code>copy.copy(t)</code>, <code>reversed(t)</code>,
+  <code>copy.deepcopy(t)</code>, <code>t1 += t2</code> / <code>t1 + t2</code> (two <code>Thesaurus</code> built from
+  disjoint fixture subsets).</p>
+<ul>
+<li>[ ] <strong>Step 10: <code>get_module</code>/<code>save_module</code> tests</strong></li>
+</ul>
+<p><code>thesaurus.get_module()</code> — assert generated classes are real,
+  importable attributes on the returned module. Using pytest's <code>tmp_path</code>
+  fixture, call <code>thesaurus.save_module(tmp_path / "model.py")</code> against a
+  path guaranteed not to exist, and confirm the file is written and
+  re-importable (e.g. via <code>importlib</code> against the written path).</p>
+<ul>
+<li>[ ] <strong>Step 11: Run and confirm pass</strong></li>
+</ul>
+<p><code>hatch test -- tests/test_thesaurus.py -vv</code></p>
+<ul>
+<li>[ ] <strong>Step 12: Confirm coverage</strong></li>
+</ul>
+<p><code>thesaurus.py</code> should reach ~88%; check <code>coverage report -m
+  src/sob/thesaurus.py</code> against spec §5.14 for residual gaps.</p>
+<ul>
+<li>[ ] <strong>Step 13: <code>make format</code> and commit</strong></li>
+</ul>
+<hr />
+<h2 id="task-15-final-verification-against-acceptance-criteria">Task 15: Final verification against acceptance criteria</h2>
+<p><strong>Files:</strong> none (verification only).</p>
+<p><strong>Interfaces:</strong>
+- Consumes: the full test suite and coverage report built up by Tasks 1–14.</p>
+<ul>
+<li>[ ] <strong>Step 1: Full local run</strong></li>
+</ul>
+<p><code>hatch test -c -vv</code> (matches CI's <code>hatch test -c -py &lt;version&gt;</code>) on
+  Python 3.10. Confirm zero failures, including all <code>--doctest-modules</code>
+  items.</p>
+<ul>
+<li>[ ] <strong>Step 2: Coverage check against acceptance criteria</strong></li>
+</ul>
+<p><code>hatch run hatch-test.py3.10:coverage report -m</code>. Confirm: every module
+  ≥ 90%, <code>hooks.py</code> and <code>thesaurus.py</code> ≥ 85%, overall ≥ 95%. If any module
+  falls short, check whether the shortfall is an already-documented
+  non-goal (spec §4) or a real gap that needs one more small test.</p>
+<ul>
+<li>[ ] <strong>Step 3: Full matrix (optional but recommended before merging)</strong></li>
+</ul>
+<p><code>hatch test -c</code> across the matrix if time/CI budget allows, or push a
+  branch and let GitHub Actions' <code>test.yml</code> run all OS/Python
+  combinations.</p>
+<ul>
+<li>[ ] <strong>Step 4: <code>make format &amp;&amp; hatch run mypy</code></strong></li>
+</ul>
+<p>Confirm lint/type-check are clean across all touched files (this should
+  already be true if <code>make format</code> was run after each task, but re-check
+  once at the end for cross-task interactions).</p>
+<ul>
+<li>[ ] <strong>Step 5: Update the spec's <code>Status</code> line</strong></li>
+</ul>
+<p>Edit <code>docs/superpowers/specs/2026-08-01-test-coverage-gaps-design.md</code>'s
+  header from <code>**Status:** Draft — pending user review</code> to <code>**Status:**
+  Implemented</code> (or similar), and commit.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.top"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../../assets/javascripts/extra.js"></script>
+      
+    
+  </body>
+</html>

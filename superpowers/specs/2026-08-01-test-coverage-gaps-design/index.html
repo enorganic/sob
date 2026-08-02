@@ -1,0 +1,1482 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+        <link rel="canonical" href="https://enorganic.github.io/sob/superpowers/specs/2026-08-01-test-coverage-gaps-design/">
+      
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Close remaining test-coverage gaps in sob - sob</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/style.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#close-remaining-test-coverage-gaps-in-sob" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="sob" class="md-header__button md-logo" aria-label="sob" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            sob
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Close remaining test-coverage gaps in sob
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1M8 13h8v-2H8zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4a5 5 0 0 0 5-5 5 5 0 0 0-5-5"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="black" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5M7 15a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/enorganic/sob/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="sob" class="md-nav__button md-logo" aria-label="sob" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    sob
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/enorganic/sob/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Introduction
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/meta/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.meta
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/properties/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.properties
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/types/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/abc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.abc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/errors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.errors
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/hooks/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.hooks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/thesaurus/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.thesaurus
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.utilities
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/version/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    sob.version
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contributing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-goal" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Goal
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-current-state-baseline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Current state (baseline)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-important-finding-the-doctest-harness-doesnt-fail-on-doctest-errors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Important finding: the doctest harness doesn't fail on doctest errors
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Non-goals
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-per-module-test-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Per-module test plan
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="5. Per-module test plan">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#51-_datetimepy-93-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.1 _datetime.py (93% → ~100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#52-_iopy-79-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.2 _io.py (79% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#53-_typespy-93-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.3 _types.py (93% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#54-_utilitiespy-89-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.4 _utilities.py (89% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#55-abcpy-98-99-remainder-is-4-non-goals" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.5 abc.py (98% → ~99%, remainder is §4 non-goals)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#56-errorspy-88-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.6 errors.py (88% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#57-typespy-81-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.7 types.py (81% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#58-propertiespy-96-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.8 properties.py (96% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#59-versionpy-80-100" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.9 version.py (80% → 100%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#510-utilitiespy-85-97" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.10 utilities.py (85% → ~97%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#511-hookspy-45-90-highest-value-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.11 hooks.py (45% → ~90%+) — highest-value gap
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#512-metapy-79-93" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.12 meta.py (79% → ~93%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#513-modelpy-87-95" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.13 model.py (87% → ~95%)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#514-thesauruspy-64-88-second-highest-value-gap" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5.14 thesaurus.py (64% → ~88%) — second-highest-value gap
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-testing-conventions-to-follow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Testing conventions to follow
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-acceptance-criteria" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Acceptance criteria
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="close-remaining-test-coverage-gaps-in-sob">Close remaining test-coverage gaps in <code>sob</code></h1>
+<p><strong>Status:</strong> Implemented (2026-08-01). Overall coverage 84%→87%; most
+modules hit or exceeded target (see plan's Task 15 for final numbers).
+<code>abc.py</code> (74%, all remaining lines are non-goal abstract stubs),
+<code>model.py</code> (85%, target 90%+), and <code>thesaurus.py</code> (82%, target 85%+)
+fell short of their per-module targets, and overall coverage (87%)
+fell short of the ≥95% target — the remaining gaps are deep/low-value
+branches (see plan for details). Four real bugs found and fixed along
+the way: two hidden by a no-op doctest assertion, <code>indent()</code>'s
+negative-<code>stop</code> sign error, <code>Properties.__eq__</code> comparing the wrong
+operand, and two related polymorphism-merge bugs in <code>thesaurus.py</code>.
+<strong>Scope:</strong> <code>src/sob/**</code> (all 16 modules), <code>tests/**</code></p>
+<h2 id="1-goal">1. Goal</h2>
+<p>Bring every module in <code>src/sob</code> up from its current measured coverage to
+as close to 100% as is meaningful, using <strong>real integration tests</strong> —
+constructing actual <code>sob</code> model/property/meta/hooks objects and exercising
+them end-to-end — rather than mocks or patched internals. This matches the
+existing test suite's own convention: <code>grep -rl "mock\|Mock\|monkeypatch"
+tests/ src/</code> returns nothing today, and every existing test builds real
+<code>sob.Object</code>/<code>sob.Array</code>/<code>sob.Dictionary</code> subclasses (see
+<code>tests/test_model.py</code>, <code>tests/test_version.py</code>, <code>tests/test_utilities.py</code>).
+This spec preserves that convention; no new test dependency (e.g.
+<code>pytest-mock</code>, <code>unittest.mock</code>) should be introduced.</p>
+<h2 id="2-current-state-baseline">2. Current state (baseline)</h2>
+<p>Measured via <code>hatch test --cover</code> on 2026-08-01 (Python 3.10 leg):</p>
+<div class="highlight"><pre><span></span><code>Name                    Stmts   Miss  Cover
+-------------------------------------------
+src/sob/__init__.py        11      0   100%
+src/sob/_datetime.py       28      2    93%
+src/sob/_inspect.py        11      0   100%
+src/sob/_io.py             19      4    79%
+src/sob/_types.py          57      4    93%
+src/sob/_utilities.py      28      3    89%
+src/sob/abc.py            529     13    98%
+src/sob/errors.py          59      7    88%
+src/sob/hooks.py          110     60    45%
+src/sob/meta.py           463     98    79%
+src/sob/model.py         1308    176    87%
+src/sob/properties.py     228     10    96%
+src/sob/thesaurus.py      465    168    64%
+src/sob/types.py           70     13    81%
+src/sob/utilities.py      315     46    85%
+src/sob/version.py         96     19    80%
+-------------------------------------------
+TOTAL                    3797    623    84%
+</code></pre></div>
+<p><code>pyproject.toml</code> sets <code>fail_under = 70</code> — already passing overall, but
+<code>hooks.py</code> (45%) and <code>thesaurus.py</code> (64%) are both individually below that
+bar, and several modules have entire classes of behavior (error branches,
+direct-construction paths, mapping-protocol methods) with zero exercise.</p>
+<p><strong>Target:</strong> every module ≥ 90%, <code>hooks.py</code> and <code>thesaurus.py</code> ≥ 85%,
+overall ≥ 95%. Some lines (documented in §4) are genuinely low-value or
+unreachable and are called out as explicit non-goals rather than chased.</p>
+<h2 id="3-important-finding-the-doctest-harness-doesnt-fail-on-doctest-errors">3. Important finding: the doctest harness doesn't fail on doctest errors</h2>
+<p>Every <code>test_doctest()</code> function across the suite (e.g.
+<code>tests/test_utilities.py:13</code>, <code>tests/test_datetime.py:11</code>) does:</p>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">test_doctest</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">doctest</span><span class="o">.</span><span class="n">testmod</span><span class="p">(</span><span class="n">utilities</span><span class="p">)</span>
+</code></pre></div>
+<p><code>doctest.testmod()</code> returns a <code>TestResults(failed, attempted)</code> tuple and
+<strong>never raises</strong> on failure — it just prints a report to stdout. Since
+nothing asserts on the return value, these test functions always pass
+regardless of whether the docstring examples in the module actually work.
+Confirmed by running <code>hatch test --cover</code> (33 passed, no failures reported)
+versus running pytest directly with <code>--doctest-modules</code> (the flag already
+configured in <code>pyproject.toml</code> under <code>[tool.hatch.envs.hatch-test]
+extra-args</code>, which collects each doctest as its own pytest item):</p>
+<div class="highlight"><pre><span></span><code>src/sob/utilities.py::sob.utilities.suffix_long_lines FAILED
+src/sob/_datetime.py::sob._datetime.str2datetime FAILED
+2 failed, 49 passed
+</code></pre></div>
+<p>Two real, currently-failing doctests exist in the docstrings today:</p>
+<ul>
+<li><strong><code>sob.utilities.suffix_long_lines</code></strong> — the example output doesn't
+  include the <code># noqa: E501</code> suffix the function actually appends; looks
+  like a stale docstring after a recent edit (see commits <code>89e906a</code>,
+  <code>c51259b</code>, <code>e3d58f0</code> — all docstring-wrap fixes).</li>
+<li><strong><code>sob._datetime.str2datetime</code></strong> — <code>str2datetime("2023-10-01T12:00:00Z")</code>
+  is documented to return a UTC-aware <code>datetime</code>, but on Python 3.10 it
+  returns a <strong>naive</strong> <code>datetime</code> (the <code>Z</code>-suffix branch differs because
+  <code>datetime.fromisoformat</code> only gained <code>Z</code>-parsing in Python 3.11; on 3.10
+  it falls through to the <code>iso8601.parse_date</code> fallback, which the
+  Python-3.10-only "incorrect UTC offset" correction then strips to naive).
+  Since the test matrix covers 3.10–3.13, this doctest's expected output is
+  only accurate on 3.11+.</li>
+</ul>
+<p><strong>Decision needed from user before implementation:</strong> should the plan (a)
+fix <code>test_doctest()</code> in every test file to assert <code>failed == 0</code> (e.g.
+<code>assert doctest.testmod(module).failed == 0</code>), which will immediately turn
+these two into real failures that must be fixed as a prerequisite, or (b)
+leave the harness as-is and just note the two bugs separately? Recommended:
+<strong>(a)</strong> — it's a one-line change per file, it's the highest-leverage single
+fix in this whole effort, and leaving it disabled defeats the purpose of
+raising coverage elsewhere. The two underlying docstring/behavior bugs it
+exposes should be fixed as their own small prerequisite fixes (not silently
+adjusted expectations) before the coverage-gap tests are added, so the
+gap-filling tests start from a green baseline.</p>
+<h2 id="4-non-goals">4. Non-goals</h2>
+<p>Do not chase coverage on:</p>
+<ul>
+<li><strong><code>abc.py</code> abstract-method stub bodies</strong> (<code>pass</code> under <code>@abstractmethod</code>,
+  e.g. lines 470, 757, 824, 966, 993, 1018, 1048, 1070, 1106, 1175, 1188,
+  1195) — every concrete subclass overrides these; the stub body itself
+  never executes in real usage and testing it would require calling the
+  abstract method through a deliberately broken subclass, which tests
+  nothing meaningful.</li>
+<li><strong><code>TYPE_CHECKING</code>-only <code>assert</code> statements</strong> (e.g. <code>model.py:1812</code>) —
+  dead at runtime by construction.</li>
+<li><strong><code>model.py</code> <code>_marshal</code>/<code>_validate</code> abstract <code>pass</code> bodies</strong> (148, 162,
+  166 area) — same reasoning as <code>abc.py</code>.</li>
+<li>A handful of deeply-defensive <code>TypeError</code>/exec-failure guards in
+  <code>model.py</code>'s <code>get_models_source</code> (3412, 3482, 3491) that would require
+  contriving malformed metadata objects bypassing all public constructors
+  to trigger — flagged as low-priority, skip unless trivial.</li>
+</ul>
+<h2 id="5-per-module-test-plan">5. Per-module test plan</h2>
+<p>Each subsection lists concrete, mock-free scenarios. Where a module already
+has a test file, new tests extend it; naming follows the existing
+<code>test_&lt;behavior&gt;</code> convention (see <code>tests/test_model.py</code>,
+<code>tests/test_types.py</code>).</p>
+<h3 id="51-_datetimepy-93-100">5.1 <code>_datetime.py</code> (93% → ~100%)</h3>
+<p>File: <code>tests/test_datetime.py</code>
+- <code>str2datetime</code> raises <code>TypeError</code> for a non-<code>str</code> argument (parallel to
+  the existing <code>test_raise_str2date_type_error</code>) — covers line 59.
+- <code>str2date</code> raises <code>TypeError</code> for a non-<code>str</code> argument — covers line 88.
+- (Prerequisite, see §3) fix the <code>str2datetime("...Z")</code> docstring/behavior
+  mismatch on Python 3.10 before/alongside this work.</p>
+<h3 id="52-_iopy-79-100">5.2 <code>_io.py</code> (79% → 100%)</h3>
+<p>File: <code>tests/test_utilities.py</code> (or a new <code>tests/test__io.py</code>)
+- A file-like proxy whose <code>read()</code> raises <code>io.UnsupportedOperation</code> (and
+  has no <code>readall</code>) to hit the <code>except UnsupportedOperation: pass</code> branch,
+  followed by exhausting both method names — e.g. a class with <code>read</code> that
+  always raises, and no <code>readall</code>, confirming the final <code>TypeError</code> is
+  raised (<code>f"{file!r} is not a file-like object"</code>) — covers lines 39-42.
+- A plain <code>object()</code> (no <code>seek</code>/<code>read</code>/<code>readall</code>) passed to <code>sob._io.read</code>
+  to hit the <code>TypeError</code> path directly too.</p>
+<h3 id="53-_typespy-93-100">5.3 <code>_types.py</code> (93% → 100%)</h3>
+<p>File: <code>tests/test_types.py</code>
+- <code>hash(sob.UNDEFINED) == 0</code> — covers line 41.
+- <code>hash(sob.NULL) == 0</code>, <code>str(sob.NULL) == "null"</code>,
+  <code>sob.Null._marshal() is None</code> — covers lines 102, 105, 109.</p>
+<h3 id="54-_utilitiespy-89-100">5.4 <code>_utilities.py</code> (89% → 100%)</h3>
+<p>File: <code>tests/test_utilities.py</code>
+- Decorate a real function with <code>sob._utilities.deprecated("message")</code>,
+  call it, and assert (via <code>pytest.warns(DeprecationWarning, match=...)</code>)
+  that the warning fires and the wrapped function's return value passes
+  through — covers line 34. (This one line also silently backs every
+  <code>deprecated</code>-wrapped alias across <code>abc.py</code>, <code>properties.py</code>, <code>meta.py</code>,
+  <code>hooks.py</code>, <code>model.py</code>, <code>thesaurus.py</code>, and <code>utilities.py</code> — e.g.
+  <code>sob.hooks.Object</code>, <code>sob.meta.read</code>, <code>sob.properties.String</code> — none of
+  which is currently invoked anywhere in the test suite. Once this line is
+  covered directly, calling a representative one or two of those aliases
+  under <code>pytest.warns(DeprecationWarning)</code> in their respective module's
+  test file is a cheap way to also confirm the aliases themselves are
+  wired correctly, though it isn't required to close this specific gap.)
+- A proxy object with a non-<code>str</code> <code>.url</code> attribute →
+  <code>get_readable_url</code> raises <code>TypeError</code> — covers line 50.
+- A proxy object with none of <code>geturl</code>/<code>url</code>/<code>name</code> → returns <code>None</code> —
+  covers line 61.</p>
+<h3 id="55-abcpy-98-99-remainder-is-4-non-goals">5.5 <code>abc.py</code> (98% → ~99%, remainder is §4 non-goals)</h3>
+<p>No new tests needed beyond what naturally falls out of exercising the
+concrete classes elsewhere in this plan (<code>abc.py</code>'s only non-non-goal gaps
+are abstract stubs).</p>
+<h3 id="56-errorspy-88-100">5.6 <code>errors.py</code> (88% → 100%)</h3>
+<p>File: <code>tests/test_utilities.py</code> or a new <code>tests/test_errors.py</code>
+- Construct <code>sob.errors.DeserializeError(data="bad", message="oops")</code>
+  directly; assert <code>.data</code>, <code>.message</code>, <code>repr(error)</code> (message + <code>"Could
+  not parse:\n..."</code>), and <code>str(error) == repr(error)</code> — covers 57-59, 62,
+  68.
+- <code>append_exception_text</code>: build a real exception with a <code>strerror</code>
+  attribute (e.g. <code>OSError(1, "boom")</code>, which sets <code>.strerror</code>) and confirm
+  the message is appended to <code>.strerror</code> — covers line 161.
+- <code>append_exception_text</code> on an exception with empty <code>.args</code> (e.g.
+  <code>Exception()</code>) to hit the "not found" <code>else</code> branch — covers line 174.</p>
+<h3 id="57-typespy-81-100">5.7 <code>types.py</code> (81% → 100%)</h3>
+<p>File: <code>tests/test_types.py</code>
+- <code>sob.Types(str)</code> (bare type, not wrapped in a sequence) — covers line 43.
+- <code>copy.copy(sob.Types([int, str]))</code> — covers line 49.
+- On a <code>sob.MutableTypes</code> instance: <code>types[0] = float</code> (<code>__setitem__</code>),
+  <code>types.extend([bool])</code>, <code>del types[0]</code> (<code>__delitem__</code>), <code>types += [str]</code>
+  (<code>__iadd__</code>), and <code>new_types = types + [int]</code> (<code>__add__</code>, returning a
+  fresh <code>MutableTypes</code>) — covers 123-124, 130, 133, 139-140, 145-149.</p>
+<h3 id="58-propertiespy-96-100">5.8 <code>properties.py</code> (96% → 100%)</h3>
+<p>File: <code>tests/test_model.py</code> or a new <code>tests/test_properties.py</code>
+- <code>has_mutable_types</code> with a plain (non-<code>Property</code>) argument that is not a
+  <code>type[abc.Property]</code> subclass → <code>TypeError</code> — covers 66-72 (also hits
+  both branches of the <code>isinstance(property_, abc.Property)</code> check with a
+  <code>Property</code> instance vs. a <code>Property</code> subclass passed as a bare type).
+- Attempt to reassign <code>.types</code> on a <code>Property</code> instance whose class defines
+  <code>_types</code> at the class level (e.g. <code>sob.StringProperty().types = [int]</code>)
+  → <code>TypeError</code> ("... .types<code>is immutable") — covers line 163.
+- Assign an invalid (non-type, non-</code>Property<code>, non-</code>None<code>) value to</code>.types<code>on a property whose</code>_types<code>is *not* class-level-fixed (a bare</code>sob.Property().types = "not-a-type"<code>) →</code>TypeError<code>— covers line 172.
+- Assign an invalid</code>.versions<code>value (e.g.</code>sob.Property().versions =
+  123<code>) →</code>TypeError` — covers lines 192, 196.</p>
+<h3 id="59-versionpy-80-100">5.9 <code>version.py</code> (80% → 100%)</h3>
+<p>File: <code>tests/test_version.py</code>
+<code>sob.Version</code> is currently only exercised indirectly through
+<code>version_model</code>/property <code>versions=</code> args — no test constructs or compares
+<code>sob.Version</code> instances directly. Add:
+- <code>sob.version._are_versions_compatible</code>/<code>_are_versions_equal</code> via
+  <code>sob.Version(equals="1.2") == "1.2.0"</code> and <code>== "1.2"</code> (differing
+  precision) to cover the truncation/length-mismatch branches (lines 24,
+  31, 37-43).
+- <code>sob.version._version_string_as_tuple("not-a-version")</code> (or
+  constructing <code>sob.Version("not-a-version")</code>) → <code>ValueError</code> — line 81.
+- <code>sob.Version(compatible_with=1.2)</code> and <code>sob.Version(compatible_with=
+  (1, 2))</code> (a bare float and a bare sequence, exercising the numeric and
+  sequence branches of <code>_version_as_tuple</code>) — lines 88, 94, 116-119.
+- <code>sob.version._version_as_tuple(object())</code> → <code>TypeError</code> — line 113.
+- <code>sob.Version(123)</code> (non-<code>str</code> <code>version_string</code>) → <code>TypeError</code> — line 226.
+- <code>sob.Version("a==1,b==2")</code> (two different specification prefixes in one
+  string) → <code>ValueError</code> — line 249.
+- <code>specification</code> defaults to <code>""</code> (verified: a default-built <code>sob.Version</code>
+  never leaves it <code>None</code>), so the <code>RuntimeError</code> at line 301 can't be
+  triggered through the constructor alone. <code>specification</code> is a plain
+  public attribute (no property/validation), so directly assigning
+  <code>version.specification = None</code> after construction and then calling
+  <code>str(version)</code> is normal use of the public interface, not a mock or
+  monkeypatch — use that to cover line 301.</p>
+<h3 id="510-utilitiespy-85-97">5.10 <code>utilities.py</code> (85% → ~97%)</h3>
+<p>File: <code>tests/test_utilities.py</code>
+- URL helpers: call the internal URL-splitting helper with a malformed URL
+  to hit its <code>ValueError</code>, and <code>get_relative_url("https://a.com/x/y",
+  "https://a.com/x/z")</code> plus a case with <strong>no shared prefix</strong> between
+  absolute and base URL — covers 389-393, 402-416.
+- <code>_align_indent("no-leading-space")</code> — covers line 427.
+- <code>_split_long_comment_line</code> with a short line (no wrap needed) — covers
+  line 473.
+- <code>split_long_docstring_lines</code>: an already-uniformly-indented docstring
+  (covers 505, 510-511) and a docstring containing a <code>"""</code>/<code>'''</code> literal
+  that closes on the same or later line, needing the suffix re-appended —
+  covers 540-548 (<code>suffix_long_lines</code>'s quote-tracking loop).
+- <code>get_qualified_name</code>: pass an unsupported type → <code>TypeError</code> (line 657);
+  pass a generic alias like <code>list[int]</code> to hit the <code>__origin__</code>/<code>repr()</code>
+  fallback (line 675); construct an object whose type truly can't resolve
+  a qualified name to hit the final <code>TypeError</code> (line 682).
+- <code>get_calling_module_name</code>/<code>get_calling_function_qualified_name</code>: call
+  with <code>depth</code> deep enough to exceed the real stack to hit the
+  <code>IndexError</code>/short-stack <code>None</code> returns (745-746, 772, 775-776), and call
+  with a non-<code>int</code> <code>depth</code> → <code>TypeError</code> (line 772's guard).
+- <code>_repr_list([])</code>, <code>_repr_set(set())</code>, <code>_repr_dict({})</code> — the empty-
+  collection short-circuit branches (<code>"[]"</code>, <code>"set()"</code>, <code>"{}"</code>) — covers
+  818-819, 842, 852.
+- <code>represent(SomeClass)</code> (representing a bare <code>type</code>, not an instance) —
+  covers line 870.
+- <code>get_method</code>: an object missing the requested method with <strong>no</strong>
+  <code>default</code> (so <code>default</code> stays <code>sob.UNDEFINED</code>) → re-raises <code>AttributeError</code>
+  (910); an object where the attribute exists but isn't callable, with and
+  without a <code>default</code> → returns default or raises — covers 914-920.</p>
+<h3 id="511-hookspy-45-90-highest-value-gap">5.11 <code>hooks.py</code> (45% → ~90%+) — highest-value gap</h3>
+<p>File: <code>tests/test_model.py</code> or a new <code>tests/test_hooks.py</code>. Currently
+<strong>zero</strong> test in the suite constructs <code>ObjectHooks</code>/<code>ArrayHooks</code>/
+<code>DictionaryHooks</code> or calls any <code>*_hooks</code> function — <code>model.py</code> calls the
+read-side internally on every operation (which is why 45% is already
+covered passively), but nothing ever registers a hook, so the entire
+write/get-writable/dispatch surface is dark.
+- <code>ObjectHooks(before_setattr=fn, after_setattr=fn)</code> assigned via
+  <code>sob.write_model_hooks(ObjectA, hooks)</code>; set an attribute on an instance
+  and assert both real (non-mock) callables fired with expected arguments
+  — covers <code>ObjectHooks.__init__</code> (244-257) and the <code>write_model_hooks</code>
+  body (835-849).
+- <code>ArrayHooks(before_append=fn, after_append=fn)</code> on <code>sob.ArrayA</code>;
+  <code>.append(...)</code> and assert hooks fired — covers 382-395.
+- <code>DictionaryHooks(before_setitem=fn, after_setitem=fn)</code> on a <code>Dictionary</code>
+  subclass; <code>d["k"] = v</code> — covers 505-516.
+- <code>sob.read_model_hooks("not-a-model")</code> → <code>TypeError</code> — covers 549-560.
+- <code>sob.get_writable_model_hooks(ObjectA)</code> on a class with no hooks yet
+  assigned → returns a fresh <code>ObjectHooks</code>, confirmed idempotent via a
+  second <code>sob.read_model_hooks(ObjectA)</code> call returning the same object;
+  repeat on an instance; and <code>sob.get_writable_model_hooks(42)</code> →
+  <code>TypeError</code> — covers 626, 633, 639, 645, 665-704.
+- <code>sob.get_writable_object_hooks</code>/<code>get_writable_array_hooks</code>/
+  <code>get_writable_dictionary_hooks</code> called directly on each container type —
+  covers 730, 756, 785.
+- <code>sob.get_model_hooks_type(ObjectA)</code> → <code>ObjectHooks</code> (and same for
+  <code>Array</code>/<code>Dictionary</code>, both class and instance); <code>sob.get_model_hooks_type
+  (str)</code> → <code>TypeError</code> — covers 800-820.
+- <code>sob.write_model_hooks(ObjectA, sob.ArrayHooks())</code> (wrong hooks type) →
+  <code>ValueError</code>; <code>sob.write_model_hooks("not-a-model", hooks)</code> → <code>TypeError</code>
+  — rounds out 835-849.</p>
+<h3 id="512-metapy-79-93">5.12 <code>meta.py</code> (79% → ~93%)</h3>
+<p>File: <code>tests/test_model.py</code> / <code>tests/test_version.py</code>
+- Assign a bare (non-iterable) type/Property to <code>DictionaryProperty(
+  value_types=sob.StringProperty())</code> and <code>ArrayProperty(item_types=str)</code>
+  (not wrapped in a list) — covers 217-219, 271-273.
+- Exercise <code>sob.Properties</code> mapping protocol directly on
+  <code>sob.get_writable_object_meta(ObjectA).properties</code>: <code>.pop("string")</code>,
+  <code>.popitem()</code>, <code>.setdefault("x", sob.StringProperty())</code>,
+  <code>.get("missing")</code>, <code>.clear()</code>, <code>copy.copy(properties)</code>, <code>repr(...)</code>,
+  equality between two independently-built <code>Properties</code> with identical
+  items, <code>properties["bad"] = "not-a-property"</code> → <code>TypeError</code>,
+  <code>.setdefault("x", 5)</code> → <code>TypeError</code>, <code>.update({...})</code> with a plain
+  <code>dict</code> — covers 304-318, 370, 376, 385, 396, 403, 406, 427, 430, 443-445,
+  450, 453-455.
+- Define a brand-new <code>sob.Object</code> subclass with no metadata ever assigned
+  and call <code>sob.read_model_meta(NewClass)</code> → <code>None</code> — covers 488-491.
+- <code>sob.get_writable_object_meta("not-a-model")</code> and <code>sob.
+  get_writable_object_meta(int)</code> → <code>TypeError</code> — covers 610-619.
+- <code>sob.write_model_meta(ObjectA, sob.ArrayMeta())</code> → <code>ValueError</code>;
+  <code>sob.write_model_meta("not-a-model", None)</code> → <code>TypeError</code> — covers 714,
+  716-717, 750, 754-755.
+- <code>sob.meta._read_object_properties</code>/<code>_read_object_property_names</code> on a
+  class with no metadata → <code>None</code> returns — covers 784, 793, 802.
+- <code>sob.meta.pointer(instance, "/foo/bar")</code> then re-call with
+  <code>pointer_=None</code> to hit only the getter; <code>sob.meta.pointer(123)</code> →
+  <code>TypeError</code>; <code>sob.meta.url(instance, "https://example.com")</code> — covers
+  883-886, 962-963.
+- Extend <code>test_version.py</code>'s pattern to a versioned <strong><code>Array</code></strong>/
+  <strong><code>Dictionary</code></strong> (not just <code>Object</code>): give <code>ArrayProperty(item_types=...)</code>
+  or <code>DictionaryProperty(value_types=...)</code> a nested <code>Property</code> with
+  <code>versions=[...]</code>, call <code>sob.meta.version_model(container_instance,
+  "test-specification", "1.0")</code> directly, and assert the container's
+  types were filtered — covers 1001, 1022-1097, 1114-1149. Also
+  deliberately trigger <code>sob.errors.VersionError</code> by setting a
+  to-be-removed versioned property's value before calling <code>version_model</code>
+  with an incompatible version. <code>sob.meta.version_model(42, "spec", "1.0")</code>
+  → <code>TypeError</code> — covers 1182, 1185-1187.
+- <code>sob.meta._copy_model_meta_to</code> with a non-<code>abc.Model</code> <code>source</code> (module-
+  internal, acceptable to import directly since it's the unit under test)
+  — covers 1248, 1274.</p>
+<h3 id="513-modelpy-87-95">5.13 <code>model.py</code> (87% → ~95%)</h3>
+<p>File: <code>tests/test_model.py</code>. This is the largest module; group tests by
+the affected class/function.
+- <strong><code>Model</code>/format guard</strong>: <code>sob.Array(123)</code>, <code>sob.Dictionary(123)</code> →
+  <code>TypeError</code> (line 148).
+- <strong><code>Array</code> protocol</strong>: build <code>arr = ArrayA([ObjectA(string="a")])</code> and
+  exercise <code>arr.append(...)</code>, <code>arr[0] = ObjectA(string="b")</code>, <code>del
+  arr[0]</code>, <code>arr.sort()</code>, <code>arr.extend([...])</code>, <code>reversed(arr)</code>, <code>arr.pop()</code>,
+  <code>arr.remove(...)</code>, <code>copy.copy(arr)</code>, <code>repr(arr)</code>, <code>str(arr)</code>, <code>arr ==
+  ArrayA()</code> (type and length mismatch), plus real <code>ArrayHooks</code>
+  (<code>before_setitem</code>/<code>after_setitem</code>/<code>before_marshal</code>/<code>after_marshal</code>/
+  <code>before_validate</code>) assigned via <code>sob.write_model_hooks</code> and a
+  <code>sob.validate(arr)</code> call against an invalid item to hit the
+  <code>ValidationError</code> raise (lines 391, 414, 436-597, 652-673).
+- <strong><code>Dictionary</code> protocol</strong>: build <code>d = DictionaryA({"a": ObjectA(...)})</code>
+  (mirroring <code>MemberDictionaryA</code> from <code>test_version.py</code>) and exercise
+  <code>d.update({...}, [("c", ...)], kw=...)</code>, <code>d.setdefault(...)</code>, <code>d.pop(...)</code>,
+  <code>d.popitem()</code>, <code>"a" in d</code>, <code>list(reversed(d))</code>, <code>copy.copy(d)</code>/
+  <code>copy.deepcopy(d)</code>, <code>d == DictionaryA()</code>, construct from a tuple-iterable
+  instead of a <code>dict</code>, and real <code>DictionaryHooks</code> on <code>__setitem__</code>/
+  <code>_marshal</code> (lines 935-1343).
+- <strong><code>Object</code> extras/copy-init</strong>: construct <code>ObjectA(other_object_with_a_
+  type-incompatible_property)</code> to hit <code>_copy_init</code>'s exception-
+  augmentation path; <code>obj["extra_key"] = "value"</code>, read it back, and
+  <code>del obj["extra_key"]</code> to hit the <code>_extra</code> (non-metadata-attribute)
+  branches of <code>__setitem__</code>/<code>__getitem__</code>/<code>__delitem__</code>; real
+  <code>ObjectHooks(before_setitem=fn)</code> on <code>obj["string"] = "x"</code> (lines
+  1600-1994).
+- <strong>Module-level <code>marshal()</code></strong>: call directly (not just via <code>Object.
+  _marshal</code>) on a raw <code>dict</code>, <code>list</code>, <code>set</code>, <code>Decimal</code>, <code>datetime</code>, <code>date</code>,
+  <code>bytes</code>, and an unsupported <code>object()</code> (→ <code>ValueError</code>), plus <code>marshal(1,
+  types=(str,))</code> (→ <code>TypeError</code>) (lines 2013-2129).
+- <strong><code>unmarshal()</code></strong>: <code>sob.unmarshal({"string": "a"}, types=ObjectA)</code>
+  (single type, not iterable); <code>sob.unmarshal((x for x in [1, 2]))</code>
+  (generator input); <code>sob.unmarshal(None)</code>; a real <code>before_unmarshal</code> hook
+  registered on <code>ObjectA</code> (lines 2171-2381).
+- <strong><code>serialize</code>/<code>deserialize</code></strong>: real <code>before_serialize</code>/<code>after_serialize</code>
+  hooks on <code>ObjectA</code>; <code>sob.deserialize(b'{"a": 1}')</code> (bytes path);
+  <code>sob.deserialize(123)</code> → <code>TypeError</code> (lines 2502-2594).
+- <strong><code>validate()</code></strong>: <code>sob.validate(ObjectA(), types=(ObjectA,))</code> (bare type,
+  not <code>Property</code>) (line 2635).
+- <strong><code>replace_model_nulls</code></strong>: <code>arr = ArrayA([sob.NULL]);
+  sob.replace_model_nulls(arr)</code>; assert <code>arr[0] is None</code> — Array-item NULL
+  replacement is untested today (only Object-property NULLs are) (line
+  3012).
+- <strong><code>get_model_from_meta</code>/<code>get_models_source</code></strong>: extend
+  <code>test_get_model_from_meta_regression</code> with a <code>DictionaryMeta</code>-based
+  class and <code>docstring=</code>/<code>pre_init_source=</code> arguments, and include it in
+  the combined <code>get_models_source(...)</code> call (lines 3061-3520 area).</p>
+<h3 id="514-thesauruspy-64-88-second-highest-value-gap">5.14 <code>thesaurus.py</code> (64% → ~88%) — second-highest-value gap</h3>
+<p>File: <code>tests/test_thesaurus.py</code> (currently only 28 lines: one regression
+test that round-trips <code>tests/static-data/thesaurus.json</code> through
+<code>Thesaurus(...).get_module_source()</code> against a golden file). <code>Thesaurus</code>
+infers an <code>sob</code> data model from <em>example</em> JSON data (rather than a
+schema); <code>Synonyms</code> is the set-like collection of interchangeable values
+used to infer one property's type, <code>Thesaurus</code> is the dict-like collection
+of named <code>Synonyms</code> keyed by pointer/identifier. The single flat fixture
+(bools/strings/one array-of-arrays-of-int) never exercises polymorphism-
+merging, date/base64/bytes detection, error paths, or most of the
+<code>Synonyms</code>/<code>Thesaurus</code> mapping/set protocol — hence the large gap. Add a
+<strong>second, deliberately richer static fixture</strong>
+(<code>tests/static-data/thesaurus_polymorphic.json</code>, or extend the existing
+one) containing: a base64 string, a plain date string, a datetime string,
+a key that is sometimes an object and sometimes an array (to trigger the
+type-conflict error path), a key whose synonym values include an empty
+object <code>{}</code> alongside populated ones, and a key that is always <code>null</code>.
+Then:
+- <strong><code>Synonyms</code> construction/inference</strong> (462, 540, 549, 691-698, 800):
+  <code>Synonyms().add(object())</code> → <code>TypeError</code> (line 540); <code>Synonyms([1.5,
+  2])</code> keeps the inferred type as <code>float</code>, not <code>int</code> (line 549); a
+  <code>Synonyms</code> built from base64/date/datetime strings infers <code>bytes</code>/
+  <code>date</code>/<code>datetime</code> respectively (691-698, 462); a shared key whose values
+  are always <code>None</code> falls back to an untyped <code>Property(name=key)</code> (800).
+- <strong><code>Synonyms</code> file-like input</strong> (71-76): add a real <code>io.StringIO</code>/
+  <code>io.BytesIO</code> containing JSON as a <code>Synonyms</code>/<code>Thesaurus</code> value and
+  confirm it decodes via both the <code>str</code> and <code>bytes</code> branches of <code>_read</code>.
+- <strong><code>Synonyms</code> mutation/set-algebra</strong> (540-579, 630-681): build two real
+  <code>Synonyms</code> from different fixture groups and exercise <code>.discard(item)</code>,
+  <code>.remove(item)</code>, <code>.pop()</code>, <code>&amp;</code>, <code>^</code>, <code>-</code>, <code>&lt;=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>==</code>,
+  <code>in</code>, <code>.isdisjoint(...)</code>, <code>copy.copy(...)</code>, <code>copy.deepcopy(...)</code>.
+- <strong><code>Synonyms.get_models</code> guards</strong> (908, 913-914, 922): <code>synonyms.
+  get_models(pointer, name=123)</code> (non-callable <code>name</code>) → <code>TypeError</code>;
+  <code>Synonyms([None]).get_models(pointer)</code> (nothing inferable) →
+  <code>RuntimeError</code>.
+- <strong>Metadata-merge chain</strong> (<code>_update_types</code>, <code>_update_array_meta</code>,
+  <code>_update_dictionary_meta</code>, <code>_update_object_meta</code>, the three
+  <code>_update_*_class_from_meta</code> functions, and <code>_get_models_from_meta</code>'s
+  memo-hit branches — lines 93-111, 129-143, 161-175, 194-232, 254-269,
+  286-291, 311-318, 340-358, 412-413, 417): these only run when the same
+  JSON pointer produces metadata twice in one <code>.get_models()</code> call.
+  - The <strong>error branch</strong> is reachable through the public API: the mixed
+    object/array fixture key above should make <code>.get_models()</code>/
+    <code>.get_module_source()</code> raise <code>TypeError</code> when the same pointer
+    resolves to incompatible container kinds — assert with
+    <code>pytest.raises(TypeError)</code>.
+  - The <strong>success merge</strong> path (two <code>ObjectMeta</code>/<code>ArrayMeta</code>/
+    <code>DictionaryMeta</code> at the same pointer with the <em>same</em> container kind
+    but different properties/types) isn't reachable through nested
+    fixture data without contrived recursive pointer collisions; test it
+    by calling the module-internal <code>_update_object_meta</code>/
+    <code>_update_object_class_from_meta</code> (and <code>_array</code>/<code>_dictionary</code>
+    counterparts) directly with two real, hand-built <code>sob.meta</code> instances
+    and two real classes from <code>sob.model.get_model_from_meta</code>, then assert
+    the merged metadata/class reflects the union.
+- <strong><code>get_class_meta_attribute_assignment_source</code></strong> (989-996): call
+  directly with a real <code>sob.meta.ArrayMeta</code>/<code>ObjectMeta</code> that sets a
+  non-default attribute (e.g. <code>item_types</code>) and assert the generated
+  source string.
+- <strong><code>Thesaurus</code> mapping/set protocol</strong> (1124, 1146, 1160-1211): build a
+  real <code>Thesaurus</code> from fixture data and exercise <code>.popitem()</code>,
+  <code>.update(new=[...])</code>, <code>.setdefault("k", [...])</code>, <code>thesaurus["new"]</code>
+  (auto-vivifying <code>__getitem__</code>) vs. <code>thesaurus["existing"]</code>, <code>"k" in
+  thesaurus</code>, <code>.keys()</code>, <code>.values()</code>, <code>t1 == t2</code>, <code>copy.copy(t)</code>,
+  <code>reversed(t)</code>, <code>copy.deepcopy(t)</code>, and <code>t1 += t2</code> / <code>t1 + t2</code> (two real
+  <code>Thesaurus</code> built from disjoint fixture subsets).
+- <strong><code>Thesaurus.get_module</code>/<code>save_module</code></strong> (1275-1276, 1301-1306):
+  <code>thesaurus.get_module()</code> returns an executed <code>ModuleType</code> — assert the
+  generated classes are real, importable attributes on it. The existing
+  regression test's <code>save_module</code> call never exercises the actual file-
+  write branch because the golden file already exists on disk; add a
+  <code>tmp_path</code>-based test that calls <code>thesaurus.save_module(tmp_path /
+  "model.py")</code> against a path guaranteed not to exist, and confirm the
+  file is written and re-importable.</p>
+<h2 id="6-testing-conventions-to-follow">6. Testing conventions to follow</h2>
+<ul>
+<li><strong>No mocks.</strong> Every new test builds real <code>sob</code> objects (subclasses of
+  <code>sob.Object</code>/<code>sob.Array</code>/<code>sob.Dictionary</code>, real <code>Property</code>/<code>Meta</code>/<code>Hooks</code>
+  instances) and calls real functions — matching 100% of existing tests.</li>
+<li><strong>Real callables for hooks</strong>, not <code>unittest.mock.Mock</code> — e.g. a closure
+  that appends to a list the test asserts against afterward, as already
+  done implicitly elsewhere in the codebase's style (plain functions/
+  classes as fixtures, e.g. <code>HTTPResponseProxy1</code> in <code>test_utilities.py</code>).</li>
+<li>Follow the file's existing structure: <code>from __future__ import
+  annotations</code>, a <code>test_doctest()</code> per module (once fixed per §3), plain
+  <code>test_*</code> functions (no test classes), and the <code>if __name__ == "__main__":
+  pytest.main([__file__, "-s", "-vv"])</code> trailer.</li>
+<li>Where a module has no test file yet (none currently — every <code>src/sob/*</code>
+  module maps to a <code>tests/test_*.py</code> except the underscore-prefixed
+  internals, which are tested from within <code>tests/test_utilities.py</code>/
+  <code>tests/test_types.py</code>), keep using that existing file rather than
+  fragmenting into more files, matching current 1:1-ish structure.</li>
+<li>Regression-style tests (<code>tests/regression-data/</code>) are the established
+  pattern for "build once, compare generated output" cases (see
+  <code>test_thesaurus</code>, <code>test_get_model_from_meta_regression</code>,
+  <code>test_serialization_regression</code>) — reuse this pattern for new
+  <code>thesaurus.py</code> and <code>get_models_source</code> coverage rather than inventing a
+  new fixture mechanism.</li>
+<li>Run <code>hatch test -- tests/test_&lt;module&gt;.py</code> per file during development;
+  <code>hatch test --cover</code> (or <code>hatch run hatch-test.py3.10:coverage report
+  -m</code>) to confirm line-level coverage before/after.</li>
+</ul>
+<h2 id="7-acceptance-criteria">7. Acceptance criteria</h2>
+<ul>
+<li><code>hatch test -c</code> passes on all four Python versions (3.10–3.13) with the
+  <code>test_doctest()</code> fix from §3 applied (i.e. it actually fails if a
+  docstring example breaks).</li>
+<li><code>coverage report -m</code> shows every module ≥ 90%, with <code>hooks.py</code> and
+  <code>thesaurus.py</code> ≥ 85%, and overall ≥ 95%.</li>
+<li>No new test uses <code>unittest.mock</code>, <code>pytest-mock</code>, or monkeypatches any
+  <code>sob</code> internals — all assertions exercise real, constructed objects.</li>
+<li>Lines listed under §4 (Non-goals) remain uncovered by design and are not
+  flagged as regressions in future coverage diffs.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["navigation.top"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+        <script src="../../../assets/javascripts/extra.js"></script>
+      
+    
+  </body>
+</html>
