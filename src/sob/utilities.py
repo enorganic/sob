@@ -368,7 +368,7 @@ def indent(
         lines: list[str] = string.split("\n")
         if stop:
             if stop < 0:
-                stop = len(lines) - stop
+                stop = len(lines) + stop
         else:
             stop = len(lines)
         index: int
@@ -589,7 +589,7 @@ def suffix_long_lines(
         ...     )
         ... )
         A short line...
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam faucibu odio a urna elementum, eu tempor nisl efficitur.  # noqa: E501
         ...another short line
 
     """  # noqa: E501

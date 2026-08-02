@@ -94,9 +94,9 @@ def _update_types(
         if (
             isinstance(new_type, type)
             and issubclass(new_type, abc.Model)
-            and (type.__name__ in memo)
+            and (new_type.__name__ in memo)
         ):
-            existing_type: type = memo[type.__name__]
+            existing_type: type = memo[new_type.__name__]
             new_type_meta: abc.Meta | None = meta.read_model_meta(new_type)
             if not isinstance(
                 new_type_meta,
@@ -201,7 +201,7 @@ def _update_object_meta(
     new_metadata_keys: set[str] = set(new_metadata.properties.keys())
     # Add properties that don't exist
     key: str
-    for key in sorted(metadata_keys - new_metadata_keys):
+    for key in sorted(new_metadata_keys - metadata_keys):
         metadata.properties[key] = new_metadata.properties[key]
     # Update shared properties
     for key in sorted(metadata_keys & new_metadata_keys):

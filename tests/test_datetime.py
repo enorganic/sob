@@ -12,7 +12,10 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(sob._datetime)  # noqa: SLF001
+    results: doctest.TestResults = doctest.testmod(
+        sob._datetime  # noqa: SLF001
+    )
+    assert results.failed == 0, results
 
 
 def test_raise_date2str_type_error() -> None:
@@ -53,6 +56,30 @@ def test_raise_str2date_type_error() -> None:
             "2023-10-01T12:00:00Z"
         )
     except ValueError:
+        error_caught = True
+    assert error_caught
+
+
+def test_raise_str2datetime_type_error() -> None:
+    """
+    Test raising of exceptions for invalid types.
+    """
+    error_caught: bool = False
+    try:
+        sob._datetime.str2datetime(123)  # type: ignore  # noqa: SLF001
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_raise_str2date_non_str_type_error() -> None:
+    """
+    Test raising of exceptions for invalid types.
+    """
+    error_caught: bool = False
+    try:
+        sob._datetime.str2date(123)  # type: ignore  # noqa: SLF001
+    except TypeError:
         error_caught = True
     assert error_caught
 

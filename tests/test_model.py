@@ -3,11 +3,11 @@ from __future__ import annotations
 import doctest
 import os
 from base64 import b64encode
-from copy import deepcopy
+from copy import copy, deepcopy
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import IO, TYPE_CHECKING, cast
+from typing import IO, TYPE_CHECKING, Any, cast
 
 import pytest
 from iso8601.iso8601 import parse_date
@@ -90,6 +90,21 @@ class ArrayA(sob.Array):
 
 
 sob.get_writable_array_meta(ArrayA).item_types = sob.Types([ObjectA])
+
+
+class DictionaryA(sob.Dictionary):
+    def __init__(
+        self,
+        items: (
+            dict[str, ObjectA] | sob.abc.Readable | str | bytes | None
+        ) = None,
+    ) -> None:
+        super().__init__(items)
+
+
+sob.get_writable_dictionary_meta(DictionaryA).value_types = sob.Types(
+    [ObjectA]
+)
 
 
 class ObjectB(sob.Object):
@@ -600,7 +615,8 @@ def test_doctest() -> None:
     """
     Run docstring tests
     """
-    doctest.testmod(sob.model)
+    results: doctest.TestResults = doctest.testmod(sob.model)
+    assert results.failed == 0, results
 
 
 def test_copy() -> None:
@@ -769,6 +785,382 @@ def test_replace_model_nulls() -> None:
     testy_copy: Tesstee = deepcopy(testy)
     sob.replace_model_nulls(testy_copy, None)
     assert testy_copy.null_value is None
+
+
+def test_replace_model_nulls_array() -> None:
+    """
+    Verify that `replace_model_nulls` also replaces `sob.NULL` items
+    within an `Array`, not just `Object` properties. A non-`None`
+    replacement value is used because, unlike `Object.__setattr__`,
+    `Array.__setitem__` always unmarshals its assigned value -- and `None`
+    unmarshals back to `sob.NULL` (there being no "unset" concept for an
+    array item as there is for an object attribute).
+    """
+    array: sob.Array = sob.Array()
+    array._list.append(sob.NULL)  # noqa: SLF001
+    sob.replace_model_nulls(array, "replaced")
+    assert array[0] == "replaced"
+
+
+def test_model_format_type_error() -> None:
+    error_caught: bool = False
+    try:
+        sob.Array(123)  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+    error_caught = False
+    try:
+        sob.Dictionary(123)  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+# region Array protocol
+
+
+def test_array_mutation_protocol() -> None:
+    array: ArrayA = ArrayA([ObjectA(string="a")])
+    array.append(ObjectA(string="b"))
+    assert len(array) == 2  # noqa: PLR2004
+    array[0] = ObjectA(string="c")
+    assert array[0].string == "c"
+    del array[0]
+    assert len(array) == 1
+    array.extend([ObjectA(string="d")])
+    assert len(array) == 2  # noqa: PLR2004
+    array.sort(key=lambda item: item.string or "")
+    array.reverse()
+    popped: Any = array.pop()
+    assert isinstance(popped, ObjectA)
+    array.remove(array[0])
+    assert len(array) == 0
+    array.insert(0, ObjectA(string="e"))
+    assert array[0].string == "e"
+    assert list(reversed(array)) == list(array)[::-1]
+    assert ObjectA(string="e") in array
+    array.clear()
+    assert len(array) == 0
+
+
+def test_array_copy_and_repr_and_str() -> None:
+    array: ArrayA = ArrayA([ObjectA(string="a")])
+    copied: ArrayA = copy(array)
+    assert copied == array
+    assert copied is not array
+    assert repr(array)
+    assert str(array)
+    assert (array + [ObjectA(string="b")]) != array
+    array += [ObjectA(string="b")]
+    assert len(array) == 2  # noqa: PLR2004
+
+
+def test_array_equality_mismatches() -> None:
+    array: ArrayA = ArrayA([ObjectA(string="a")])
+    assert array != ArrayA()
+    assert array != DictionaryA()
+
+
+def test_array_hooks_wired_through_validate() -> None:
+    calls: list[str] = []
+
+    def before_validate(array: sob.Array) -> sob.Array:
+        calls.append("before_validate")
+        return array
+
+    def after_validate(array: sob.Array) -> None:
+        calls.append("after_validate")
+
+    array: ArrayA = ArrayA([ObjectA(string="a")])
+    sob.write_model_hooks(
+        array,
+        sob.ArrayHooks(
+            before_validate=before_validate,  # type: ignore
+            after_validate=after_validate,  # type: ignore
+        ),
+    )
+    sob.validate(array)
+    assert calls == ["before_validate", "after_validate"]
+
+
+# endregion
+# region Dictionary protocol
+
+
+def test_dictionary_mutation_protocol() -> None:
+    dictionary: DictionaryA = DictionaryA({"a": ObjectA(string="a")})
+    dictionary.update({"b": ObjectA(string="b")}, [("c", ObjectA(string="c"))])
+    assert len(dictionary) == 3  # noqa: PLR2004
+    dictionary.setdefault("d", ObjectA(string="d"))
+    assert "d" in dictionary
+    popped: ObjectA = dictionary.pop("d")
+    assert isinstance(popped, ObjectA)
+    key, value = dictionary.popitem()
+    assert isinstance(key, str)
+    assert isinstance(value, ObjectA)
+    assert "a" in dictionary
+    assert list(reversed(dictionary)) == list(reversed(list(dictionary)))
+    del dictionary["a"]
+    assert "a" not in dictionary
+
+
+def test_dictionary_from_tuple_iterable() -> None:
+    dictionary: DictionaryA = DictionaryA(
+        [("a", ObjectA(string="a"))]  # type: ignore
+    )
+    assert dictionary["a"].string == "a"
+
+
+def test_dictionary_copy() -> None:
+    dictionary: DictionaryA = DictionaryA({"a": ObjectA(string="a")})
+    assert copy(dictionary) == dictionary
+    assert deepcopy(dictionary) == dictionary
+    assert deepcopy(dictionary) is not dictionary
+
+
+def test_dictionary_equality_mismatch() -> None:
+    dictionary: DictionaryA = DictionaryA({"a": ObjectA(string="a")})
+    assert dictionary != DictionaryA()
+    assert dictionary != ArrayA()
+
+
+def test_dictionary_hooks_wired_through_setitem() -> None:
+    calls: list[str] = []
+
+    def before_setitem(
+        dictionary: sob.Dictionary, key: str, value: Any
+    ) -> tuple[str, Any]:
+        calls.append("before_setitem")
+        return key, value
+
+    def after_setitem(
+        dictionary: sob.Dictionary, key: str, value: Any
+    ) -> None:
+        calls.append("after_setitem")
+
+    dictionary: DictionaryA = DictionaryA()
+    sob.write_model_hooks(
+        dictionary,
+        sob.DictionaryHooks(
+            before_setitem=before_setitem,  # type: ignore
+            after_setitem=after_setitem,  # type: ignore
+        ),
+    )
+    dictionary["a"] = ObjectA(string="a")
+    assert calls == ["before_setitem", "after_setitem"]
+
+
+# endregion
+# region Object extras/copy-init
+
+
+def test_object_extra_attributes() -> None:
+    obj: ObjectA = ObjectA()
+    obj["extra_key"] = "extra value"
+    assert obj["extra_key"] == "extra value"
+    del obj["extra_key"]
+    error_caught: bool = False
+    try:
+        obj["extra_key"]
+    except KeyError:
+        error_caught = True
+    assert error_caught
+
+
+def test_object_getitem_key_error_no_extras_at_all() -> None:
+    # A fresh instance where `_extra` has never been assigned at all (as
+    # opposed to having been assigned and later emptied).
+    obj: ObjectA = ObjectA()
+    error_caught: bool = False
+    try:
+        obj["never-set"]
+    except KeyError:
+        error_caught = True
+    assert error_caught
+
+
+def test_object_delitem_key_error_no_extras_at_all() -> None:
+    obj: ObjectA = ObjectA()
+    error_caught: bool = False
+    try:
+        del obj["never-set"]
+    except KeyError:
+        error_caught = True
+    assert error_caught
+
+
+def test_object_getitem_setitem_delitem_real_property() -> None:
+    obj: ObjectA = ObjectA(string="a")
+    assert obj["string"] == "a"
+    obj["string"] = "b"
+    assert obj.string == "b"
+    del obj["string"]
+    assert obj.string is None
+
+
+def test_object_hooks_wired_through_setitem() -> None:
+    calls: list[str] = []
+
+    def before_setitem(
+        obj: sob.Object, key: str, value: Any
+    ) -> tuple[str, Any]:
+        calls.append("before_setitem")
+        return key, value
+
+    def after_setitem(obj: sob.Object, key: str, value: Any) -> None:
+        calls.append("after_setitem")
+
+    obj: ObjectA = ObjectA()
+    sob.write_model_hooks(
+        obj,
+        sob.ObjectHooks(
+            before_setitem=before_setitem,  # type: ignore
+            after_setitem=after_setitem,  # type: ignore
+        ),
+    )
+    obj["string"] = "hi"
+    assert calls == ["before_setitem", "after_setitem"]
+    assert obj.string == "hi"
+
+
+# endregion
+# region get_model_from_meta() / get_models_source()
+
+
+def test_get_model_from_meta_dictionary_docstring_pre_init_source() -> None:
+    """
+    Exercise `get_model_from_meta`'s `DictionaryMeta` branch, along with
+    its `docstring=`/`pre_init_source=` arguments -- not part of the
+    `Tesstee` regression fixture (test_get_model_from_meta_regression), so
+    this doesn't require regenerating any checked-in golden file.
+    """
+    dictionary_meta: sob.abc.DictionaryMeta = cast(
+        "sob.abc.DictionaryMeta", sob.read_dictionary_meta(DictionaryA)
+    )
+    model_class: type = sob.get_model_from_meta(
+        "GeneratedDictionaryA",
+        dictionary_meta,
+        module="__main__",
+        docstring="A generated dictionary model.",
+        pre_init_source="X = 1",
+    )
+    assert issubclass(model_class, sob.Dictionary)
+    source: str = sob.get_models_source(model_class)
+    assert "class GeneratedDictionaryA" in source
+    assert "A generated dictionary model." in source
+    assert "X = 1" in source
+
+
+# endregion
+# region marshal()/unmarshal()/serialize()/deserialize()/validate()
+
+
+def test_marshal_raw_data() -> None:
+    assert sob.marshal({"a": 1}) == {"a": 1}
+    assert sob.marshal([1, 2]) == [1, 2]
+    assert sob.marshal(Decimal("1.5")) == 1.5  # noqa: PLR2004
+    assert isinstance(sob.marshal(datetime(2024, 1, 1)), str)
+    assert isinstance(sob.marshal(date(2024, 1, 1)), str)
+    import base64
+
+    assert sob.marshal(b"data") == str(base64.b64encode(b"data"), "ascii")
+
+
+def test_marshal_unsupported_type_error() -> None:
+    error_caught: bool = False
+    try:
+        sob.marshal(object())  # type: ignore
+    except ValueError:
+        error_caught = True
+    assert error_caught
+
+
+def test_marshal_types_type_error() -> None:
+    # `types` is only consulted for data which isn't already a
+    # `Decimal`/`None`/`str`/`int`/`float`/`sob.NULL`/`sob.Model`.
+    error_caught: bool = False
+    try:
+        sob.marshal(object(), types=(str,))  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_unmarshal_single_type_not_iterable() -> None:
+    obj: Any = sob.unmarshal({"string": "a"}, types=ObjectA)
+    assert isinstance(obj, ObjectA)
+    assert obj.string == "a"
+
+
+def test_unmarshal_generator() -> None:
+    result: Any = sob.unmarshal(x for x in (1, 2))
+    assert list(result) == [1, 2]
+
+
+def test_unmarshal_none() -> None:
+    # `None` unmarshals to the explicit `sob.NULL` sentinel.
+    assert sob.unmarshal(None) is sob.NULL
+
+
+def test_unmarshal_before_unmarshal_hook() -> None:
+    calls: list[str] = []
+
+    def before_unmarshal(data: Any) -> Any:
+        calls.append("before_unmarshal")
+        return data
+
+    sob.write_model_hooks(
+        ObjectA, sob.ObjectHooks(before_unmarshal=before_unmarshal)
+    )
+    try:
+        sob.unmarshal({"string": "a"}, types=(ObjectA,))
+        assert calls == ["before_unmarshal"]
+    finally:
+        sob.write_model_hooks(ObjectA, None)
+
+
+def test_serialize_before_after_hooks() -> None:
+    calls: list[str] = []
+
+    def before_serialize(data: Any) -> Any:
+        calls.append("before_serialize")
+        return data
+
+    def after_serialize(data: str) -> str:
+        calls.append("after_serialize")
+        return data
+
+    obj: ObjectA = ObjectA(string="a")
+    sob.write_model_hooks(
+        obj,
+        sob.ObjectHooks(
+            before_serialize=before_serialize,  # type: ignore
+            after_serialize=after_serialize,  # type: ignore
+        ),
+    )
+    sob.serialize(obj)
+    assert calls == ["before_serialize", "after_serialize"]
+
+
+def test_deserialize_bytes() -> None:
+    assert sob.deserialize(b'{"a": 1}') == {"a": 1}
+
+
+def test_deserialize_type_error() -> None:
+    error_caught: bool = False
+    try:
+        sob.deserialize(123)  # type: ignore
+    except TypeError:
+        error_caught = True
+    assert error_caught
+
+
+def test_validate_bare_type() -> None:
+    assert sob.validate(ObjectA(string="a"), types=(ObjectA,)) == []
+
+
+# endregion
 
 
 if __name__ == "__main__":
