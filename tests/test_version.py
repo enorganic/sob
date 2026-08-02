@@ -182,6 +182,25 @@ class VersionedObject(sob.Object):
         self.versioned_container = versioned_container
 
 
+class VersionedGoneObject(sob.Object):
+    """
+    This class has a property which is only applicable to a single,
+    specific version, used to test that `sob.meta.version_model` raises
+    a `VersionError` when a property excluded by a version filter still
+    has a value assigned.
+    """
+
+    __slots__: tuple[str, ...] = ("gone_property",)
+
+    def __init__(
+        self,
+        _data: str | None = None,
+        gone_property: str | None = None,
+    ) -> None:
+        self.gone_property: str | None = gone_property
+        super().__init__(_data)
+
+
 # endregion
 # region Metadata
 
@@ -225,6 +244,21 @@ sob.meta.get_writable_object_meta(
     [("property_a", sob.IntegerProperty(name="propertyA"))]
 )
 
+sob.meta.get_writable_object_meta(
+    VersionedGoneObject
+).properties = sob.meta.Properties(
+    [
+        (
+            "gone_property",
+            sob.properties.Property(
+                name="goneProperty",
+                types=[str],
+                versions=["test-specification==2.0"],
+            ),
+        ),
+    ]
+)
+
 # endregion
 
 
@@ -253,6 +287,38 @@ def test_version_1() -> None:
     # Verify that setting the version to a non-string raises no error
     # when the version is >= 1.2
     VersionedObject(version=1.2)
+
+
+def test_version_recurses_into_nested_container() -> None:
+    """
+    Verify that `sob.meta.version_model` recurses into a nested model-typed
+    property value. `version_model` is called explicitly, after
+    construction, so that `versioned_container` already holds a real
+    `MemberObjectA` instance when the recursive call is made (during
+    `__init__`, `version_model` runs *before* `versioned_container` is
+    assigned).
+    """
+    versioned_object: VersionedObject = VersionedObject(version=1.2)
+    versioned_object.versioned_container = MemberObjectA(property_a=1)
+    sob.meta.version_model(versioned_object, "test-specification", "1.2")
+    assert isinstance(versioned_object.versioned_container, MemberObjectA)
+
+
+def test_version_error_on_removed_property_with_value() -> None:
+    """
+    Verify that `sob.meta.version_model` raises a `VersionError` if a
+    property excluded by the target version still has a (non-`None`)
+    value assigned.
+    """
+    gone_object: VersionedGoneObject = VersionedGoneObject(
+        gone_property="still here"
+    )
+    error_caught: bool = False
+    try:
+        sob.meta.version_model(gone_object, "test-specification", "1.0")
+    except sob.errors.VersionError:
+        error_caught = True
+    assert error_caught
 
 
 def test_version_equality_precision() -> None:

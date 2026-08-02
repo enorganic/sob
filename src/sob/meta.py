@@ -452,7 +452,7 @@ class Properties(abc.Properties):
     def __eq__(self, other: object) -> bool:
         if type(self) is not type(other):
             return False
-        return self._dict.__eq__(other)
+        return self._dict == cast("Properties", other)._dict  # noqa: SLF001
 
     def __len__(self) -> int:
         return self._dict.__len__()
