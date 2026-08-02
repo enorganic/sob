@@ -63,9 +63,11 @@ def str2datetime(str_value: str) -> datetime:
     except ValueError:
         datetime_value = parse_date(str_value)
         # `iso8601` incorrectly sets the UTC offset to `0` instead of `None`
-        # when no time zone is provided
+        # when no time zone is provided. A trailing "Z" *is* an explicit
+        # (UTC) time zone indicator, so only strip the offset when the
+        # original string had no such indicator.
         if (
-            str_value.endswith("Z")
+            not str_value.endswith("Z")
             and "+" not in str_value
             and len(str_value.split("-")) == 3  # noqa: PLR2004
             and (datetime_value.tzinfo is not None)
